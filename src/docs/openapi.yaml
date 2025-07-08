@@ -1,0 +1,33 @@
+openapi: 3.0.0
+info:
+  title: MedBlock Healthcare API
+  version: 1.0.0
+  description: |
+    OpenAPI specification for MedBlock Healthcare Management System.
+    This is a placeholder. Please expand with full endpoint documentation.
+servers:
+  - url: /api/v1
+paths:
+  /patients:
+    get:
+      summary: Get all patients
+      responses:
+        '200':
+          description: OK
+    post:
+      summary: Create a new patient
+      responses:
+        '201':
+          description: Created
+  /auth/login:
+    post:
+      summary: User login
+      responses:
+        '200':
+          description: OK
+  /vital-signs:
+    get:
+      summary: Get all vital signs
+      responses:
+        '200':
+          description: OK 
