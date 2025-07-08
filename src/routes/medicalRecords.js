@@ -1,6 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { authenticateToken, requireRole, canAccessMedicalRecord, isGovernmentVerifiedProfessional } = require('../middleware/auth');
+const { authenticateToken, requireRole, canAccessMedicalRecord } = require('../middleware/auth');
+const { isGovernmentVerifiedProfessional } = require('../middleware/authMiddleware');
 const MedicalRecord = require('../models/MedicalRecord');
 const Patient = require('../models/Patient');
 const encryptionService = require('../utils/encryption');

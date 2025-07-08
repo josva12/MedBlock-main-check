@@ -3,15 +3,15 @@ const router = express.Router();
 const User = require('../models/User');
 // Assuming you have validateObjectId in ../utils/validation, if not, add it
 const { validateObjectId } = require('../utils/validation'); 
-const { authenticate, authorize } = require('../middleware/authMiddleware');
+const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
 const { body, validationResult } = require('express-validator'); // Import for validation
 
 // GET /api/v1/admin/admins - List all admin users
 router.get(
   '/admins',
-  authenticate,
-  authorize('admin'),
+  authenticateToken,
+  requireRole(['admin']),
   async (req, res) => {
     try {
       // Additional safety check for req.user
@@ -66,8 +66,8 @@ router.patch('/users/:id/verify-professional', authenticateToken, requireRole(['
 // DELETE /api/v1/admin/users/:id - Delete any user (admin only, not self)
 router.delete(
   '/users/:id',
-  authenticate,
-  authorize('admin'),
+  authenticateToken,
+  requireRole(['admin']),
   async (req, res) => {
     try {
       // Additional safety check for req.user
