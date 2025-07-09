@@ -8,6 +8,7 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const path = require('path');
+const mongoose = require('mongoose'); // ADDED: Import mongoose here
 
 // Import custom modules
 const db = require('./config/database');
@@ -44,12 +45,12 @@ try {
   process.exit(1);
 }
 
-// const { errorHandler } = require('./middleware/errorHandler');
+// const { errorHandler } = require('./middleware/errorHandler'); // Keep commented if you intend to use it later
 const routes = require('./routes');
 
 // Create Express app
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000; // Note: Your .env uses 3000, but this code defaults to 5000. Ensure consistency.
 
 console.log('✅ server.js is running...');
 
@@ -158,7 +159,7 @@ app.use('*', (req, res) => {
 });
 
 // Global error handler
-// app.use(errorHandler);
+// app.use(errorHandler); // Keep commented if you intend to use it later
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
@@ -198,11 +199,19 @@ console.log('🧪 logger object keys:', Object.keys(logger || {}));
 const startServer = async () => {
   try {
     await db.connect();
+    // --- IMPORTANT: Force Mongoose to synchronize indexes AFTER connection ---
+    // This is crucial in development to ensure schema index changes are applied.
+    // In production, you might manage index creation via migrations.
+    await mongoose.connection.syncIndexes();
     if (logger && typeof logger.info === 'function') {
+      logger.info('MongoDB indexes synchronized successfully.');
       logger.info('Database connected successfully');
     } else {
+      console.log('MongoDB indexes synchronized successfully (using console.log).');
       console.log('Database connected successfully (using console.log)');
     }
+    // --- END IMPORTANT ---
+
     app.listen(PORT, () => {
       if (logger && typeof logger.info === 'function') {
         logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
@@ -213,9 +222,9 @@ const startServer = async () => {
       }
     });
   } catch (error) {
-    console.error('❌ Failed during db.connect():', error);
+    console.error('❌ Failed during db.connect() or index sync:', error);
     if (logger && typeof logger.error === 'function') {
-      logger.error('❌ Failed during db.connect():', error);
+      logger.error('❌ Failed during db.connect() or index sync:', error);
     }
     process.exit(1);
   }
@@ -226,4 +235,4 @@ startServer().catch(err => {
   process.exit(1);
 });
 
-module.exports = app; 
+module.exports = app;

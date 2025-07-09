@@ -20,6 +20,7 @@ try {
 } catch (error) {
   console.error(`🔴 FATAL ERROR: Winston Logger: Could not create or access logs directory "${logsDir}". Error: ${error.message}`);
   console.error("🔴 Winston Logger: Falling back to console-only logging.");
+  // Fallback logger (this block is executed if logs directory cannot be initialized)
   module.exports = {
     info: (...args) => console.info('[FALLBACK-INFO]', ...args),
     warn: (...args) => console.warn('[FALLBACK-WARN]', ...args),
@@ -31,7 +32,8 @@ try {
     medical: (action, patientId, recordType) => console.log('[FALLBACK-MEDICAL]', action, patientId, recordType),
     api: (method, url, statusCode) => console.log('[FALLBACK-API]', method, url, statusCode),
     database: (operation, collection) => console.log('[FALLBACK-DB]', operation, collection),
-    encryption: (action, recordId) => console.log('[FALLBACK-ENCRYPT]', action, recordId),
+    // Corrected fallback signature to match expected usage in encryptionService
+    encryption: (action, recordId, success, details = {}) => console.log('[FALLBACK-ENCRYPT]', action, recordId, success, details),
     performance: (operation, duration) => console.log('[FALLBACK-PERF]', operation, duration),
   };
   return;
@@ -93,7 +95,7 @@ logger.stream = {
   }
 };
 
-// Add a basic custom audit method
+// Helper to redact sensitive fields from logs
 const redact = (obj, fields = ['password', 'token', 'secret']) => {
   if (!obj || typeof obj !== 'object') return obj;
   const clone = { ...obj };
@@ -103,13 +105,12 @@ const redact = (obj, fields = ['password', 'token', 'secret']) => {
   return clone;
 };
 
+// Add custom audit method
 logger.audit = (action, userId, resource, details = {}) => {
   logger.info('AUDIT_LOG', { action, userId, resource, timestamp: new Date().toISOString(), ...redact(details) });
 };
 
-// ✅ --- START OF FIX --- ✅
-// Add the missing logger.security method.
-// Security events are often logged at 'warn' level to make them stand out.
+// Add custom security method
 logger.security = (event, userId, details = {}) => {
   logger.warn('SECURITY_EVENT', {
     event,
@@ -118,7 +119,69 @@ logger.security = (event, userId, details = {}) => {
     ...redact(details)
   });
 };
+
+// ✅ --- START OF FIX: Add the missing logger.encryption method to the main logger instance --- ✅
+/**
+ * Custom logging method for encryption/decryption events.
+ * @param {string} action - 'encrypt' or 'decrypt' or 'encrypt_file' or 'decrypt_file'.
+ * @param {string} recordId - The ID of the medical record being processed (can be null).
+ * @param {boolean} success - True if the operation was successful, false otherwise.
+ * @param {object} details - Additional details about the operation (e.g., dataLength, error message).
+ */
+logger.encryption = (action, recordId, success, details = {}) => {
+  const level = success ? 'info' : 'error'; // Log success as info, failure as error
+  logger[level]('ENCRYPTION_EVENT', {
+    action,
+    recordId: recordId || 'N/A',
+    success,
+    timestamp: new Date().toISOString(),
+    ...redact(details)
+  });
+};
 // ✅ --- END OF FIX --- ✅
 
+// Add custom medical event logging (if not already present)
+logger.medical = (action, patientId, recordType, details = {}) => {
+  logger.info('MEDICAL_EVENT', {
+    action,
+    patientId,
+    recordType,
+    timestamp: new Date().toISOString(),
+    ...redact(details)
+  });
+};
+
+// Add custom API event logging (if not already present)
+logger.api = (method, url, statusCode, details = {}) => {
+  logger.info('API_EVENT', {
+    method,
+    url,
+    statusCode,
+    timestamp: new Date().toISOString(),
+    ...redact(details)
+  });
+};
+
+// Add custom Database event logging (if not already present)
+logger.database = (operation, collection, details = {}) => {
+  logger.info('DATABASE_EVENT', {
+    operation,
+    collection,
+    timestamp: new Date().toISOString(),
+    ...redact(details)
+  });
+};
+
+// Add custom Performance event logging (if not already present)
+logger.performance = (operation, duration, details = {}) => {
+  logger.info('PERFORMANCE_EVENT', {
+    operation,
+    durationMs: duration,
+    timestamp: new Date().toISOString(),
+    ...redact(details)
+  });
+};
+
+
 console.log('✅ Winston Logger: Instance created and configured.');
-module.exports = logger; 
+module.exports = logger;

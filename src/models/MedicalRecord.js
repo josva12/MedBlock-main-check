@@ -5,13 +5,13 @@ const medicalRecordSchema = new mongoose.Schema({
   // Basic Information
   recordId: {
     type: String,
-    required: true,
+    // REMOVED: required: true, // Handled by pre-save hook
     unique: true
   },
   
   // Patient Reference
   patientId: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId, // CHANGED: Type to ObjectId
     required: true,
     ref: 'Patient'
   },
@@ -89,7 +89,7 @@ const medicalRecordSchema = new mongoose.Schema({
     },
     role: {
       type: String,
-      enum: ['doctor', 'nurse', 'specialist', 'pharmacist', 'lab_technician', 'radiologist'],
+      enum: ['doctor', 'nurse', 'specialist', 'pharmacist', 'lab_technician', 'radiologist', 'admin'],
       required: true
     },
     department: String,
@@ -98,7 +98,7 @@ const medicalRecordSchema = new mongoose.Schema({
   
   // Facility Information
   facility: {
-    id: {
+    id: { // This field is optional if you're only storing name and type
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Facility'
     },

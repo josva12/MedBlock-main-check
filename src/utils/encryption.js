@@ -6,11 +6,15 @@ class EncryptionService {
     this.algorithm = process.env.ENCRYPTION_ALGORITHM || 'aes-256-cbc';
     this.key = process.env.ENCRYPTION_KEY;
     
+    // Ensure key is a Buffer of correct length
     if (!this.key || this.key.length !== 32) {
       throw new Error('ENCRYPTION_KEY must be exactly 32 characters long');
     }
-    
-    this.keyBuffer = Buffer.from(this.key, 'utf8');
+    this.keyBuffer = Buffer.from(this.key, 'utf8'); // Key should be a Buffer
+
+    // Check if algorithm supports IV (most modern ones do)
+    // For aes-256-cbc, IV length is 16 bytes (128 bits)
+    this.ivLength = 16; 
   }
 
   /**
@@ -26,11 +30,11 @@ class EncryptionService {
       }
 
       // Generate a random initialization vector
-      const iv = crypto.randomBytes(16);
+      const iv = crypto.randomBytes(this.ivLength); // Use this.ivLength
       
-      // Create cipher
-      const cipher = crypto.createCipher(this.algorithm, this.keyBuffer);
-      cipher.setAutoPadding(true);
+      // Create cipher using createCipheriv and pass the IV
+      const cipher = crypto.createCipheriv(this.algorithm, this.keyBuffer, iv);
+      cipher.setAutoPadding(true); // Ensure padding is handled
       
       // Encrypt the data
       let encrypted = cipher.update(data, 'utf8', 'hex');
@@ -75,9 +79,9 @@ class EncryptionService {
       const iv = Buffer.from(parts[0], 'hex');
       const encrypted = parts[1];
       
-      // Create decipher
-      const decipher = crypto.createDecipher(this.algorithm, this.keyBuffer);
-      decipher.setAutoPadding(true);
+      // Create decipher using createDecipheriv and pass the IV
+      const decipher = crypto.createDecipheriv(this.algorithm, this.keyBuffer, iv);
+      decipher.setAutoPadding(true); // Ensure padding is handled
       
       // Decrypt the data
       let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -183,8 +187,8 @@ class EncryptionService {
    */
   encryptFile(fileBuffer, recordId = null) {
     try {
-      const iv = crypto.randomBytes(16);
-      const cipher = crypto.createCipher(this.algorithm, this.keyBuffer);
+      const iv = crypto.randomBytes(this.ivLength); // Use this.ivLength
+      const cipher = crypto.createCipheriv(this.algorithm, this.keyBuffer, iv);
       
       const encrypted = Buffer.concat([
         iv,
@@ -214,10 +218,10 @@ class EncryptionService {
    */
   decryptFile(encryptedBuffer, recordId = null) {
     try {
-      const iv = encryptedBuffer.slice(0, 16);
-      const encrypted = encryptedBuffer.slice(16);
+      const iv = encryptedBuffer.slice(0, this.ivLength); // Use this.ivLength
+      const encrypted = encryptedBuffer.slice(this.ivLength);
       
-      const decipher = crypto.createDecipher(this.algorithm, this.keyBuffer);
+      const decipher = crypto.createDecipheriv(this.algorithm, this.keyBuffer, iv);
       const decrypted = Buffer.concat([
         decipher.update(encrypted),
         decipher.final()
@@ -251,4 +255,4 @@ class EncryptionService {
   }
 }
 
-module.exports = new EncryptionService(); 
+module.exports = new EncryptionService();

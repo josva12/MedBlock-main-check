@@ -36,31 +36,31 @@ router.get(
 // @desc    Admin verifies or rejects a professional (doctor/nurse)
 // @access  Private (admin)
 router.patch('/users/:id/verify-professional', authenticateToken, requireRole(['admin']), async (req, res) => {
-  try {
+    try {
     const { id } = req.params;
     const { status, rejectionReason, notes, submittedLicenseNumber, licensingBody } = req.body;
     if (!['verified', 'rejected', 'pending', 'unsubmitted'].includes(status)) {
       return res.status(400).json({ error: 'Invalid status' });
-    }
+      }
     const user = await User.findById(id);
-    if (!user) {
+      if (!user) {
       return res.status(404).json({ error: 'User not found' });
-    }
+      }
     user.professionalVerification.status = status;
     user.professionalVerification.verificationDate = status === 'verified' ? new Date() : undefined;
     user.professionalVerification.verifiedBy = req.user._id;
     user.professionalVerification.rejectionReason = status === 'rejected' ? rejectionReason : undefined;
-    user.professionalVerification.notes = notes;
+      user.professionalVerification.notes = notes;
     if (submittedLicenseNumber) user.professionalVerification.submittedLicenseNumber = submittedLicenseNumber;
     if (licensingBody) user.professionalVerification.licensingBody = licensingBody;
     user.isGovernmentVerified = status === 'verified';
-    await user.save();
+      await user.save();
     logger.audit('professional_verification', req.user._id, 'user', { userId: id, status });
     res.json({ success: true, message: 'Professional verification updated', data: { user: user.getProfile() } });
   } catch (error) {
     logger.error('Professional verification failed:', error);
     res.status(500).json({ error: 'Failed to verify professional', details: error.message });
-  }
+    }
 });
 
 // DELETE /api/v1/admin/users/:id - Delete any user (admin only, not self)

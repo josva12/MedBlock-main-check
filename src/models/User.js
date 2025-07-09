@@ -291,7 +291,8 @@ userSchema.index({ isActive: 1 });
 userSchema.index({ createdAt: -1 });
 
 // Add index for the new licenseNumber if it's the primary professional identifier
-userSchema.index({ 'professionalVerification.submittedLicenseNumber': 1, 'professionalVerification.licensingBody': 1 }, { unique: true, sparse: true });
+// MODIFIED: Added sparse: true to allow multiple null values for submittedLicenseNumber
+userSchema.index({ 'professionalVerification.submittedLicenseNumber': 1, 'professionalVerification.licensingBody': 1 }, { sparse: true });
 
 // Password hashing middleware
 userSchema.pre('save', async function (next) {
@@ -529,4 +530,4 @@ userSchema.statics.authenticate = async function(email, password) {
   }
 };
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

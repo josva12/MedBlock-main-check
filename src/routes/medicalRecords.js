@@ -1,7 +1,7 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const { authenticateToken, requireRole, canAccessMedicalRecord } = require('../middleware/auth');
-const { isGovernmentVerifiedProfessional } = require('../middleware/authMiddleware');
+const { isGovernmentVerifiedProfessional } = require('../middleware/authMiddleware'); // Unused, but kept as existing
 const MedicalRecord = require('../models/MedicalRecord');
 const Patient = require('../models/Patient');
 const encryptionService = require('../utils/encryption');
@@ -14,17 +14,33 @@ router.use(authenticateToken);
 
 // Validation middleware
 const validateMedicalRecord = [
-  body('patientId').notEmpty(),
+  body('patientId').notEmpty().withMessage('Patient ID is required.'),
   body('recordType').isIn([
     'lab_report', 'prescription', 'diagnosis', 'treatment_plan', 'surgery_report',
     'imaging_report', 'vaccination_record', 'allergy_test', 'vital_signs',
     'consultation_note', 'discharge_summary', 'emergency_report', 'pharmacy_dispense',
     'pathology_report', 'radiology_report'
-  ]),
-  body('title').trim().isLength({ min: 3, max: 200 }),
-  body('description').optional().trim().isLength({ max: 1000 }),
-  body('priority').optional().isIn(['low', 'normal', 'high', 'urgent', 'emergency']),
-  body('accessLevel').optional().isIn(['public', 'restricted', 'confidential', 'highly_confidential'])
+  ]).withMessage('Invalid record type.'),
+  body('title').trim().isLength({ min: 3, max: 200 }).withMessage('Title must be between 3 and 200 characters.'),
+  body('description').optional().trim().isLength({ max: 1000 }).withMessage('Description cannot exceed 1000 characters.'),
+  body('priority').optional().isIn(['low', 'normal', 'high', 'urgent', 'emergency']).withMessage('Invalid priority.'),
+  body('accessLevel').optional().isIn(['public', 'restricted', 'confidential', 'highly_confidential']).withMessage('Invalid access level.'),
+  
+  // Provider validation
+  body('provider.id').notEmpty().withMessage('Provider ID is required.'),
+  body('provider.name').trim().notEmpty().withMessage('Provider name is required.'),
+  body('provider.role').isIn(['doctor', 'nurse', 'specialist', 'pharmacist', 'lab_technician', 'radiologist']).withMessage('Invalid provider role.'),
+  body('provider.department').optional().trim(),
+  body('provider.licenseNumber').optional().trim(),
+
+  // Facility validation
+  body('facility.name').trim().notEmpty().withMessage('Facility name is required.'),
+  body('facility.type').optional().isIn(['hospital', 'clinic', 'pharmacy', 'laboratory', 'imaging_center']).withMessage('Invalid facility type.'),
+  body('facility.address').optional().isObject(),
+
+  // Encrypted data and hash validation
+  body('encryptedData').notEmpty().withMessage('Encrypted data is required.'),
+  body('dataHash').notEmpty().withMessage('Data hash is required.')
 ];
 
 // Define canAccessPatient middleware (placeholder)
@@ -199,7 +215,7 @@ router.post('/', requireRole(['admin', 'doctor', 'nurse']), validateMedicalRecor
     // Prepare record data
     const recordData = {
       ...req.body,
-      patientId: patient.patientId,
+      patientId: patient._id, // <--- FIXED: Use the correct ObjectId
       provider: {
         id: req.user._id,
         name: req.user.fullNameWithTitle,

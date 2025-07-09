@@ -16,6 +16,7 @@ const userRoutes = require('./users'); // For general user routes like GET /user
 const adminRoutes = require('./adminRoutes'); // Specifically for admin-only management routes
 const vitalSignRoutes = require('./vitalSigns'); // For vital signs management
 const facilitiesRoutes = require('./facilities');
+const appointmentRoutes = require('./appointments'); // NEW: Import appointments routes
 
 // --- TEMPORARY DIAGNOSTIC ROUTE - ADD THIS BLOCK ---
 // This route MUST be defined and used BEFORE any general authentication middleware
@@ -80,6 +81,7 @@ router.use('/medical-records', medicalRecordRoutes); // For /api/v1/medical-reco
 router.use('/users', userRoutes); // For /api/v1/users (like GET /users and GET /users/:id)
 router.use('/vital-signs', vitalSignRoutes); // For /api/v1/vital-signs
 router.use('/facilities', facilitiesRoutes);
+router.use('/appointments', appointmentRoutes); // NEW: Use appointments routes
 
 // The admin routes for managing admins are mounted at the root of the API
 // This makes the routes inside it like /api/v1/admin/admins and /api/v1/admin/users/:id
