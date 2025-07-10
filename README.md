@@ -71,7 +71,9 @@ MedBlock/
 │   ├── config/
 │   │   ├── database.js          # Database configuration
 │   │   └── multerConfig.js      # File upload configuration
-│   ├── controllers/             # Route controllers
+│   ├── controllers/
+│   │   ├── appointmentController.js  # Appointment controller
+│   │   └── vitalSignController.js    # Vital signs controller
 │   ├── database/
 │   │   ├── migrations/          # Database migrations
 │   │   └── seeders/            # Database seeders
@@ -85,13 +87,16 @@ MedBlock/
 │   │   ├── requestId.js
 │   │   └── simulateError.js
 │   ├── models/
+│   │   ├── Appointment.js      # Appointment model
 │   │   ├── Encounter.js        # Hospital encounter model
+│   │   ├── Facility.js         # Healthcare facility model
 │   │   ├── MedicalRecord.js    # Medical record model
 │   │   ├── Patient.js          # Patient model
 │   │   ├── User.js             # User model
 │   │   └── VitalSign.js        # Vital signs model
 │   ├── routes/
 │   │   ├── adminRoutes.js      # Admin routes
+│   │   ├── appointments.js     # Appointment routes
 │   │   ├── auth.js             # Authentication routes
 │   │   ├── index.js            # Main router
 │   │   ├── medicalRecords.js   # Medical record routes
@@ -359,6 +364,8 @@ API responses include debugging data for troubleshooting:
 - ✅ **Comprehensive Documentation**: Complete guides and examples
 
 ### Latest Improvements
+- ✅ **Appointment Management**: Complete appointment scheduling and management system
+- ✅ **Vital Signs Population Fix**: Fixed patient data population in vital signs API responses
 - ✅ **Virtual Field Resilience**: Fixed virtual fields to handle unpopulated vital signs references
 - ✅ **Draft Functionality**: Save incomplete vital signs as drafts and finalize later
 - ✅ **Status Tracking**: Draft, final, and amended status with audit trails

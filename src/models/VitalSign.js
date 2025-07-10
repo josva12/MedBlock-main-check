@@ -310,9 +310,8 @@ vitalSignSchema.virtual('bloodPressureCategory').get(function() {
 
 // Method to get vital sign summary
 vitalSignSchema.methods.getSummary = function() {
-  return {
+  const summary = {
     _id: this._id,
-    patient: this.patient,
     recordedBy: this.recordedBy,
     recordedAt: this.recordedAt,
     temperature: this.temperature,
@@ -335,6 +334,16 @@ vitalSignSchema.methods.getSummary = function() {
     createdAt: this.createdAt,
     updatedAt: this.updatedAt
   };
+
+  // If patient is populated and is a Mongoose document, convert it to object with virtuals
+  if (this.patient && this.patient instanceof mongoose.Document) {
+    summary.patient = this.patient.toObject({ virtuals: true });
+  } else {
+    // If patient is not populated (just an ID) or is already a plain object, assign directly
+    summary.patient = this.patient;
+  }
+
+  return summary;
 };
 
 // Method to mark as final
@@ -381,4 +390,4 @@ vitalSignSchema.statics.getByDateRange = function(patientId, startDate, endDate)
   .populate('recordedBy', 'fullName email');
 };
 
-module.exports = mongoose.model('VitalSign', vitalSignSchema); 
+module.exports = mongoose.model('VitalSign', vitalSignSchema);

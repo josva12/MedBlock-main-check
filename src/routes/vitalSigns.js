@@ -59,7 +59,7 @@ router.post('/', authenticateToken, async (req, res) => {
     
     // Populate references for response
     await vitalSign.populate([
-      { path: 'patient', select: 'patientId fullName age gender' },
+      { path: 'patient', select: 'patientId firstName lastName dateOfBirth gender' },
       { path: 'recordedBy', select: 'fullName email' }
     ]);
     
@@ -207,7 +207,7 @@ router.get('/', authenticateToken, async (req, res) => {
         .sort(sort)
         .skip(skip)
         .limit(limitNum)
-        .populate('patient', 'patientId fullName age gender')
+        .populate('patient', 'patientId firstName lastName dateOfBirth gender')
         .populate('recordedBy', 'fullName email')
         .populate('amendedBy', 'fullName email'),
       VitalSign.countDocuments(query)
@@ -275,7 +275,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     }
     
     const vitalSign = await VitalSign.findById(id)
-      .populate('patient', 'patientId fullName age gender bloodType')
+      .populate('patient', 'patientId firstName lastName dateOfBirth gender bloodType')
       .populate('recordedBy', 'fullName email role')
       .populate('amendedBy', 'fullName email');
     
@@ -364,11 +364,21 @@ router.put('/:id', authenticateToken, async (req, res) => {
     Object.assign(vitalSign, updateData);
     await vitalSign.save();
     
-    // Populate references for response
+    // Populate references for response with the CORRECT fields
     await vitalSign.populate([
-      { path: 'patient', select: 'patientId fullName age gender' },
+      { 
+        path: 'patient', 
+        select: 'patientId firstName lastName dateOfBirth gender' // This is the corrected select
+      },
       { path: 'recordedBy', select: 'fullName email' }
     ]);
+    
+    // ============================================================
+    // !! THIS IS THE DEBUGGING LOG WE NEED !!
+    // ============================================================
+    console.log('--- DEBUG: Populated Patient Object ---');
+    console.log(vitalSign.patient);
+    console.log('---------------------------------------');
     
     logger.info('Vital sign updated', {
       vitalSignId: id,
@@ -450,9 +460,12 @@ router.patch('/:id/finalize', authenticateToken, async (req, res) => {
     // Mark as final
     await vitalSign.markAsFinal();
     
-    // Populate references for response
+    // Populate references for response with the CORRECT fields
     await vitalSign.populate([
-      { path: 'patient', select: 'patientId fullName age gender' },
+      { 
+        path: 'patient', 
+        select: 'patientId firstName lastName dateOfBirth gender' // This is the corrected select
+      },
       { path: 'recordedBy', select: 'fullName email' }
     ]);
     
@@ -534,12 +547,22 @@ router.patch('/:id/amend', authenticateToken, async (req, res) => {
     // Mark as amended
     await vitalSign.markAsAmended(req.user.id, reason.trim());
     
-    // Populate references for response
+    // Populate references for response with the CORRECT fields
     await vitalSign.populate([
-      { path: 'patient', select: 'patientId fullName age gender' },
+      { 
+        path: 'patient', 
+        select: 'patientId firstName lastName dateOfBirth gender' // This is the corrected select
+      },
       { path: 'recordedBy', select: 'fullName email' },
       { path: 'amendedBy', select: 'fullName email' }
     ]);
+    
+    // ============================================================
+    // !! THIS IS THE DEBUGGING LOG WE NEED !!
+    // ============================================================
+    console.log('--- DEBUG: Populated Patient Object in PATCH /amend ---');
+    console.log(vitalSign.patient);
+    console.log('---------------------------------------');
     
     logger.info('Vital sign amended', {
       vitalSignId: id,

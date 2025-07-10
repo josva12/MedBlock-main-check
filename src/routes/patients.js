@@ -10,6 +10,7 @@ const fs = require('fs').promises; // Use fs.promises for async file operations
 const path = require('path'); // Import path module
 const multer = require('multer');
 const { validateObjectId } = require('../utils/validation'); // UNCOMMENT THIS
+const User = require('../models/User'); // Ensure User model is imported
 
 const router = express.Router();
 
@@ -807,6 +808,87 @@ router.get('/:id', canAccessPatient('id'), async (req, res) => {
     logger.error('Get patient failed:', error);
     res.status(500).json({
       error: 'Failed to get patient'
+    });
+  }
+});
+
+/**
+ * @route   PATCH /api/v1/patients/:id/assign-doctor
+ * @desc    Assign a doctor and department to a patient
+ * @access  Private (admin, doctor, nurse)
+ */
+router.patch('/:id/assign-doctor', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  const { id } = req.params;
+  const { doctorId, department } = req.body;
+
+  // Validate patient ID
+  if (!validateObjectId(id)) {
+    return res.status(400).json({ success: false, message: 'Invalid patient ID format.' });
+  }
+  // Validate doctor ID
+  if (!validateObjectId(doctorId)) {
+    return res.status(400).json({ success: false, message: 'Invalid doctor ID format.' });
+  }
+  // Validate department
+  if (!department || typeof department !== 'string' || department.trim().length === 0) {
+    return res.status(400).json({ success: false, message: 'Department is required and must be a non-empty string.' });
+  }
+
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient not found.' });
+    }
+
+    const doctor = await User.findById(doctorId);
+    if (!doctor || doctor.role !== 'doctor') {
+      return res.status(404).json({ success: false, message: 'Doctor not found or invalid user role.' });
+    }
+
+    // Update assigned doctor and department
+    patient.assignedDoctor = doctorId;
+    patient.assignedDepartment = department;
+
+    // Add to assignment history
+    if (!Array.isArray(patient.assignmentHistory)) patient.assignmentHistory = [];
+    patient.assignmentHistory.push({
+      doctorId: doctorId,
+      department: department,
+      assignedAt: new Date(),
+      assignedBy: req.user._id
+    });
+
+    patient.updatedBy = req.user._id;
+    patient.updatedAt = new Date();
+
+    await patient.save();
+
+    // Re-populate the assignedDoctor field for the response
+    const updatedPatient = await Patient.findById(patient._id)
+      .populate('createdBy', 'fullName email')
+      .populate('updatedBy', 'fullName email')
+      .populate('assignedDoctor', 'fullName email');
+
+    logger.audit('patient_doctor_assigned', req.user._id, `patient:${id}`, {
+      patientId: id,
+      assignedDoctorId: doctorId,
+      assignedDepartment: department
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Doctor assigned to patient successfully',
+      data: {
+        patient: updatedPatient.getSummaryForRole(req.user.role)
+      }
+    });
+
+  } catch (error) {
+    logger.error('Error assigning doctor to patient:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to assign doctor to patient',
+      details: error.message
     });
   }
 });
