@@ -66,58 +66,61 @@ A comprehensive, production-ready healthcare management system built with Node.j
 ## 📁 Project Structure
 
 ```
-MedBlock/
+MedBlock-main-check/
 ├── src/
 │   ├── config/
-│   │   ├── database.js          # Database configuration
-│   │   └── multerConfig.js      # File upload configuration
+│   │   ├── database.js
+│   │   └── multerConfig.js
 │   ├── controllers/
-│   │   ├── appointmentController.js  # Appointment controller
-│   │   └── vitalSignController.js    # Vital signs controller
-│   ├── database/
-│   │   ├── migrations/          # Database migrations
-│   │   └── seeders/            # Database seeders
+│   │   ├── appointmentController.js
+│   │   └── vitalSignController.js
 │   ├── docs/
 │   │   └── openapi.yaml
-│   ├── logs/                   # Application logs
 │   ├── middleware/
-│   │   ├── auth.js             # Authentication middleware
-│   │   ├── authMiddleware.js   # JWT authentication
-│   │   ├── errorHandler.js     # Error handling middleware
+│   │   ├── auth.js
+│   │   ├── authMiddleware.js
+│   │   ├── errorHandler.js
 │   │   ├── requestId.js
 │   │   └── simulateError.js
 │   ├── models/
-│   │   ├── Appointment.js      # Appointment model
-│   │   ├── Encounter.js        # Hospital encounter model
-│   │   ├── Facility.js         # Healthcare facility model
-│   │   ├── MedicalRecord.js    # Medical record model
-│   │   ├── Patient.js          # Patient model
-│   │   ├── User.js             # User model
-│   │   └── VitalSign.js        # Vital signs model
+│   │   ├── Appointment.js
+│   │   ├── Encounter.js
+│   │   ├── Facility.js
+│   │   ├── MedicalRecord.js
+│   │   ├── Patient.js
+│   │   ├── User.js
+│   │   └── VitalSign.js
 │   ├── routes/
-│   │   ├── adminRoutes.js      # Admin routes
-│   │   ├── appointments.js     # Appointment routes
-│   │   ├── auth.js             # Authentication routes
-│   │   ├── index.js            # Main router
-│   │   ├── medicalRecords.js   # Medical record routes
-│   │   ├── patients.js         # Patient routes
-│   │   └── vitalSigns.js       # Vital signs routes
-│   ├── services/               # Business logic services
-│   ├── uploads/                # File upload storage
-│   │   ├── documents/          # Medical reports, prescriptions, lab results
-│   │   ├── images/             # X-rays and medical images
-│   │   ├── others/             # Miscellaneous files
-│   │   └── reports/            # Generated reports
+│   │   ├── adminRoutes.js
+│   │   ├── appointments.js
+│   │   ├── auth.js
+│   │   ├── facilities.js
+│   │   ├── index.js
+│   │   ├── medicalRecords.js
+│   │   ├── patients.js
+│   │   ├── users.js
+│   │   └── vitalSigns.js
+│   ├── uploads/
+│   │   ├── documents/
+│   │   │   └── 1751221442193-medical_report.pdf
+│   │   ├── others/
+│   │   │   └── 1751220462134-medical_report.pdf
 │   ├── utils/
-│   │   ├── encryption.js       # Data encryption utilities
-│   │   ├── logger.js           # Logging utilities
-│   │   └── masking.js          # PII masking utilities
-│   └── server.js               # Main server file
-├── logs/                       # Application logs
-├── .env                        # Environment variables
-├── .gitignore                  # Git ignore file
-├── package.json                # Dependencies and scripts
-└── README.md                   # Project documentation
+│   │   ├── encryption.js
+│   │   ├── logger.js
+│   │   ├── masking.js
+│   │   └── validation.js
+│   └── server.js
+├── logs/
+│   ├── app.log
+│   ├── error.log
+│   ├── exceptions.log
+│   ├── rejections.log
+│   └── security.log
+├── .env
+├── .gitignore
+├── package.json
+└── README.md
 ```
 
 ## 🔧 Configuration

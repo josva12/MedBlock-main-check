@@ -768,9 +768,9 @@ router.get('/:id', canAccessPatient('id'), async (req, res) => {
   try {
     // Remove .select('-password') to include all fields including audit fields
     const patient = await Patient.findById(id)
-      .populate('createdBy', 'fullName email')
-      .populate('updatedBy', 'fullName email')
-      .populate('assignedDoctor', 'fullName email');
+      .populate('createdBy', 'fullName email title')
+      .populate('updatedBy', 'fullName email title')
+      .populate('assignedDoctor', 'fullName email title');
 
     if (!patient) {
       logger.warn(`Attempt to retrieve non-existent patient with ID: ${id}`, { userId: req.user._id });
@@ -779,21 +779,14 @@ router.get('/:id', canAccessPatient('id'), async (req, res) => {
       });
     }
 
-    // Get the summary and add audit fields explicitly
     const patientSummary = patient.getSummaryForRole(req.user.role);
     const patientData = {
       ...patientSummary,
-      // Explicitly include audit fields
-      createdBy: patient.createdBy ? {
-        _id: patient.createdBy._id,
-        fullName: patient.createdBy.fullName,
-        email: patient.createdBy.email
-      } : null,
-      updatedBy: patient.updatedBy ? {
-        _id: patient.updatedBy._id,
-        fullName: patient.updatedBy.fullName,
-        email: patient.updatedBy.email
-      } : null,
+      // Explicitly include audit fields and use getSummary() for populated users
+      // This ensures virtuals like fullNameWithTitle are correctly evaluated
+      createdBy: patient.createdBy ? patient.createdBy.getSummary() : null,
+      updatedBy: patient.updatedBy ? patient.updatedBy.getSummary() : null,
+      assignedDoctor: patient.assignedDoctor ? patient.assignedDoctor.getSummary() : null,
       createdAt: patient.createdAt,
       updatedAt: patient.updatedAt
     };
@@ -865,9 +858,9 @@ router.patch('/:id/assign-doctor', requireRole(['admin', 'doctor', 'nurse']), as
 
     // Re-populate the assignedDoctor field for the response
     const updatedPatient = await Patient.findById(patient._id)
-      .populate('createdBy', 'fullName email')
-      .populate('updatedBy', 'fullName email')
-      .populate('assignedDoctor', 'fullName email');
+      .populate('createdBy', 'fullName email title')
+      .populate('updatedBy', 'fullName email title')
+      .populate('assignedDoctor', 'fullName email title');
 
     logger.audit('patient_doctor_assigned', req.user._id, `patient:${id}`, {
       patientId: id,
@@ -931,9 +924,9 @@ router.post('/', requireRole(['admin', 'doctor', 'nurse']), isGovernmentVerified
 
     // Fetch the created patient with populated fields for response
     const createdPatient = await Patient.findById(patient._id)
-      .populate('createdBy', 'fullName email')
-      .populate('updatedBy', 'fullName email')
-      .populate('assignedDoctor', 'fullName email');
+      .populate('createdBy', 'fullName email title')
+      .populate('updatedBy', 'fullName email title')
+      .populate('assignedDoctor', 'fullName email title');
 
     logger.audit('patient_created', req.user._id, `patient:${patient.patientId}`, {
       patientId: patient.patientId,

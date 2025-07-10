@@ -532,7 +532,22 @@ patientSchema.methods.getSummary = function() {
 // Instance method to get patient summary with role-based PII masking
 patientSchema.methods.getSummaryForRole = function(userRole) {
   const patientObject = this.toObject({ virtuals: true });
-  
+
+  // Helper to ensure fullNameWithTitle is present on populated user refs
+  function ensureFullNameWithTitle(user) {
+    if (!user) return user;
+    if (user.fullNameWithTitle) return user;
+    if (user.title && user.fullName) {
+      user.fullNameWithTitle = `${user.title} ${user.fullName}`;
+    }
+    return user;
+  }
+
+  // Always ensure these fields have the virtual
+  patientObject.createdBy = ensureFullNameWithTitle(patientObject.createdBy);
+  patientObject.updatedBy = ensureFullNameWithTitle(patientObject.updatedBy);
+  patientObject.assignedDoctor = ensureFullNameWithTitle(patientObject.assignedDoctor);
+
   // Base summary with always-visible fields
   const summary = {
     _id: patientObject._id,
