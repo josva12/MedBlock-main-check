@@ -136,8 +136,8 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
         if (existingUser.phone === phone) {
             return res.status(400).json({ error: 'User with this phone number already exists' });
         }
-        if (submittedLicenseNumber && licensingBody &&
-            existingUser.professionalVerification &&
+        if (submittedLicenseNumber && licensingBody && 
+            existingUser.professionalVerification && 
             existingUser.professionalVerification.submittedLicenseNumber === submittedLicenseNumber &&
             existingUser.professionalVerification.licensingBody === licensingBody) {
             return res.status(400).json({ error: 'A user with this professional license number is already registered.' });
@@ -173,7 +173,7 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
       address,
       createdBy: req.user?._id, // If an admin is creating a user, req.user will be available
       // NEW: Assign the professionalVerification sub-document
-      professionalVerification: professionalVerificationData
+      professionalVerification: professionalVerificationData 
     });
 
     await user.save();
@@ -239,7 +239,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
 
     // Authenticate user
     const user = await User.authenticate(email, password);
-
+    
     // Generate tokens
     const accessToken = user.generateAuthToken();
     const refreshToken = user.generateRefreshToken();
@@ -273,7 +273,7 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
 router.post('/refresh', authenticateRefreshToken, async (req, res) => {
   try {
     const user = req.user;
-
+    
     // Generate new tokens
     const accessToken = user.generateAuthToken();
     const refreshToken = user.generateRefreshToken();
@@ -432,7 +432,7 @@ router.post('/reset-password', authLimiter, validateNewPassword, async (req, res
 router.get('/me', authenticateToken, async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password -passwordResetToken');
-
+    
     // Use the new getProfile method, which returns the full user object
     // Then, based on the role, we decide what to expose
     if (user.role === 'admin' || user.role === 'doctor' || user.role === 'nurse') {
@@ -528,7 +528,7 @@ router.put('/me', authenticateToken, [
                 user.professionalVerification.status = 'pending';
                 user.professionalVerification.submissionDate = new Date();
                 // Clear rejection reason if re-submitting
-                user.professionalVerification.rejectionReason = undefined;
+                user.professionalVerification.rejectionReason = undefined; 
                 user.isGovernmentVerified = false; // Reset verified status upon re-submission
             } else if (user.professionalVerification.status === 'pending') {
                 // Allow updating license number if already pending, e.g., correction

@@ -53,11 +53,11 @@ async function login() {
   try {
     console.log('🔐 Logging in...');
     const response = await axios.post(`${BASE_URL}/auth/login`, {
-      email: 'admin@medblock.com',
-      password: 'Admin123!'
+      email: 'joshuamumbua12@gmail.com',
+      password: 'Password123@'
     });
     
-    authToken = response.data.data.token;
+    authToken = response.data.data.accessToken;
     console.log('✅ Login successful');
     return true;
   } catch (error) {

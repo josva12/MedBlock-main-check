@@ -547,7 +547,7 @@ patientSchema.methods.getSummaryForRole = function(userRole) {
   patientObject.createdBy = ensureFullNameWithTitle(patientObject.createdBy);
   patientObject.updatedBy = ensureFullNameWithTitle(patientObject.updatedBy);
   patientObject.assignedDoctor = ensureFullNameWithTitle(patientObject.assignedDoctor);
-
+  
   // Base summary with always-visible fields
   const summary = {
     _id: patientObject._id,
