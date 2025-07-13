@@ -1,0 +1,25 @@
+{
+  "patientId": "6873a33fd4a921179643cd24",
+  "recordType": "diagnosis",
+  "title": "Updated Diabetes Type 2 Diagnosis & Management Plan",
+  "description": "Patient's diabetes management plan updated after 3 months review. Good progress noted.",
+  "priority": "normal",
+  "accessLevel": "confidential",
+  "provider": {
+    "id": "68739c5ad4a921179643ccff",
+    "name": "Dr. UniqueDoc",
+    "role": "doctor",
+    "department": "Internal Medicine",
+    "licenseNumber": "MD12345"
+  },
+  "facility": {
+    "name": "Nairobi General Hospital",
+    "type": "hospital",
+    "address": { "street": "Hospital Road", "city": "Nairobi", "zip": "00100" }
+  },
+  "encryptedData": "dummy_encrypted_data_placeholder_to_pass_validation",
+  "dataHash": "dummy_data_hash_placeholder_to_pass_validation",
+  "diagnosis": "Type 2 Diabetes Mellitus (E11.9) - Controlled",
+  "treatmentPlan": "Continue Metformin, add regular exercise, review diet. Follow-up in 6 months.",
+  "notes": "Patient's HbA1c improved from 8.2% to 7.0%. Well-tolerated medication."
+}

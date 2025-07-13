@@ -1890,21 +1890,20 @@ router.delete('/:id/medical-history/:historyId', canAccessPatient('id'), async (
 // @access  Private
 router.delete('/:id/files/:fileId', canAccessPatient('id'), async (req, res) => {
   const { id, fileId } = req.params;
-  if (!validateObjectId(id)) {
-    return res.status(400).json({ error: 'Invalid patient ID format.' });
+  if (!validateObjectId(id) || !validateObjectId(fileId)) {
+    return res.status(400).json({ error: 'Invalid patient or file ID format.' });
   }
   try {
     const patient = await Patient.findById(id);
     if (!patient) return res.status(404).json({ error: 'Patient not found' });
-    const fileIndex = patient.files.findIndex(f => f.filename === fileId);
-    if (fileIndex === -1) return res.status(404).json({ error: 'File not found' });
-    const file = patient.files[fileIndex];
+    const file = patient.files.id(fileId);
+    if (!file) return res.status(404).json({ error: 'File not found' });
     // Remove file from filesystem if exists
     if (file.path && fsSync.existsSync(file.path)) {
       try { fsSync.unlinkSync(file.path); } catch (e) { logger.warn('Failed to delete file from disk:', e); }
     }
-    // Remove from patient.files array
-    patient.files.splice(fileIndex, 1);
+    // Remove from patient.files array using pull
+    patient.files.pull(fileId);
     await patient.save();
     res.json({ success: true, message: 'File deleted successfully' });
   } catch (error) {
@@ -1930,6 +1929,43 @@ router.get('/:id/files', canAccessPatient('id'), async (req, res) => {
   } catch (error) {
     logger.error('Get patient files failed:', error);
     res.status(500).json({ error: 'Failed to get patient files' });
+  }
+});
+
+// @route   PATCH /api/v1/patients/:id/files/:fileId
+// @desc    Update metadata for a specific file (e.g., description, fileType)
+// @access  Private
+router.patch('/:id/files/:fileId', canAccessPatient('id'), async (req, res) => {
+  const { id, fileId } = req.params;
+  if (!validateObjectId(id) || !validateObjectId(fileId)) {
+    return res.status(400).json({ error: 'Invalid patient or file ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    const file = patient.files.id(fileId);
+    if (!file) {
+      return res.status(404).json({ error: 'File not found' });
+    }
+    // Only allow updating certain fields
+    const allowedFields = ['description', 'fileType'];
+    let updated = false;
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        file[key] = req.body[key];
+        updated = true;
+      }
+    }
+    if (!updated) {
+      return res.status(400).json({ error: 'No valid fields to update.' });
+    }
+    await patient.save();
+    res.json({ success: true, message: 'File metadata updated', data: file });
+  } catch (error) {
+    logger.error('Update patient file failed:', error);
+    res.status(500).json({ error: 'Failed to update file metadata' });
   }
 });
 

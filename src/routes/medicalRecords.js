@@ -365,6 +365,42 @@ router.put('/:id', canAccessMedicalRecord('id'), validateMedicalRecord, async (r
   }
 });
 
+// @route   PATCH /api/v1/medical-records/:id
+// @desc    Partially update a medical record
+// @access  Private
+router.patch('/:id', canAccessMedicalRecord('id'), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const record = await MedicalRecord.findOne({
+      $or: [
+        { recordId: id },
+        { _id: id }
+      ]
+    });
+    if (!record) {
+      return res.status(404).json({ error: 'Medical record not found' });
+    }
+    // Only allow updating certain fields
+    const allowedFields = ['status', 'description', 'title', 'priority', 'accessLevel', 'tags'];
+    let updated = false;
+    for (const key of allowedFields) {
+      if (req.body[key] !== undefined) {
+        record[key] = req.body[key];
+        updated = true;
+      }
+    }
+    if (!updated) {
+      return res.status(400).json({ error: 'No valid fields to update.' });
+    }
+    record.updatedBy = req.user._id;
+    await record.save();
+    res.json({ success: true, message: 'Medical record updated successfully', data: { record: record.getSummary() } });
+  } catch (error) {
+    logger.error('Patch medical record failed:', error);
+    res.status(500).json({ error: 'Failed to update medical record' });
+  }
+});
+
 // @route   DELETE /api/v1/medical-records/:id
 // @desc    Delete medical record (soft delete)
 // @access  Private
