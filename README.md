@@ -412,3 +412,65 @@ For support and questions:
 ---
 
 **MedBlock Team** - Building the future of healthcare in Kenya 🇰🇪 
+
+## Project File Structure (Backend)
+
+```
+MedBlock-main-check/
+  ├── src/
+  │   ├── config/
+  │   │   ├── database.js
+  │   │   └── multerConfig.js
+  │   ├── controllers/
+  │   │   ├── appointmentController.js
+  │   │   └── vitalSignController.js
+  │   ├── docs/
+  │   │   └── openapi.yaml
+  │   ├── middleware/
+  │   │   ├── auth.js
+  │   │   ├── authMiddleware.js
+  │   │   └── errorHandler.js
+  │   ├── models/
+  │   │   ├── Appointment.js
+  │   │   ├── Encounter.js
+  │   │   ├── Facility.js
+  │   │   ├── Patient.js
+  │   │   ├── User.js
+  │   │   └── VitalSign.js
+  │   ├── routes/
+  │   │   ├── adminRoutes.js
+  │   │   ├── appointments.js
+  │   │   ├── auth.js
+  │   │   ├── facilities.js
+  │   │   ├── medicalRecords.js
+  │   │   ├── patients.js
+  │   │   ├── users.js
+  │   │   └── vitalSigns.js
+  │   ├── server.js
+  │   ├── uploads/
+  │   │   ├── documents/
+  │   │   ├── images/
+  │   │   ├── others/
+  │   │   └── reports/
+  │   └── utils/
+  │       ├── encryption.js
+  │       ├── logger.js
+  │       ├── masking.js
+  │       └── validation.js
+  ├── logs/
+  ├── package.json
+  ├── package-lock.json
+  └── README.md
+```
+
+### API Endpoints for File Uploads and Medical Records
+
+- **Patient File Uploads:**
+  - `POST /api/v1/patients/:id/files` — Upload a file (medical report, prescription, lab result, xray, or other) for a patient. Use the `file` field in form-data and specify `fileType`.
+  - There is **no** `/api/v1/patients/:id/reports/upload` endpoint. Use `/api/v1/patients/:id/files` instead.
+
+- **Medical Records:**
+  - Managed via `/api/v1/medical-records` endpoints (see `src/routes/medicalRecords.js`).
+
+- **Uploads Directory:**
+  - Uploaded files are stored in `src/uploads/documents/`, `src/uploads/images/`, `src/uploads/others/`, or `src/uploads/reports/` depending on file type. 

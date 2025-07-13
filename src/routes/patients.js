@@ -11,6 +11,8 @@ const path = require('path'); // Import path module
 const multer = require('multer');
 const { validateObjectId } = require('../utils/validation'); // UNCOMMENT THIS
 const User = require('../models/User'); // Ensure User model is imported
+const { Types } = require('mongoose');
+const fsSync = require('fs'); // For sync file existence check and deletion
 
 const router = express.Router();
 
@@ -1778,6 +1780,156 @@ router.patch('/:id/assign', requireRole(['admin', 'doctor']), async (req, res) =
   } catch (error) {
     logger.error('Patient assignment failed:', error);
     res.status(500).json({ error: 'Failed to assign patient' });
+  }
+});
+
+// --- MEDICAL HISTORY MANAGEMENT ENDPOINTS ---
+// @route   POST /api/v1/patients/:id/medical-history
+// @desc    Add a medical history entry
+// @access  Private
+router.post('/:id/medical-history', canAccessPatient('id'), async (req, res) => {
+  const { id } = req.params;
+  if (!validateObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid patient ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    const entry = req.body;
+    if (!entry || !entry.condition) {
+      return res.status(400).json({ error: 'Medical history entry must include a condition.' });
+    }
+    entry._id = new Types.ObjectId();
+    entry.recordedAt = entry.recordedAt || new Date();
+    patient.medicalHistory.push(entry);
+    await patient.save();
+    res.status(201).json({ success: true, message: 'Medical history entry added', data: entry });
+  } catch (error) {
+    logger.error('Add medical history failed:', error);
+    res.status(500).json({ error: 'Failed to add medical history' });
+  }
+});
+
+// @route   GET /api/v1/patients/:id/medical-history
+// @desc    Get all medical history entries
+// @access  Private
+router.get('/:id/medical-history', canAccessPatient('id'), async (req, res) => {
+  const { id } = req.params;
+  if (!validateObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid patient ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id).select('medicalHistory');
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    res.json({ success: true, data: patient.medicalHistory || [] });
+  } catch (error) {
+    logger.error('Get medical history failed:', error);
+    res.status(500).json({ error: 'Failed to get medical history' });
+  }
+});
+
+// @route   PATCH /api/v1/patients/:id/medical-history/:historyId
+// @desc    Update a medical history entry
+// @access  Private
+router.patch('/:id/medical-history/:historyId', canAccessPatient('id'), async (req, res) => {
+  const { id, historyId } = req.params;
+  if (!validateObjectId(id) || !validateObjectId(historyId)) {
+    return res.status(400).json({ error: 'Invalid patient or history ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    const entry = patient.medicalHistory.id(historyId);
+    if (!entry) return res.status(404).json({ error: 'Medical history entry not found' });
+    Object.assign(entry, req.body);
+    await patient.save();
+    res.json({ success: true, message: 'Medical history entry updated', data: entry });
+  } catch (error) {
+    logger.error('Update medical history failed:', error);
+    res.status(500).json({ error: 'Failed to update medical history' });
+  }
+});
+
+// @route   DELETE /api/v1/patients/:id/medical-history/:historyId
+// @desc    Delete a medical history entry
+// @access  Private
+router.delete('/:id/medical-history/:historyId', canAccessPatient('id'), async (req, res) => {
+  const { id, historyId } = req.params;
+  if (!validateObjectId(id) || !validateObjectId(historyId)) {
+    return res.status(400).json({ error: 'Invalid patient or history ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) {
+      logger.error(`[DELETE medical-history] Patient not found: ${id}`);
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    const entry = patient.medicalHistory.id(historyId);
+    if (!entry) {
+      logger.error(`[DELETE medical-history] Entry not found: ${historyId} in patient ${id}`);
+      return res.status(404).json({ error: 'Medical history entry not found' });
+    }
+    logger.info(`[DELETE medical-history] Removing entry: ${historyId} from patient ${id} using pull()`);
+    patient.medicalHistory.pull(historyId);
+    await patient.save().then(() => {
+      logger.info(`[DELETE medical-history] Successfully deleted entry: ${historyId}`);
+      res.json({ success: true, message: 'Medical history entry deleted' });
+    }).catch((saveErr) => {
+      logger.error(`[DELETE medical-history] Error saving patient after removal:`, saveErr);
+      res.status(500).json({ error: 'Failed to delete medical history', details: saveErr.message });
+    });
+  } catch (error) {
+    logger.error('[DELETE medical-history] Exception:', error);
+    res.status(500).json({ error: 'Failed to delete medical history', details: error.message });
+  }
+});
+
+// --- FILE DELETION ENDPOINT ---
+// @route   DELETE /api/v1/patients/:id/files/:fileId
+// @desc    Delete a file from patient record and filesystem
+// @access  Private
+router.delete('/:id/files/:fileId', canAccessPatient('id'), async (req, res) => {
+  const { id, fileId } = req.params;
+  if (!validateObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid patient ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    const fileIndex = patient.files.findIndex(f => f.filename === fileId);
+    if (fileIndex === -1) return res.status(404).json({ error: 'File not found' });
+    const file = patient.files[fileIndex];
+    // Remove file from filesystem if exists
+    if (file.path && fsSync.existsSync(file.path)) {
+      try { fsSync.unlinkSync(file.path); } catch (e) { logger.warn('Failed to delete file from disk:', e); }
+    }
+    // Remove from patient.files array
+    patient.files.splice(fileIndex, 1);
+    await patient.save();
+    res.json({ success: true, message: 'File deleted successfully' });
+  } catch (error) {
+    logger.error('Delete patient file failed:', error);
+    res.status(500).json({ error: 'Failed to delete file' });
+  }
+});
+
+// @route   GET /api/v1/patients/:id/files
+// @desc    Get all files for a patient
+// @access  Private
+router.get('/:id/files', canAccessPatient('id'), async (req, res) => {
+  const { id } = req.params;
+  if (!validateObjectId(id)) {
+    return res.status(400).json({ error: 'Invalid patient ID format.' });
+  }
+  try {
+    const patient = await Patient.findById(id).select('files');
+    if (!patient) {
+      return res.status(404).json({ error: 'Patient not found' });
+    }
+    res.json({ success: true, data: patient.files || [] });
+  } catch (error) {
+    logger.error('Get patient files failed:', error);
+    res.status(500).json({ error: 'Failed to get patient files' });
   }
 });
 
