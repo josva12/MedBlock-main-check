@@ -22,6 +22,11 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    // --- DEBUGGING OUTPUT ---
+    console.log('DEBUG: Token received for verification:', token);
+    console.log('DEBUG: JWT_SECRET from environment:', process.env.JWT_SECRET);
+    // --- END DEBUGGING OUTPUT ---
+
     // Verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
