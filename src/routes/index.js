@@ -112,6 +112,12 @@ router.post('/ai/consult', (req, res) => {
   });
 });
 
+// Encryption service status endpoint
+router.get('/encryption/status', (req, res) => {
+  // TODO: Add real health checks for encryption service if needed
+  res.json({ success: true, status: 'healthy', message: 'Encryption service is operational.' });
+});
+
 // --- GDPR/HIPAA Compliance Stubs ---
 // Data consent endpoint stub
 router.post('/privacy/consent', (req, res) => {

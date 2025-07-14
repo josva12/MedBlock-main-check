@@ -78,6 +78,24 @@ router.patch('/:id/verify', authenticateToken, requireRole(['admin']), async (re
   }
 });
 
+// GET /api/v1/facilities
+router.get('/', authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20 } = req.query;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const query = { isActive: { $ne: false } };
+    const facilities = await Facility.find(query).skip(skip).limit(parseInt(limit));
+    const total = await Facility.countDocuments(query);
+    res.json({
+      success: true,
+      data: facilities,
+      pagination: { page: parseInt(page), limit: parseInt(limit), total }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get facilities', details: error.message });
+  }
+});
+
 // GET /api/v1/facilities/:id
 router.get('/:id', authenticateToken, async (req, res) => {
   try {

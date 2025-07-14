@@ -19,6 +19,22 @@ router.post('/sms', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/v1/notifications/email
+router.post('/email', authenticateToken, async (req, res) => {
+  try {
+    const { to, subject, message } = req.body;
+    if (!to || !subject || !message) {
+      return res.status(400).json({ error: 'Missing to, subject, or message' });
+    }
+    // TODO: Integrate with email provider
+    logger.info(`Email sent to ${to}: Subject: ${subject}, Message: ${message}`);
+    res.json({ success: true, message: 'Email sent (stub)' });
+  } catch (error) {
+    logger.error('Failed to send email:', error);
+    res.status(500).json({ error: 'Failed to send email', details: error.message });
+  }
+});
+
 // GET /api/v1/users/:id/notifications
 router.get('/users/:id/notifications', authenticateToken, async (req, res) => {
   try {

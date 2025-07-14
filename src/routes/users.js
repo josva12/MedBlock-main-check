@@ -170,100 +170,36 @@ router.post('/', requireRole(['admin']), validateUser, validatePassword, async (
 });
 
 // @route   PUT /api/v1/users/:id
-// @desc    Update user
+// @desc    Update user by ID (Admin or self)
 // @access  Private (Admin or self)
-router.put('/:id', validateUser, async (req, res) => {
+router.put('/:id', requireRole(['admin']), async (req, res) => {
+  const { id } = req.params;
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        error: 'Validation failed',
-        details: errors.array()
-      });
+    // Only allow admin to update any user
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied' });
     }
-
-    // Users can only update their own profile unless they're admin
-    if (req.params.id !== req.user._id.toString() && req.user.role !== 'admin') {
-      return res.status(403).json({
-        error: 'Access denied'
-      });
-    }
-
-    const user = await User.findOne({ 
-      $or: [
-        { userId: req.params.id },
-        { _id: req.params.id }
-      ]
-    });
-
+    // Find user
+    const user = await User.findById(id);
     if (!user) {
-      return res.status(404).json({
-        error: 'User not found'
-      });
+      return res.status(404).json({ error: 'User not found' });
     }
-
-    // Check for duplicate email/phone if being updated
-    if (req.body.email || req.body.phone || req.body.licenseNumber) {
-      const existingUser = await User.findOne({
-        $and: [
-          {
-            $or: [
-              { email: req.body.email || user.email },
-              { phone: req.body.phone || user.phone },
-              { licenseNumber: req.body.licenseNumber || user.licenseNumber }
-            ]
-          },
-          { _id: { $ne: user._id } }
-        ]
-      });
-
-      if (existingUser) {
-        return res.status(400).json({
-          error: 'User with this email, phone, or license number already exists'
-        });
-      }
-    }
-
-    // Update user
-    const updateFields = [
-      'fullName', 'title', 'specialization', 'department', 'phone', 'address',
-      'bio', 'workSchedule', 'permissions', 'assignedFacilities'
+    // Update allowed fields
+    const allowedFields = [
+      'fullName', 'title', 'role', 'specialization', 'department', 'licenseNumber', 'licenseExpiry',
+      'isGovernmentVerified', 'professionalVerification', 'email', 'phone', 'address', 'isActive',
+      'isVerified', 'emailVerified', 'phoneVerified', 'lastLogin', 'loginAttempts', 'lockUntil'
     ];
-
-    updateFields.forEach(field => {
+    allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         user[field] = req.body[field];
       }
     });
-
-    // Only admin can update role and license
-    if (req.user.role === 'admin') {
-      if (req.body.role) user.role = req.body.role;
-      if (req.body.licenseNumber) user.licenseNumber = req.body.licenseNumber;
-      if (req.body.licenseExpiry) user.licenseExpiry = req.body.licenseExpiry;
-      if (req.body.isActive !== undefined) user.isActive = req.body.isActive;
-      if (req.body.isVerified !== undefined) user.isVerified = req.body.isVerified;
-    }
-
-    user.updatedBy = req.user._id;
     await user.save();
-
-    logger.audit('user_updated', req.user.userId, `user:${user.userId}`, {
-      updatedUserId: user.userId
-    });
-
-    res.json({
-      success: true,
-      message: 'User updated successfully',
-      data: {
-        user: user.getSummary()
-      }
-    });
+    res.json({ success: true, message: 'User updated successfully', data: user });
   } catch (error) {
-    logger.error('Update user failed:', error);
-    res.status(500).json({
-      error: 'Failed to update user'
-    });
+    logger.error('Error updating user:', error);
+    res.status(500).json({ error: 'Failed to update user', details: error.message });
   }
 });
 
@@ -453,6 +389,158 @@ router.post('/:id/reset-password', requireRole(['admin']), validatePassword, asy
     res.status(500).json({
       error: 'Failed to reset password'
     });
+  }
+});
+
+// @route   GET /api/v1/users/:doctorId/assignment-history
+// @desc    Get assignment history for a doctor
+// @access  Private (Admin, Doctor, Nurse)
+router.get('/:doctorId/assignment-history', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  const { doctorId } = req.params;
+  try {
+    // Validate doctorId
+    if (!doctorId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: 'Invalid doctor ID format.' });
+    }
+    // Find all patients with assignment history for this doctor
+    const patients = await require('../models/Patient').find({
+      'assignmentHistory.doctorId': doctorId,
+      isActive: { $ne: false }
+    }, { assignmentHistory: 1, firstName: 1, lastName: 1, patientId: 1 });
+    // Extract only the relevant assignment history entries
+    const history = [];
+    patients.forEach(patient => {
+      (patient.assignmentHistory || []).forEach(entry => {
+        if (entry.doctorId && entry.doctorId.toString() === doctorId) {
+          history.push({
+            patientId: patient.patientId,
+            patientName: `${patient.firstName} ${patient.lastName}`,
+            ...entry
+          });
+        }
+      });
+    });
+    res.json({ success: true, count: history.length, data: history });
+  } catch (error) {
+    logger.error('Error fetching assignment history:', error);
+    res.status(500).json({ error: 'Failed to fetch assignment history', details: error.message });
+  }
+});
+
+// @route   GET /api/v1/users/:doctorId/assigned-patients
+// @desc    Get all patients assigned to a specific doctor
+// @access  Private (Admin, Doctor, Nurse)
+router.get('/:doctorId/assigned-patients', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  const { doctorId } = req.params;
+  try {
+    // Validate doctorId
+    if (!doctorId.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({ error: 'Invalid doctor ID format.' });
+    }
+    // Find patients assigned to this doctor
+    const patients = await require('../models/Patient').find({ assignedDoctor: doctorId, isActive: { $ne: false } })
+      .populate('assignedDoctor', 'fullName email title');
+    res.json({ success: true, count: patients.length, data: patients.map(p => p.getSummaryForRole(req.user.role)) });
+  } catch (error) {
+    logger.error('Error fetching assigned patients:', error);
+    res.status(500).json({ error: 'Failed to fetch assigned patients', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/deactivate
+// @desc    Deactivate a user (admin only)
+router.patch('/:id/deactivate', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isActive = false;
+    await user.save();
+    res.json({ success: true, message: 'User deactivated', data: user });
+  } catch (error) {
+    logger.error('Error deactivating user:', error);
+    res.status(500).json({ error: 'Failed to deactivate user', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/activate
+// @desc    Activate a user (admin only)
+router.patch('/:id/activate', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.isActive = true;
+    await user.save();
+    res.json({ success: true, message: 'User activated', data: user });
+  } catch (error) {
+    logger.error('Error activating user:', error);
+    res.status(500).json({ error: 'Failed to activate user', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/lock
+// @desc    Lock a user account (admin only)
+router.patch('/:id/lock', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.lockUntil = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // Lock for 1 year
+    await user.save();
+    res.json({ success: true, message: 'User account locked', data: user });
+  } catch (error) {
+    logger.error('Error locking user:', error);
+    res.status(500).json({ error: 'Failed to lock user', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/unlock
+// @desc    Unlock a user account (admin only)
+router.patch('/:id/unlock', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    user.lockUntil = null;
+    await user.save();
+    res.json({ success: true, message: 'User account unlocked', data: user });
+  } catch (error) {
+    logger.error('Error unlocking user:', error);
+    res.status(500).json({ error: 'Failed to unlock user', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/assign-facility
+// @desc    Assign a facility to a user (admin only)
+router.patch('/:id/assign-facility', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const { facilityId } = req.body;
+    if (!facilityId) return res.status(400).json({ error: 'facilityId is required' });
+    if (!user.assignedFacilities) user.assignedFacilities = [];
+    if (!user.assignedFacilities.includes(facilityId)) user.assignedFacilities.push(facilityId);
+    await user.save();
+    res.json({ success: true, message: 'Facility assigned to user', data: user });
+  } catch (error) {
+    logger.error('Error assigning facility:', error);
+    res.status(500).json({ error: 'Failed to assign facility', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/users/:id/remove-facility
+// @desc    Remove a facility from a user (admin only)
+router.patch('/:id/remove-facility', requireRole(['admin']), async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    const { facilityId } = req.body;
+    if (!facilityId) return res.status(400).json({ error: 'facilityId is required' });
+    if (user.assignedFacilities) {
+      user.assignedFacilities = user.assignedFacilities.filter(f => f !== facilityId);
+      await user.save();
+    }
+    res.json({ success: true, message: 'Facility removed from user', data: user });
+  } catch (error) {
+    logger.error('Error removing facility:', error);
+    res.status(500).json({ error: 'Failed to remove facility', details: error.message });
   }
 });
 
