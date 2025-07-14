@@ -29,21 +29,19 @@ const validateMedicalRecord = [
   body('priority').optional().isIn(['low', 'normal', 'high', 'urgent', 'emergency']).withMessage('Invalid priority.'),
   body('accessLevel').optional().isIn(['public', 'restricted', 'confidential', 'highly_confidential']).withMessage('Invalid access level.'),
   
-  // Provider validation
-  body('provider.id').notEmpty().withMessage('Provider ID is required.'),
-  body('provider.name').trim().notEmpty().withMessage('Provider name is required.'),
-  body('provider.role').isIn(['doctor', 'nurse', 'specialist', 'pharmacist', 'lab_technician', 'radiologist']).withMessage('Invalid provider role.'),
+  // Provider validation (optional since it's set automatically from req.user)
+  body('provider.id').optional(),
+  body('provider.name').optional(),
+  body('provider.role').optional().isIn(['doctor', 'nurse', 'specialist', 'pharmacist', 'lab_technician', 'radiologist']).withMessage('Invalid provider role.'),
   body('provider.department').optional().trim(),
   body('provider.licenseNumber').optional().trim(),
 
   // Facility validation
   body('facility.name').trim().notEmpty().withMessage('Facility name is required.'),
   body('facility.type').optional().isIn(['hospital', 'clinic', 'pharmacy', 'laboratory', 'imaging_center']).withMessage('Invalid facility type.'),
-  body('facility.address').optional().isObject(),
+  body('facility.address').optional().isObject()
 
-  // Encrypted data and hash validation
-  body('encryptedData').notEmpty().withMessage('Encrypted data is required.'),
-  body('dataHash').notEmpty().withMessage('Data hash is required.')
+  // Note: encryptedData and dataHash are generated automatically by the backend
 ];
 
 // Define canAccessPatient middleware (placeholder)
@@ -591,6 +589,200 @@ router.get('/statistics/overview', requireRole(['admin', 'doctor']), async (req,
     logger.error('Get medical record statistics failed:', error);
     res.status(500).json({
       error: 'Failed to get medical record statistics'
+    });
+  }
+});
+
+// @route   GET /api/v1/medical-records/blockchain/status
+// @desc    Get blockchain service status
+// @access  Private (admin, service_account)
+router.get('/blockchain/status', requireRole(['admin', 'service_account']), async (req, res) => {
+  try {
+    const blockchainService = require('../services/blockchainService');
+    const status = await blockchainService.getNetworkStatus();
+
+    res.json({
+      success: true,
+      data: status
+    });
+  } catch (error) {
+    logger.error('Get blockchain status failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get blockchain status',
+      details: error.message
+    });
+  }
+});
+
+// @route   PATCH /api/v1/medical-records/:id/blockchain-status
+// @desc    Update medical record blockchain status
+// @access  Private (admin, service_account)
+router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account']), canAccessMedicalRecord('id'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { action, transactionHash, blockNumber, isVerified } = req.body;
+
+    // Find the medical record
+    const record = await MedicalRecord.findOne({
+      $or: [
+        { recordId: id },
+        { _id: id }
+      ]
+    });
+
+    if (!record) {
+      return res.status(404).json({
+        success: false,
+        error: 'Medical record not found'
+      });
+    }
+
+    // Import blockchain service
+    const blockchainService = require('../services/blockchainService');
+
+    let result = {};
+
+    // Process different actions
+    switch (action) {
+      case 'record':
+        // Record the medical record on blockchain
+        try {
+          const blockchainResult = await blockchainService.recordOnBlockchain({
+            recordId: record.recordId,
+            dataHash: record.dataHash,
+            encryptedData: record.encryptedData
+          });
+
+          // Update the record with blockchain information
+          await record.updateBlockchainStatus(
+            blockchainResult.transactionHash,
+            blockchainResult.blockNumber,
+            false // Initially not verified
+          );
+
+          result = {
+            success: true,
+            message: 'Medical record recorded on blockchain successfully',
+            data: {
+              recordId: record.recordId,
+              transactionHash: blockchainResult.transactionHash,
+              blockNumber: blockchainResult.blockNumber,
+              timestamp: blockchainResult.timestamp,
+              isVerified: false
+            }
+          };
+        } catch (blockchainError) {
+          logger.error('Blockchain recording failed', {
+            recordId: record.recordId,
+            error: blockchainError.message
+          });
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to record on blockchain',
+            details: blockchainError.message
+          });
+        }
+        break;
+
+      case 'verify':
+        // Verify the medical record on blockchain
+        try {
+          if (!record.blockchain.transactionHash) {
+            return res.status(400).json({
+              success: false,
+              error: 'No transaction hash found. Record must be recorded on blockchain first.'
+            });
+          }
+
+          const verificationResult = await blockchainService.verifyOnBlockchain(
+            record.blockchain.transactionHash
+          );
+
+          // Update verification status
+          record.blockchain.isVerified = verificationResult.isVerified;
+          record.blockchain.verificationAttempts += 1;
+          await record.save();
+
+          result = {
+            success: true,
+            message: 'Blockchain verification completed',
+            data: {
+              recordId: record.recordId,
+              transactionHash: record.blockchain.transactionHash,
+              isVerified: verificationResult.isVerified,
+              verifiedAt: verificationResult.verifiedAt,
+              verificationAttempts: record.blockchain.verificationAttempts
+            }
+          };
+        } catch (blockchainError) {
+          logger.error('Blockchain verification failed', {
+            recordId: record.recordId,
+            transactionHash: record.blockchain.transactionHash,
+            error: blockchainError.message
+          });
+          return res.status(500).json({
+            success: false,
+            error: 'Failed to verify on blockchain',
+            details: blockchainError.message
+          });
+        }
+        break;
+
+      case 'update_status':
+        // Manual status update (admin override)
+        if (isVerified !== undefined) {
+          record.blockchain.isVerified = isVerified;
+        }
+        if (transactionHash) {
+          record.blockchain.transactionHash = transactionHash;
+        }
+        if (blockNumber) {
+          record.blockchain.blockNumber = blockNumber;
+        }
+        
+        record.blockchain.timestamp = new Date();
+        record.blockchain.verificationAttempts += 1;
+        await record.save();
+
+        result = {
+          success: true,
+          message: 'Blockchain status updated manually',
+          data: {
+            recordId: record.recordId,
+            transactionHash: record.blockchain.transactionHash,
+            blockNumber: record.blockchain.blockNumber,
+            isVerified: record.blockchain.isVerified,
+            timestamp: record.blockchain.timestamp,
+            verificationAttempts: record.blockchain.verificationAttempts
+          }
+        };
+        break;
+
+      default:
+        return res.status(400).json({
+          success: false,
+          error: 'Invalid action. Must be one of: record, verify, update_status'
+        });
+    }
+
+    // Log the blockchain status update
+    logger.audit('blockchain_status_updated', req.user.userId, `record:${record.recordId}`, {
+      recordId: record.recordId,
+      action,
+      transactionHash: record.blockchain.transactionHash,
+      isVerified: record.blockchain.isVerified,
+      verificationAttempts: record.blockchain.verificationAttempts
+    });
+
+    res.json(result);
+
+  } catch (error) {
+    logger.error('Update blockchain status failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update blockchain status',
+      details: error.message
     });
   }
 });
