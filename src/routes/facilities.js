@@ -78,4 +78,39 @@ router.patch('/:id/verify', authenticateToken, requireRole(['admin']), async (re
   }
 });
 
+// GET /api/v1/facilities/:id
+router.get('/:id', authenticateToken, async (req, res) => {
+  try {
+    const facility = await Facility.findById(req.params.id);
+    if (!facility) return res.status(404).json({ error: 'Facility not found' });
+    res.json({ success: true, data: facility });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get facility', details: error.message });
+  }
+});
+
+// PUT /api/v1/facilities/:id
+router.put('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const facility = await Facility.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!facility) return res.status(404).json({ error: 'Facility not found' });
+    res.json({ success: true, data: facility });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update facility', details: error.message });
+  }
+});
+
+// DELETE /api/v1/facilities/:id (soft delete)
+router.delete('/:id', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const facility = await Facility.findById(req.params.id);
+    if (!facility) return res.status(404).json({ error: 'Facility not found' });
+    facility.isActive = false;
+    await facility.save();
+    res.json({ success: true, message: 'Facility soft deleted' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete facility', details: error.message });
+  }
+});
+
 module.exports = router; 

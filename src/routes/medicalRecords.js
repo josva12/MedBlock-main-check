@@ -6,6 +6,9 @@ const MedicalRecord = require('../models/MedicalRecord');
 const Patient = require('../models/Patient');
 const encryptionService = require('../utils/encryption');
 const logger = require('../utils/logger');
+const upload = require('../config/multerConfig');
+const fs = require('fs');
+const path = require('path');
 
 const router = express.Router();
 
@@ -159,7 +162,10 @@ router.get('/:id', canAccessMedicalRecord('id'), async (req, res) => {
       decryptedData = JSON.parse(encryptionService.decrypt(record.encryptedData, record.recordId));
     } catch (error) {
       logger.error('Failed to decrypt medical record data:', error);
-      decryptedData = { error: 'Failed to decrypt data' };
+      return res.status(400).json({
+        error: 'Tampered or corrupted encrypted data',
+        details: error.message
+      });
     }
 
     logger.audit('medical_record_viewed', req.user.userId, `record:${record.recordId}`, {
@@ -438,6 +444,48 @@ router.delete('/:id', requireRole(['admin']), canAccessMedicalRecord('id'), asyn
     res.status(500).json({
       error: 'Failed to delete medical record'
     });
+  }
+});
+
+// POST /api/v1/medical-records/:id/attachments
+router.post('/:id/attachments', authenticateToken, upload.single('file'), async (req, res) => {
+  try {
+    const record = await MedicalRecord.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Medical record not found' });
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    const attachment = {
+      filename: req.file.filename,
+      originalName: req.file.originalname,
+      mimeType: req.file.mimetype,
+      size: req.file.size,
+      path: req.file.path,
+      uploadedAt: new Date(),
+      uploadedBy: req.user._id
+    };
+    record.attachments.push(attachment);
+    await record.save();
+    res.status(201).json({ success: true, message: 'Attachment added', data: attachment });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to add attachment', details: error.message });
+  }
+});
+
+// DELETE /api/v1/medical-records/:id/attachments/:attachmentId
+router.delete('/:id/attachments/:attachmentId', authenticateToken, async (req, res) => {
+  try {
+    const record = await MedicalRecord.findById(req.params.id);
+    if (!record) return res.status(404).json({ error: 'Medical record not found' });
+    const attachment = record.attachments.id(req.params.attachmentId);
+    if (!attachment) return res.status(404).json({ error: 'Attachment not found' });
+    // Remove file from disk
+    if (attachment.path && fs.existsSync(attachment.path)) {
+      fs.unlinkSync(attachment.path);
+    }
+    attachment.remove();
+    await record.save();
+    res.json({ success: true, message: 'Attachment removed' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to remove attachment', details: error.message });
   }
 });
 

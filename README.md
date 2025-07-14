@@ -413,54 +413,85 @@ For support and questions:
 
 **MedBlock Team** - Building the future of healthcare in Kenya 🇰🇪 
 
-## Project File Structure (Backend)
+## 🆕 New & Extended API Endpoints
+
+### Medical Record Attachments
+- `POST /api/v1/medical-records/:id/attachments` — Add an attachment to a medical record
+- `DELETE /api/v1/medical-records/:id/attachments/:attachmentId` — Remove an attachment from a medical record
+
+### Audit Logs
+- `GET /api/v1/audit-logs?userId=...&action=...&startDate=...&endDate=...` — Filter audit logs by user, action, or date range
+
+### Reporting & Analytics
+- `GET /api/v1/reports/medical-record-trends` — Medical record trends report
+- `GET /api/v1/reports/appointment-utilization` — Appointment utilization report
+
+### Notifications
+- `POST /api/v1/notifications/sms` — Send SMS notification (stub)
+- `GET /api/v1/users/:id/notifications` — Get user notifications (stub)
+
+### Facility Management
+- `GET /api/v1/facilities/:id` — Get single facility by ID
+- `PUT /api/v1/facilities/:id` — Update facility
+- `DELETE /api/v1/facilities/:id` — Soft delete facility
+
+### Data Encryption & Integrity
+- `GET /api/v1/medical-records/:id` — Now returns a clear error if encrypted data is tampered/corrupted
+
+## 📁 Updated Project Structure
 
 ```
 MedBlock-main-check/
-  ├── src/
-  │   ├── config/
-  │   │   ├── database.js
-  │   │   └── multerConfig.js
-  │   ├── controllers/
-  │   │   ├── appointmentController.js
-  │   │   └── vitalSignController.js
-  │   ├── docs/
-  │   │   └── openapi.yaml
-  │   ├── middleware/
-  │   │   ├── auth.js
-  │   │   ├── authMiddleware.js
-  │   │   └── errorHandler.js
-  │   ├── models/
-  │   │   ├── Appointment.js
-  │   │   ├── Encounter.js
-  │   │   ├── Facility.js
-  │   │   ├── Patient.js
-  │   │   ├── User.js
-  │   │   └── VitalSign.js
-  │   ├── routes/
-  │   │   ├── adminRoutes.js
-  │   │   ├── appointments.js
-  │   │   ├── auth.js
-  │   │   ├── facilities.js
-  │   │   ├── medicalRecords.js
-  │   │   ├── patients.js
-  │   │   ├── users.js
-  │   │   └── vitalSigns.js
-  │   ├── server.js
-  │   ├── uploads/
-  │   │   ├── documents/
-  │   │   ├── images/
-  │   │   ├── others/
-  │   │   └── reports/
-  │   └── utils/
-  │       ├── encryption.js
-  │       ├── logger.js
-  │       ├── masking.js
-  │       └── validation.js
-  ├── logs/
-  ├── package.json
-  ├── package-lock.json
-  └── README.md
+├── src/
+│   ├── config/
+│   │   ├── database.js
+│   │   └── multerConfig.js
+│   ├── controllers/
+│   │   ├── appointmentController.js
+│   │   └── vitalSignController.js
+│   ├── docs/
+│   │   └── openapi.yaml
+│   ├── middleware/
+│   │   ├── auth.js
+│   │   ├── authMiddleware.js
+│   │   └── errorHandler.js
+│   ├── models/
+│   │   ├── Appointment.js
+│   │   ├── AuditLog.js
+│   │   ├── Encounter.js
+│   │   ├── Facility.js
+│   │   ├── MedicalRecord.js
+│   │   ├── Patient.js
+│   │   ├── User.js
+│   │   └── VitalSign.js
+│   ├── routes/
+│   │   ├── adminRoutes.js
+│   │   ├── appointments.js
+│   │   ├── auditLogs.js
+│   │   ├── auth.js
+│   │   ├── facilities.js
+│   │   ├── index.js
+│   │   ├── medicalRecords.js
+│   │   ├── notifications.js
+│   │   ├── patients.js
+│   │   ├── reports.js
+│   │   ├── users.js
+│   │   └── vitalSigns.js
+│   ├── server.js
+│   ├── uploads/
+│   │   ├── documents/
+│   │   ├── images/
+│   │   ├── others/
+│   │   └── reports/
+│   └── utils/
+│       ├── encryption.js
+│       ├── logger.js
+│       ├── masking.js
+│       └── validation.js
+├── logs/
+├── package.json
+├── package-lock.json
+└── README.md
 ```
 
 ### API Endpoints for File Uploads and Medical Records
