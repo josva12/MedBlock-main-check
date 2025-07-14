@@ -269,3 +269,46 @@ exports.deleteAppointment = async (req, res) => {
     });
   }
 };
+
+// @desc    Get appointment statistics overview
+// @route   GET /api/v1/appointments/statistics/overview
+// @access  Private (Admin, Doctor, Nurse)
+exports.getAppointmentStatisticsOverview = async (req, res) => {
+  try {
+    // Aggregate counts by status
+    const statusCounts = await Appointment.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    // Aggregate counts by type
+    const typeCounts = await Appointment.aggregate([
+      { $group: { _id: "$appointmentType", count: { $sum: 1 } } }
+    ]);
+    // Total appointments
+    const total = await Appointment.countDocuments();
+    // Upcoming appointments (future date)
+    const now = new Date();
+    const upcoming = await Appointment.countDocuments({ appointmentDate: { $gte: now } });
+
+    // Format results
+    const statusStats = {};
+    statusCounts.forEach(s => { statusStats[s._id] = s.count; });
+    const typeStats = {};
+    typeCounts.forEach(t => { typeStats[t._id] = t.count; });
+
+    res.json({
+      success: true,
+      data: {
+        totalAppointments: total,
+        status: statusStats,
+        type: typeStats,
+        upcomingAppointments: upcoming
+      }
+    });
+  } catch (error) {
+    logger.error('Get appointment statistics overview failed:', error);
+    res.status(500).json({
+      error: 'Failed to get appointment statistics overview',
+      details: error.message
+    });
+  }
+};

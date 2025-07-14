@@ -2,7 +2,6 @@ const VitalSign = require('../models/VitalSign');
 const Patient = require('../models/Patient'); // Ensure Patient model is imported
 const User = require('../models/User'); // Ensure User model is imported
 const logger = require('../utils/logger');
-const ErrorResponse = require('../utils/errorResponse'); // Assuming you have this utility
 
 // @desc    Create new vital signs record
 // @route   POST /api/v1/vital-signs
@@ -15,12 +14,12 @@ exports.createVitalSign = async (req, res, next) => {
     // Validate patient and recordedBy IDs
     const patientExists = await Patient.findById(patientId);
     if (!patientExists) {
-      return next(new ErrorResponse('Invalid patient ID format or patient not found', 400, 'INVALID_PATIENT_ID'));
+      return res.status(400).json({ error: 'Invalid patient ID format or patient not found', code: 'INVALID_PATIENT_ID' });
     }
 
     const recordedByUser = await User.findById(recordedBy);
     if (!recordedByUser) {
-      return next(new ErrorResponse('Invalid recordedBy user ID or user not found', 400, 'INVALID_USER_ID'));
+      return res.status(400).json({ error: 'Invalid recordedBy user ID or user not found', code: 'INVALID_USER_ID' });
     }
 
     // Construct vital sign data, handling nested objects for temperature, bloodPressure, weight, height, bloodGlucose
@@ -177,7 +176,7 @@ exports.getVitalSignById = async (req, res, next) => {
       .populate('amendedBy', 'fullName email title');
 
     if (!vitalSign) {
-      return next(new ErrorResponse('Vital sign not found', 404));
+      return res.status(404).json({ error: 'Vital sign not found' });
     }
 
     logger.audit('get_vital_sign_by_id', req.user._id, 'vital_signs', {
@@ -210,7 +209,7 @@ exports.getVitalSignsByPatient = async (req, res, next) => {
 
     const patientExists = await Patient.findById(patientId);
     if (!patientExists) {
-      return next(new ErrorResponse('Patient not found', 404));
+      return res.status(404).json({ error: 'Patient not found' });
     }
 
     const vitalSigns = await VitalSign.find({ patient: patientId })
@@ -270,11 +269,11 @@ exports.updateVitalSign = async (req, res, next) => {
     const vitalSign = await VitalSign.findById(id);
 
     if (!vitalSign) {
-      return next(new ErrorResponse('Vital sign not found', 404));
+      return res.status(404).json({ error: 'Vital sign not found' });
     }
 
     if (vitalSign.status !== 'draft') {
-      return next(new ErrorResponse('Only draft vital signs can be updated directly. Use /amend for final records.', 400));
+      return res.status(400).json({ error: 'Only draft vital signs can be updated directly. Use /amend for final records.' });
     }
 
     // Apply updates
@@ -332,11 +331,11 @@ exports.finalizeVitalSign = async (req, res, next) => {
     const vitalSign = await VitalSign.findById(id);
 
     if (!vitalSign) {
-      return next(new ErrorResponse('Vital sign not found', 404));
+      return res.status(404).json({ error: 'Vital sign not found' });
     }
 
     if (vitalSign.status !== 'draft') {
-      return next(new ErrorResponse('Only draft vital signs can be finalized', 400));
+      return res.status(400).json({ error: 'Only draft vital signs can be finalized' });
     }
 
     await vitalSign.markAsFinal(); // This method sets status to 'final' and saves
@@ -379,17 +378,17 @@ exports.amendVitalSign = async (req, res, next) => {
     const { reason } = req.body; // Reason for amendment is required
 
     if (!reason || reason.trim() === '') {
-      return next(new ErrorResponse('Amendment reason is required', 400));
+      return res.status(400).json({ error: 'Amendment reason is required' });
     }
 
     const vitalSign = await VitalSign.findById(id);
 
     if (!vitalSign) {
-      return next(new ErrorResponse('Vital sign not found', 404));
+      return res.status(404).json({ error: 'Vital sign not found' });
     }
 
     if (vitalSign.status !== 'final' && vitalSign.status !== 'amended') {
-      return next(new ErrorResponse('Only final or already amended vital signs can be amended', 400));
+      return res.status(400).json({ error: 'Only final or already amended vital signs can be amended' });
     }
 
     // Mark as amended and save
@@ -442,12 +441,12 @@ exports.deleteVitalSign = async (req, res, next) => {
     const vitalSign = await VitalSign.findById(id);
 
     if (!vitalSign) {
-      return next(new ErrorResponse('Vital sign not found', 404));
+      return res.status(404).json({ error: 'Vital sign not found' });
     }
 
     // Only allow deletion of 'draft' vital signs
     if (vitalSign.status !== 'draft') {
-      return next(new ErrorResponse('Only draft vital signs can be deleted.', 400));
+      return res.status(400).json({ error: 'Only draft vital signs can be deleted.' });
     }
 
     // Remove reference from patient's vitalSigns array
@@ -475,5 +474,44 @@ exports.deleteVitalSign = async (req, res, next) => {
   } catch (error) {
     logger.error('Error deleting vital sign:', error);
     next(error);
+  }
+};
+
+// @desc    Get vital signs statistics overview
+// @route   GET /api/v1/vital-signs/statistics/overview
+// @access  Private (Admin, Doctor, Nurse)
+exports.getVitalSignsStatisticsOverview = async (req, res) => {
+  try {
+    // Aggregate counts by status
+    const statusCounts = await VitalSign.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } }
+    ]);
+    // Aggregate counts by type (if available)
+    // For demonstration, let's aggregate by temperature presence (fever detection)
+    const feverCount = await VitalSign.countDocuments({ "temperature.value": { $gte: 38 } });
+    // Total vital signs
+    const total = await VitalSign.countDocuments();
+    // Latest record date
+    const latest = await VitalSign.findOne().sort({ recordedAt: -1 }).select('recordedAt');
+
+    // Format results
+    const statusStats = {};
+    statusCounts.forEach(s => { statusStats[s._id] = s.count; });
+
+    res.json({
+      success: true,
+      data: {
+        totalVitalSigns: total,
+        status: statusStats,
+        feverCases: feverCount,
+        latestRecord: latest ? latest.recordedAt : null
+      }
+    });
+  } catch (error) {
+    logger.error('Get vital signs statistics overview failed:', error);
+    res.status(500).json({
+      error: 'Failed to get vital signs statistics overview',
+      details: error.message
+    });
   }
 }; 

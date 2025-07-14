@@ -55,7 +55,7 @@ router.patch('/users/:id/verify-professional', authenticateToken, requireRole(['
     if (licensingBody) user.professionalVerification.licensingBody = licensingBody;
     user.isGovernmentVerified = status === 'verified';
     user.isVerified = status === 'verified'; // <-- Set isVerified based on status
-    await user.save();
+      await user.save();
     logger.audit('professional_verification', req.user._id, 'user', { userId: id, status });
     res.json({ success: true, message: 'Professional verification updated', data: { user: user.getProfile() } });
   } catch (error) {

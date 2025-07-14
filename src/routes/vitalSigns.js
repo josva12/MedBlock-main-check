@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { authenticateToken } = require('../middleware/auth');
 const { validateObjectId } = require('../utils/validation');
 const logger = require('../utils/logger');
+const vitalSignController = require('../controllers/vitalSignController');
 
 /**
  * @route   POST /api/vital-signs
@@ -773,5 +774,33 @@ router.get('/patient/:patientId', authenticateToken, async (req, res) => {
     });
   }
 });
+
+router.get('/patient/:patientId/latest', authenticateToken, async (req, res) => {
+  const { patientId } = req.params;
+  if (!validateObjectId(patientId)) {
+    return res.status(400).json({ success: false, message: 'Invalid patient ID format', debug: { patientId } });
+  }
+  try {
+    // Check if patient exists
+    const patient = await Patient.findById(patientId);
+    if (!patient) {
+      return res.status(404).json({ success: false, message: 'Patient not found', debug: { patientId } });
+    }
+    // Find the latest vital sign
+    const vitalSign = await VitalSign.findOne({ patient: patientId })
+      .sort({ recordedAt: -1 })
+      .populate('recordedBy', 'fullName email title')
+      .populate('amendedBy', 'fullName email title');
+    if (!vitalSign) {
+      return res.status(404).json({ success: false, message: 'No vital signs found for this patient' });
+    }
+    res.json({ success: true, data: vitalSign.getSummary() });
+  } catch (error) {
+    logger.error('Error fetching latest vital sign:', error);
+    res.status(500).json({ success: false, message: 'Internal server error', debug: { error: error.message } });
+  }
+});
+
+router.get('/statistics/overview', authenticateToken, vitalSignController.getVitalSignsStatisticsOverview);
 
 module.exports = router; 

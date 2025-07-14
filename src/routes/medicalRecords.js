@@ -475,13 +475,14 @@ router.delete('/:id/attachments/:attachmentId', authenticateToken, async (req, r
   try {
     const record = await MedicalRecord.findById(req.params.id);
     if (!record) return res.status(404).json({ error: 'Medical record not found' });
-    const attachment = record.attachments.id(req.params.attachmentId);
+    const attachment = record.attachments.find(att => att._id.toString() === req.params.attachmentId);
     if (!attachment) return res.status(404).json({ error: 'Attachment not found' });
     // Remove file from disk
     if (attachment.path && fs.existsSync(attachment.path)) {
       fs.unlinkSync(attachment.path);
     }
-    attachment.remove();
+    // Remove from array
+    record.attachments = record.attachments.filter(att => att._id.toString() !== req.params.attachmentId);
     await record.save();
     res.json({ success: true, message: 'Attachment removed' });
   } catch (error) {

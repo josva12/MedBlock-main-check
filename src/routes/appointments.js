@@ -20,6 +20,7 @@ router.use(authenticateToken);
 
 router.post('/', requireRole(['admin', 'doctor', 'nurse']), validateAppointment, appointmentController.createAppointment);
 router.get('/', requireRole(['admin', 'doctor', 'nurse']), appointmentController.getAppointments);
+router.get('/statistics/overview', requireRole(['admin', 'doctor', 'nurse']), appointmentController.getAppointmentStatisticsOverview);
 router.get('/:id', requireRole(['admin', 'doctor', 'nurse', 'patient']), appointmentController.getAppointmentById);
 router.put('/:id', requireRole(['admin', 'doctor']), validateAppointment, appointmentController.updateAppointment);
 router.delete('/:id', requireRole(['admin']), appointmentController.deleteAppointment);
