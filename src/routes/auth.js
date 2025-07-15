@@ -21,7 +21,7 @@ const validateRegister = [
   body('fullName').trim().isLength({ min: 2, max: 100 }),
   body('email').isEmail().normalizeEmail(),
   body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/),
-  body('role').isIn(['doctor', 'nurse', 'admin', 'front-desk']),
+  body('role').isIn(['doctor', 'nurse', 'admin', 'front-desk', 'pharmacy']),
   body('phone').matches(/^(\+254|0)[17]\d{8}$/),
   body('title').isIn(['Dr.', 'Prof.', 'Mr.', 'Mrs.', 'Ms.', 'Nurse', 'Pharm.', 'Tech.']),
   // NEW: Optional fields for professional verification submission during registration

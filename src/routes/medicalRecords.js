@@ -541,20 +541,33 @@ router.get('/patient/:patientId', canAccessPatient('patientId'), async (req, res
 });
 
 // @route   GET /api/v1/medical-records/patient/:patientId/medication-history
-// @desc    Get medication history for a patient (pharmacy access)
-// @access  Private (pharmacy, must be government verified)
-router.get('/patient/:patientId/medication-history', authenticateToken, requireRole(['pharmacy']), isGovernmentVerifiedProfessional, async (req, res) => {
+// @desc    Get medication (prescription and pharmacy dispense) history for a patient
+// @access  Private (pharmacist, doctor, admin)
+router.get('/patient/:patientId/medication-history', requireRole(['pharmacist', 'doctor', 'admin']), canAccessPatient('patientId'), async (req, res) => {
   try {
     const { patientId } = req.params;
-    // Find all prescription and pharmacy dispense records for this patient
+    const { limit = 50, sortOrder = 'desc' } = req.query;
+
+    // Find prescription and pharmacy_dispense records for the patient
     const records = await MedicalRecord.find({
       patientId,
       recordType: { $in: ['prescription', 'pharmacy_dispense'] }
-    }).sort({ recordDate: -1 });
-    res.json({ success: true, data: { medicationHistory: records } });
+    })
+      .sort({ recordDate: sortOrder === 'asc' ? 1 : -1 })
+      .limit(Number(limit))
+      .populate('provider.id', 'firstName lastName')
+      .populate('facility.id', 'name');
+
+    res.json({
+      success: true,
+      data: {
+        records: records.map(r => r.getSummary()),
+        count: records.length
+      }
+    });
   } catch (error) {
     logger.error('Get medication history failed:', error);
-    res.status(500).json({ error: 'Failed to get medication history', details: error.message });
+    res.status(500).json({ error: 'Failed to get medication history' });
   }
 });
 

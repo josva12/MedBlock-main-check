@@ -4,6 +4,7 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
+const Patient = require('../models/Patient');
 
 const router = express.Router();
 
@@ -428,8 +429,8 @@ router.get('/:doctorId/assignment-history', requireRole(['admin', 'doctor', 'nur
 });
 
 // @route   GET /api/v1/users/:doctorId/assigned-patients
-// @desc    Get all patients assigned to a specific doctor
-// @access  Private (Admin, Doctor, Nurse)
+// @desc    Get patients assigned to a specific doctor
+// @access  Private (admin, doctor, nurse)
 router.get('/:doctorId/assigned-patients', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
   const { doctorId } = req.params;
   try {
@@ -437,13 +438,17 @@ router.get('/:doctorId/assigned-patients', requireRole(['admin', 'doctor', 'nurs
     if (!doctorId.match(/^[0-9a-fA-F]{24}$/)) {
       return res.status(400).json({ error: 'Invalid doctor ID format.' });
     }
-    // Find patients assigned to this doctor
-    const patients = await require('../models/Patient').find({ assignedDoctor: doctorId, isActive: { $ne: false } })
-      .populate('assignedDoctor', 'fullName email title');
-    res.json({ success: true, count: patients.length, data: patients.map(p => p.getSummaryForRole(req.user.role)) });
+    // Find all patients assigned to this doctor
+    const patients = await Patient.find({ assignedDoctor: doctorId, isActive: { $ne: false } })
+      .select('patientId fullName gender dateOfBirth assignedDepartment checkInStatus')
+      .sort({ fullName: 1 });
+    res.json({
+      success: true,
+      data: patients
+    });
   } catch (error) {
-    logger.error('Error fetching assigned patients:', error);
-    res.status(500).json({ error: 'Failed to fetch assigned patients', details: error.message });
+    logger.error('Get assigned patients failed:', error);
+    res.status(500).json({ error: 'Failed to get assigned patients' });
   }
 });
 

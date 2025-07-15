@@ -2,6 +2,8 @@ const express = require('express');
 const { body } = require('express-validator');
 const appointmentController = require('../controllers/appointmentController');
 const { authenticateToken, requireRole } = require('../middleware/auth');
+const Encounter = require('../models/Encounter');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -20,7 +22,21 @@ router.use(authenticateToken);
 
 router.post('/', requireRole(['admin', 'doctor', 'nurse']), validateAppointment, appointmentController.createAppointment);
 router.get('/', requireRole(['admin', 'doctor', 'nurse']), appointmentController.getAppointments);
-router.get('/statistics/overview', requireRole(['admin', 'doctor', 'nurse']), appointmentController.getAppointmentStatisticsOverview);
+// @route   GET /api/v1/appointments/statistics/overview
+// @desc    Get appointment statistics overview
+// @access  Private (admin, doctor, nurse)
+router.get('/statistics/overview', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  try {
+    const stats = await Encounter.getStatistics();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    logger.error('Get appointment statistics failed:', error);
+    res.status(500).json({ error: 'Failed to get appointment statistics' });
+  }
+});
 router.get('/:id', requireRole(['admin', 'doctor', 'nurse', 'patient']), appointmentController.getAppointmentById);
 router.put('/:id', requireRole(['admin', 'doctor']), validateAppointment, appointmentController.updateAppointment);
 router.delete('/:id', requireRole(['admin']), appointmentController.deleteAppointment);

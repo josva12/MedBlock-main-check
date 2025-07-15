@@ -390,4 +390,45 @@ vitalSignSchema.statics.getByDateRange = function(patientId, startDate, endDate)
   .populate('recordedBy', 'fullName email');
 };
 
+// Static method to get vital signs statistics
+vitalSignSchema.statics.getStatistics = async function(filters = {}) {
+  try {
+    const matchStage = {};
+    if (filters.patientId) {
+      matchStage.patient = filters.patientId;
+    }
+    if (filters.status) {
+      matchStage.status = filters.status;
+    }
+    if (filters.dateRange) {
+      matchStage.recordedAt = {
+        $gte: filters.dateRange.start,
+        $lte: filters.dateRange.end
+      };
+    }
+    const stats = await this.aggregate([
+      { $match: matchStage },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: 1 },
+          final: { $sum: { $cond: [{ $eq: ['$status', 'final'] }, 1, 0] } },
+          draft: { $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] } },
+          amended: { $sum: { $cond: [{ $eq: ['$status', 'amended'] }, 1, 0] } },
+          statusDistribution: {
+            $push: {
+              status: '$status',
+              count: 1
+            }
+          }
+        }
+      }
+    ]);
+    return stats[0] || { total: 0, final: 0, draft: 0, amended: 0, statusDistribution: [] };
+  } catch (error) {
+    logger.error('Failed to get vital signs statistics:', error);
+    throw error;
+  }
+};
+
 module.exports = mongoose.model('VitalSign', vitalSignSchema);

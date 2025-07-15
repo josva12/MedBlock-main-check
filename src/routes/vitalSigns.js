@@ -775,32 +775,64 @@ router.get('/patient/:patientId', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   GET /api/v1/vital-signs/patient/:patientId/latest
+// @desc    Get the latest vital sign for a specific patient
+// @access  Private (doctors, nurses, admins)
 router.get('/patient/:patientId/latest', authenticateToken, async (req, res) => {
-  const { patientId } = req.params;
-  if (!validateObjectId(patientId)) {
-    return res.status(400).json({ success: false, message: 'Invalid patient ID format', debug: { patientId } });
-  }
   try {
+    const { patientId } = req.params;
+    if (!validateObjectId(patientId)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid patient ID format',
+        debug: { patientId }
+      });
+    }
     // Check if patient exists
     const patient = await Patient.findById(patientId);
     if (!patient) {
-      return res.status(404).json({ success: false, message: 'Patient not found', debug: { patientId } });
+      return res.status(404).json({
+        success: false,
+        message: 'Patient not found',
+        debug: { patientId }
+      });
     }
-    // Find the latest vital sign
-    const vitalSign = await VitalSign.findOne({ patient: patientId })
+    // Get the latest vital sign
+    const latest = await VitalSign.findOne({ patient: patientId })
       .sort({ recordedAt: -1 })
-      .populate('recordedBy', 'fullName email title')
-      .populate('amendedBy', 'fullName email title');
-    if (!vitalSign) {
-      return res.status(404).json({ success: false, message: 'No vital signs found for this patient' });
+      .populate('recordedBy', 'fullName email')
+      .populate('amendedBy', 'fullName email');
+    if (!latest) {
+      return res.status(404).json({
+        success: false,
+        message: 'No vital signs found for this patient',
+        debug: { patientId }
+      });
     }
-    res.json({ success: true, data: vitalSign.getSummary() });
+    res.json({
+      success: true,
+      data: latest.getSummary()
+    });
   } catch (error) {
-    logger.error('Error fetching latest vital sign:', error);
-    res.status(500).json({ success: false, message: 'Internal server error', debug: { error: error.message } });
+    logger.error('Get latest vital sign failed:', error);
+    res.status(500).json({ success: false, message: 'Failed to get latest vital sign', error: error.message });
   }
 });
 
-router.get('/statistics/overview', authenticateToken, vitalSignController.getVitalSignsStatisticsOverview);
+// @route   GET /api/v1/vital-signs/statistics/overview
+// @desc    Get vital signs statistics overview
+// @access  Private (admin, doctor, nurse)
+router.get('/statistics/overview', authenticateToken, async (req, res) => {
+  try {
+    const stats = await VitalSign.getStatistics();
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    logger.error('Get vital signs statistics failed:', error);
+    res.status(500).json({ error: 'Failed to get vital signs statistics' });
+  }
+});
 
 module.exports = router; 
