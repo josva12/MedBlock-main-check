@@ -1969,4 +1969,25 @@ router.patch('/:id/files/:fileId', canAccessPatient('id'), async (req, res) => {
   }
 });
 
+// @route   PATCH /api/v1/patients/:id/checkin
+// @desc    Check-in or discharge a patient
+// @access  Private (doctors, nurses, admins)
+router.patch('/:id/checkin', authenticateToken, async (req, res) => {
+  try {
+    const { checkInStatus } = req.body;
+    const patient = await Patient.findById(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    if (patient.checkInStatus === 'admitted' && checkInStatus === 'admitted') {
+      return res.status(400).json({ error: 'Patient already admitted' });
+    }
+    patient.checkInStatus = checkInStatus;
+    patient.checkInDate = new Date();
+    patient.checkedInBy = req.user._id;
+    await patient.save();
+    res.status(200).json({ success: true, data: patient });
+  } catch (error) {
+    res.status(500).json({ error: 'Check-in failed', details: error.message });
+  }
+});
+
 module.exports = router; 

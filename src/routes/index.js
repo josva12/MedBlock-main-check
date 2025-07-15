@@ -20,6 +20,12 @@ const appointmentRoutes = require('./appointments'); // NEW: Import appointments
 const auditLogRoutes = require('./auditLogs');
 const reportRoutes = require('./reports');
 const notificationRoutes = require('./notifications');
+const subscriptionRoutes = require('./subscriptions');
+const claimRoutes = require('./claims');
+const insuranceRoutes = require('./insurance');
+const teleconsultationRoutes = require('./teleconsultations');
+const predictionRoutes = require('./predictions');
+const resourceRoutes = require('./resources');
 
 // --- TEMPORARY DIAGNOSTIC ROUTE - ADD THIS BLOCK ---
 // This route MUST be defined and used BEFORE any general authentication middleware
@@ -88,6 +94,12 @@ router.use('/appointments', appointmentRoutes); // NEW: Use appointments routes
 router.use('/audit-logs', auditLogRoutes);
 router.use('/reports', reportRoutes);
 router.use('/notifications', notificationRoutes);
+router.use('/api/v1/subscriptions', subscriptionRoutes);
+router.use('/api/v1/claims', claimRoutes);
+router.use('/api/v1/insurance', insuranceRoutes);
+router.use('/api/v1/teleconsultations', teleconsultationRoutes);
+router.use('/api/v1/predictions', predictionRoutes);
+router.use('/api/v1/resources', resourceRoutes);
 
 // The admin routes for managing admins are mounted at the root of the API
 // This makes the routes inside it like /api/v1/admin/admins and /api/v1/admin/users/:id

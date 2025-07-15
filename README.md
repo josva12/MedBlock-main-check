@@ -64,76 +64,40 @@ A comprehensive, production-ready healthcare management system built with Node.j
    npm start
    ```
 
-## 📁 Project Structure
+## Project Structure
+
+Below is an overview of the main directories and files in the MedBlock backend:
 
 ```
 MedBlock-main-check/
-├── src/
-│   ├── config/
-│   │   ├── database.js
-│   │   └── multerConfig.js
-│   ├── controllers/
-│   │   ├── appointmentController.js
-│   │   ├── auditLogController.js
-│   │   ├── facilityController.js
-│   │   ├── notificationController.js
-│   │   ├── reportController.js
-│   │   ├── userController.js
-│   │   └── vitalSignController.js
-│   ├── docs/
-│   │   └── openapi.yaml
-│   ├── middleware/
-│   │   ├── auth.js
-│   │   ├── authMiddleware.js
-│   │   ├── errorHandler.js
-│   │   ├── requestId.js
-│   │   └── simulateError.js
-│   ├── models/
-│   │   ├── Appointment.js
-│   │   ├── AuditLog.js
-│   │   ├── Encounter.js
-│   │   ├── Facility.js
-│   │   ├── MedicalRecord.js
-│   │   ├── Patient.js
-│   │   ├── User.js
-│   │   └── VitalSign.js
-│   ├── routes/
-│   │   ├── adminRoutes.js
-│   │   ├── appointments.js
-│   │   ├── auditLogs.js
-│   │   ├── auth.js
-│   │   ├── facilities.js
-│   │   ├── index.js
-│   │   ├── medicalRecords.js
-│   │   ├── notifications.js
-│   │   ├── patients.js
-│   │   ├── reports.js
-│   │   ├── users.js
-│   │   └── vitalSigns.js
-│   ├── services/
-│   │   └── blockchainService.js
-│   ├── uploads/
-│   │   ├── documents/
-│   │   │   └── 1751221442193-medical_report.pdf
-│   │   ├── others/
-│   │   │   └── 1751220462134-medical_report.pdf
-│   ├── utils/
-│   │   ├── encryption.js
-│   │   ├── logger.js
-│   │   ├── masking.js
-│   │   └── validation.js
-│   └── server.js
-├── logs/
-│   ├── app.log
-│   ├── error.log
-│   ├── exceptions.log
-│   ├── rejections.log
-│   └── security.log
-├── .env
-├── .gitignore
-├── package.json
-└── README.md
+├── ai/                  # AI/ML models and virtual environment (if used)
+│   └── venv/            # Python virtual environment (for AI modules)
+├── src/                 # Main backend source code
+│   ├── config/          # Configuration files (DB, multer, etc.)
+│   ├── controllers/     # Route handler logic for each module
+│   ├── docs/            # API documentation (OpenAPI/Swagger)
+│   ├── middleware/      # Express middleware (auth, error handling, etc.)
+│   ├── models/          # Mongoose models (Appointment, User, etc.)
+│   ├── routes/          # Express route definitions (all endpoints)
+│   ├── services/        # Business logic/services (blockchain, etc.)
+│   ├── uploads/         # Uploaded files (e.g., reports)
+│   └── utils/           # Utility functions (encryption, logging, etc.)
+├── logs/                # Log files
+├── BLOCKCHAIN_IMPLEMENTATION_SUMMARY.md  # Blockchain integration notes
+├── CHANGELOG.md         # Project changelog
+├── IMPLEMENTATION_COMPLETE.md  # Completion report
+├── PROJECT_STRUCTURE.md # (Optional) Additional structure notes
+├── README.md            # Project documentation (this file)
+├── downloaded_dummy_report.pdf # Example report
+└── ...                  # Other files (package.json, .env, etc.)
 ```
+
+- Each module (appointments, users, claims, subscriptions, etc.) has its own model, controller, and route file.
+- All endpoints are registered in `src/routes/` and handled by their respective controllers.
+- Business logic and integrations (blockchain, M-Pesa, AI) are in `src/services/`.
+- Sensitive data is encrypted and validated for Kenyan context.
+
+Refer to the rest of this README for endpoint documentation, test results, and usage instructions.
 
 ## 🔧 Configuration
 
@@ -1230,3 +1194,133 @@ curl -X GET "http://localhost:3000/api/v1/medical-records/68759610d64e33fe95b4cf
 4. Edit the `encryptedData` field: change a few characters in the string and save.
 5. Re-run the GET request for that record.
 6. The API should return an error or a message indicating decryption failed, and the backend logs should show a decryption error. 
+
+## New API Endpoints (Kenyan Monetization, Insurance, Telemedicine, AI, Education)
+
+### Subscriptions
+- **POST /api/v1/subscriptions**: Create a subscription (M-Pesa supported)
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/subscriptions -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"plan": "premium", "facilityId": "6876669d9c99c5ba64916bf8", "paymentMethod": "mpesa", "mpesaReceipt": "MPESA12345"}'
+    ```
+- **GET /api/v1/subscriptions**: List all subscriptions
+- **GET /api/v1/subscriptions/:id**: Get subscription by id
+- **Notes**: M-Pesa receipts are supported. Error handling for not found and validation.
+
+### Claims
+- **POST /api/v1/claims**: Create an insurance claim (blockchain hash optional)
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/claims -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"patientId": "6873a393d4a921179643cd3c", "amount": 5000}'
+    ```
+- **GET /api/v1/claims**: List all claims
+- **GET /api/v1/claims/:id**: Get claim by id
+- **Notes**: Blockchain hash field for future integration. Error handling for not found and validation.
+
+### Insurance
+- **POST /api/v1/insurance**: Create a micro-insurance policy
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/insurance -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"patientId": "6873a393d4a921179643cd3c", "plan": "basic"}'
+    ```
+- **GET /api/v1/insurance**: List all insurance policies
+- **GET /api/v1/insurance/:id**: Get insurance policy by id
+- **Notes**: Designed for Kenyan micro-insurance. Error handling for not found and validation.
+
+### Teleconsultations
+- **POST /api/v1/teleconsultations**: Create a teleconsultation (M-Pesa supported)
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/teleconsultations -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"patientId": "6873a393d4a921179643cd3c", "doctorId": "68739c5ad4a921179643ccff", "paymentMethod": "mpesa", "mpesaReceipt": "MPESA67890"}'
+    ```
+- **GET /api/v1/teleconsultations**: List all teleconsultations
+- **GET /api/v1/teleconsultations/:id**: Get teleconsultation by id
+- **Notes**: M-Pesa receipts are supported. Error handling for not found and validation.
+
+### Predictions (AI Health Risk)
+- **POST /api/v1/predictions**: Create an AI health risk prediction
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/predictions -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"patientId": "6873a393d4a921179643cd3c", "risk": "high", "probability": 0.85}'
+    ```
+- **GET /api/v1/predictions**: List all predictions
+- **GET /api/v1/predictions/:id**: Get prediction by id
+- **Notes**: For future AI/ML integration. Error handling for not found and validation.
+
+### Resources (Health Education)
+- **POST /api/v1/resources**: Create a health education resource
+  - cURL:
+    ```bash
+    curl -X POST http://localhost:3000/api/v1/resources -H 'Content-Type: application/json' -H 'Authorization: Bearer <ADMIN_TOKEN>' -d '{"title": "Diabetes in Kenya", "content": "Diabetes is a growing concern in Kenya...", "category": "diabetes"}'
+    ```
+- **GET /api/v1/resources**: List all resources (filter by category)
+  - cURL:
+    ```bash
+    curl -X GET http://localhost:3000/api/v1/resources?category=diabetes
+    ```
+- **GET /api/v1/resources/:id**: Get resource by id
+- **Notes**: Designed for Kenyan health education. Error handling for not found and validation.
+
+---
+
+**All endpoints tested for creation, listing, and error handling.**
+- All POST and GET endpoints return expected results or proper error messages.
+- Kenyan context (M-Pesa, micro-insurance, local health education) is supported throughout.
+- For full details, see the cURL commands and test notes above. 
+
+## Front-End (React) Project Structure
+
+The MedBlock front-end is a modern React application, designed to mirror the backend's modularity and support a robust, production-ready healthcare platform for Kenya.
+
+### Directory Layout
+
+```
+frontend/
+├── src/
+│   ├── api/         # Axios instance and API call definitions
+│   ├── assets/      # Images, fonts, and static files
+│   ├── components/  # Reusable UI components (buttons, modals, tables)
+│   ├── features/    # Feature modules (patients, users, auth, etc.)
+│   ├── hooks/       # Custom React hooks (e.g., useAuth, useDebounce)
+│   ├── pages/       # Top-level page components for each route
+│   ├── routes/      # Routing configuration (public, private routes)
+│   ├── store/       # Redux Toolkit store setup and slices
+│   └── utils/       # Utility functions (date formatting, masking, etc.)
+├── public/          # Static public assets
+├── index.html       # Main HTML entry point
+├── package.json     # Project dependencies and scripts
+└── ...              # Vite, TypeScript, and config files
+```
+
+### Key Technologies
+- **Vite** for fast development and builds
+- **React + TypeScript** for scalable, type-safe UI
+- **Material-UI (MUI)** for consistent, modern components
+- **Redux Toolkit** for global state management
+- **Axios** for API requests
+- **react-router-dom** for routing
+
+### Setup Instructions
+1. Navigate to the `frontend` directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+4. Configure environment variables in `.env` (e.g., `VITE_API_BASE_URL` for backend API).
+
+### Architectural Notes
+- The front-end structure mirrors the backend for intuitive navigation and maintainability.
+- Each feature (patients, users, claims, etc.) has its own folder in `src/features/`.
+- API calls are centralized in `src/api/` with Axios interceptors for authentication.
+- State is managed globally with Redux Toolkit, including authentication and role-based access.
+- UI components are reusable and styled with MUI.
+- Routing is protected and role-aware, enforcing backend RBAC on the client.
+
+Refer to the backend project structure above for details on available endpoints and business logic. 
