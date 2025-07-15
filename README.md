@@ -982,3 +982,251 @@ MedBlock-main-check/
 
 - **Uploads Directory:**
   - Uploaded files are stored in `src/uploads/documents/`, `src/uploads/images/`, `src/uploads/others/`, or `src/uploads/reports/` depending on file type. 
+
+## Comprehensive API Test Report (2025-07-15)
+
+Below is a summary of all tested endpoints, cURL commands, results, and notes. Replace `<ADMIN_TOKEN>` and `<PHARMACY_TOKEN>` with valid JWT tokens as needed.
+
+---
+
+### 3.9 Get Medication History for Patient (Pharmacy Access)
+**GET /api/v1/medical-records/patient/:patientId/medication-history**
+- **Status:** ✅ PASSED
+- **Notes:** Tested with a government-verified pharmacy user. Returned prescription records as expected.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/medical-records/patient/6873a393d4a921179643cd3c/medication-history" \
+  -H 'Authorization: Bearer <PHARMACY_TOKEN>'
+```
+
+---
+
+### 4.9 Get Appointment Statistics
+**GET /api/v1/appointments/statistics/overview**
+- **Status:** ✅ PASSED
+- **Notes:** Returns statistics object (empty if no data).
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/appointments/statistics/overview" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 5.11 Get Vital Signs Statistics
+**GET /api/v1/vital-signs/statistics/overview**
+- **Status:** ✅ PASSED
+- **Notes:** Returns statistics for all vital signs.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/vital-signs/statistics/overview" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 5.12 Get Latest Vital Signs for Patient
+**GET /api/v1/vital-signs/patient/:patientId/latest**
+- **Status:** ✅ PASSED
+- **Notes:** Returns the latest vital sign or a message if none found.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/vital-signs/patient/6873a393d4a921179643cd3c/latest" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 6.4 Get Patients Assigned to a Specific Doctor
+**GET /api/v1/users/:doctorId/assigned-patients**
+- **Status:** ✅ PASSED
+- **Notes:** Returns a list of assigned patients.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/assigned-patients" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 6.5 Get Assignment History for a Doctor
+**GET /api/v1/users/:doctorId/assignment-history**
+- **Status:** ✅ PASSED
+- **Notes:** Returns assignment history.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/assignment-history" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 7.3 Update User by ID (Admin)
+**PUT /api/v1/users/:id**
+- **Status:** ✅ PASSED
+- **Notes:** Successfully updated user details.
+- **cURL:**
+```bash
+curl -X PUT "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"fullName": "Dr. UniqueDoc Updated"}'
+```
+
+---
+
+### 7.4 Deactivate User (Admin)
+**PATCH /api/v1/users/:id/deactivate**
+- **Status:** ✅ PASSED
+- **Notes:** Successfully deactivated the user.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/deactivate" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 7.5 Activate User (Admin)
+**PATCH /api/v1/users/:id/activate**
+- **Status:** ✅ PASSED
+- **Notes:** Successfully activated the user.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/activate" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 7.6 Lock User Account (Admin)
+**PATCH /api/v1/users/:id/lock**
+- **Status:** ✅ PASSED
+- **Notes:** Successfully locked the user account.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/lock" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 7.7 Unlock User Account (Admin)
+**PATCH /api/v1/users/:id/unlock**
+- **Status:** ✅ PASSED
+- **Notes:** Successfully unlocked the user account.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/unlock" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 7.8 Assign Facility to User (Admin)
+**PATCH /api/v1/users/:id/assign-facility**
+- **Status:** ✅ PASSED
+- **Notes:** Assigned a facility to the user.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/assign-facility" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"facilityId": "6876669d9c99c5ba64916bf8"}'
+```
+
+---
+
+### 7.9 Remove Facility from User (Admin)
+**PATCH /api/v1/users/:id/remove-facility**
+- **Status:** ✅ PASSED
+- **Notes:** Removed the facility from the user.
+- **cURL:**
+```bash
+curl -X PATCH "http://localhost:3000/api/v1/users/68739c5ad4a921179643ccff/remove-facility" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"facilityId": "6876669d9c99c5ba64916bf8"}'
+```
+
+---
+
+### 8.1 Get All Audit Logs (Admin)
+**GET /api/v1/audit-logs**
+- **Status:** ✅ PASSED
+- **Notes:** Returns audit logs (empty if none exist).
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/audit-logs" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 9.1 Generate Patient Demographics Report
+**GET /api/v1/reports/patient-demographics**
+- **Status:** ✅ PASSED
+- **Notes:** Returns valid demographic data.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/reports/patient-demographics" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 10.1 Send Email Notification
+**POST /api/v1/notifications/email**
+- **Status:** ✅ PASSED
+- **Notes:** Returns a success message ("Email sent (stub)").
+- **cURL:**
+```bash
+curl -X POST "http://localhost:3000/api/v1/notifications/email" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>' \
+  -H 'Content-Type: application/json' \
+  -d '{"to": "test@example.com", "subject": "Test Email", "message": "This is a test email from MedBlock."}'
+```
+
+---
+
+### 11.2 Get All Facilities
+**GET /api/v1/facilities**
+- **Status:** ✅ PASSED
+- **Notes:** Returns the list of facilities, including the one created for testing.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/facilities" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+### 12.2 Handle Tampered Encrypted Data
+**GET /api/v1/medical-records/:id**
+- **Status:** ⚠️ MANUAL STEP REQUIRED
+- **Notes:**
+  - The endpoint works for valid records and returns decrypted data.
+  - To fully test, manually tamper the `encryptedData` field in the database and re-run the GET request.
+  - The API should return an error or a message indicating decryption failed, and the backend logs should show a decryption error.
+- **cURL:**
+```bash
+curl -X GET "http://localhost:3000/api/v1/medical-records/68759610d64e33fe95b4cf09" \
+  -H 'Authorization: Bearer <ADMIN_TOKEN>'
+```
+
+---
+
+**Legend:**
+- `<ADMIN_TOKEN>`: Replace with a valid admin JWT token.
+- `<PHARMACY_TOKEN>`: Replace with a valid pharmacy JWT token.
+- All IDs (user, patient, facility, record) are from the test database and may differ in your environment.
+
+---
+
+**Manual DB Tampering for Encryption Test:**
+1. Create a valid medical record via the API and note its `_id`.
+2. Open your MongoDB client (e.g., MongoDB Compass, Atlas, or mongo shell).
+3. Find the record in the `medicalrecords` collection by `_id`.
+4. Edit the `encryptedData` field: change a few characters in the string and save.
+5. Re-run the GET request for that record.
+6. The API should return an error or a message indicating decryption failed, and the backend logs should show a decryption error. 
