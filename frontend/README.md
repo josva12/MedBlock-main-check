@@ -1,74 +1,69 @@
-# MedBlock Frontend (React + Vite + TypeScript)
+# React + TypeScript + Vite
 
-This is the frontend for the MedBlock MERN project. It is a modern, responsive, and fully-featured healthcare management UI built with React, Vite, TypeScript, Tailwind CSS, and Heroicons. It connects seamlessly to the MedBlock backend API.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
----
+Currently, two official plugins are available:
 
-## 🚀 Quick Start
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### 1. Prerequisites
-- Node.js v16+ and npm installed
-- MedBlock backend (Node/Express/Mongo) running (see backend README)
+## Expanding the ESLint configuration
 
-### 2. Install Dependencies
-```bash
-cd frontend
-npm install
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+
+```js
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+
+      // Remove tseslint.configs.recommended and replace with this
+      ...tseslint.configs.recommendedTypeChecked,
+      // Alternatively, use this for stricter rules
+      ...tseslint.configs.strictTypeChecked,
+      // Optionally, add this for stylistic rules
+      ...tseslint.configs.stylisticTypeChecked,
+
+      // Other configs...
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
 
-### 3. Configure API URL (if needed)
-- By default, the frontend expects the backend API at `http://localhost:5000/api`.
-- To change, edit `src/api.ts`:
-  ```ts
-  export const API_BASE_URL = 'http://localhost:5000/api';
-  ```
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-### 4. Start the Frontend
-```bash
-npm run dev
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
+
+export default tseslint.config([
+  globalIgnores(['dist']),
+  {
+    files: ['**/*.{ts,tsx}'],
+    extends: [
+      // Other configs...
+      // Enable lint rules for React
+      reactX.configs['recommended-typescript'],
+      // Enable lint rules for React DOM
+      reactDom.configs.recommended,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: ['./tsconfig.node.json', './tsconfig.app.json'],
+        tsconfigRootDir: import.meta.dirname,
+      },
+      // other options...
+    },
+  },
+])
 ```
-- Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### 5. Login and Use
-- Use valid credentials (or register if enabled) to log in.
-- Navigate the dashboard, manage patients, appointments, users, and more.
-
----
-
-## 🛠️ Features
-- **Authentication:** Login, logout, role-based access
-- **Dashboard:** Quick actions and user info
-- **Patients:** List, add, edit, delete, view details
-- **Medical Records & Vital Signs:** View/add per patient
-- **Appointments:** List, schedule, cancel
-- **User Management:** (Admin only) Add/edit users
-- **Modern UI:** Tailwind CSS, Heroicons, responsive design
-- **Reusable Components:** Sidebar, header, modals, spinners, error messages
-- **API Integration:** Centralized Axios with token handling
-
----
-
-## 🐞 Troubleshooting
-- **CORS errors:** Ensure your backend allows requests from `http://localhost:5173` (set CORS headers).
-- **API not found:** Check that the backend is running and the API URL matches in `src/api.ts`.
-- **npm errors:** Try deleting `node_modules` and `package-lock.json`, then run `npm install` again.
-- **Tailwind not working:** Ensure `tailwind.config.js` and `postcss.config.js` exist and are correct.
-
----
-
-## 📝 Developer Notes
-- All UI is styled with Tailwind CSS and uses Heroicons for modern icons.
-- Auth state is managed globally with React Context (`src/context/AuthContext.tsx`).
-- All API calls use the centralized Axios instance (`src/api.ts`).
-- Routing is handled by `react-router-dom` v6, with protected routes for role-based access.
-- Extend by adding new pages/components in `src/pages/` and `src/components/`.
-
----
-
-## 📚 Backend Setup
-See the backend README for instructions on setting up and running the MedBlock server (Node/Express/MongoDB).
-
----
-
-## 💡 Need Help?
-If you encounter issues, check the troubleshooting section above or review your backend logs for errors. For further help, open an issue or contact the maintainer.

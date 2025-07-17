@@ -780,14 +780,14 @@ router.get('/patient/:patientId', authenticateToken, async (req, res) => {
 // @access  Private (doctors, nurses, admins)
 router.get('/patient/:patientId/latest', authenticateToken, async (req, res) => {
   try {
-    const { patientId } = req.params;
-    if (!validateObjectId(patientId)) {
+  const { patientId } = req.params;
+  if (!validateObjectId(patientId)) {
       return res.status(400).json({
         success: false,
         message: 'Invalid patient ID format',
         debug: { patientId }
       });
-    }
+  }
     // Check if patient exists
     const patient = await Patient.findById(patientId);
     if (!patient) {
