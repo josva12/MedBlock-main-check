@@ -1,20 +1,19 @@
 import React, { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "../../store";
+import { addUserMessage, sendAIMessage } from "../../features/ai/aiSlice";
 
 const AIPage: React.FC = () => {
-  const [messages, setMessages] = useState([
-    { from: "ai", text: "Hello! How can I help you with your health today?" },
-  ]);
+  const dispatch = useDispatch<AppDispatch>();
+  const { messages, loading, error } = useSelector((state: RootState) => state.ai);
   const [input, setInput] = useState("");
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-    setMessages([...messages, { from: "user", text: input }]);
+    dispatch(addUserMessage(input));
+    await dispatch(sendAIMessage(input));
     setInput("");
-    // TODO: Call AI API and append response
-    setTimeout(() => {
-      setMessages(msgs => [...msgs, { from: "ai", text: "This is a demo AI response. Please consult a real doctor for urgent issues." }]);
-    }, 1000);
   };
 
   return (
@@ -26,6 +25,8 @@ const AIPage: React.FC = () => {
             <div className={`px-4 py-2 rounded-lg max-w-xs ${msg.from === "user" ? "bg-blue-100 text-blue-900" : "bg-green-100 text-green-900"}`}>{msg.text}</div>
           </div>
         ))}
+        {loading && <div className="flex justify-center items-center"><span className="animate-spin h-6 w-6 border-4 border-blue-400 border-t-transparent rounded-full"></span></div>}
+        {error && <div className="text-red-600 text-center mt-2">{error}</div>}
       </div>
       <form onSubmit={handleSend} className="flex gap-2">
         <input
@@ -34,7 +35,7 @@ const AIPage: React.FC = () => {
           onChange={e => setInput(e.target.value)}
           placeholder="Type your health question..."
         />
-        <button className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition" type="submit">Send</button>
+        <button className="bg-blue-700 text-white px-4 py-2 rounded hover:bg-blue-800 transition" type="submit" disabled={loading}>Send</button>
       </form>
       <img src="https://images.unsplash.com/photo-1506784983877-45594efa4cbe?auto=format&fit=crop&w=600&q=80" alt="Kenyan healthcare" className="rounded-lg shadow mt-8 w-full max-w-xl mx-auto" />
     </div>

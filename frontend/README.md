@@ -18,7 +18,13 @@ frontend/
 │   ├── api/            # Axios instance
 │   ├── assets/         # Images, icons
 │   ├── components/     # Reusable UI components
-│   ├── features/       # Redux slices (auth, patients, appointments, etc.)
+│   ├── features/       # Redux slices (auth, patients, appointments, reports, blockchain, admin, etc.)
+│   │   ├── auth/
+│   │   ├── patients/
+│   │   ├── appointments/
+│   │   ├── reports/
+│   │   ├── blockchain/
+│   │   ├── admin/
 │   ├── hooks/          # Custom React hooks
 │   ├── layouts/        # Main layout (sidebar, header)
 │   ├── pages/          # Main views (Dashboard, Patients, etc.)
