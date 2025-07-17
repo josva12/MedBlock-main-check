@@ -5,6 +5,8 @@ import reportsReducer from "./features/reports/reportsSlice";
 import blockchainReducer from "./features/blockchain/blockchainSlice";
 import aiReducer from "./features/ai/aiSlice";
 import adminReducer from "./features/admin/adminSlice";
+import vitalsReducer from "./features/vitals/vitalsSlice";
+import recordsReducer from "./features/records/recordsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +16,8 @@ export const store = configureStore({
     blockchain: blockchainReducer,
     ai: aiReducer,
     admin: adminReducer,
+    vitals: vitalsReducer,
+    records: recordsReducer,
   },
 });
 
