@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, NavLink } from "react-router-dom";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/outline";
+
+const navLinks = [
+  { to: "/", label: "Dashboard" },
+  { to: "/patients", label: "Patients" },
+  { to: "/appointments", label: "Appointments" },
+  { to: "/vitals", label: "Vitals" },
+  { to: "/records", label: "Records" },
+  { to: "/reports", label: "Reports" },
+  { to: "/blockchain", label: "Blockchain" },
+  { to: "/ai", label: "AI Chat" },
+  { to: "/admin", label: "Admin" },
+];
 
 const MainLayout: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -15,14 +27,27 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      {/* Sidebar placeholder */}
+      {/* Sidebar */}
       <aside className="w-64 bg-blue-900 dark:bg-blue-950 text-white flex flex-col p-4 hidden md:block min-h-screen">
         <div className="text-2xl font-bold mb-8">MedBlock</div>
-        {/* Navigation links will go here */}
-        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="Kenyan healthcare" className="rounded-lg shadow mb-4" />
+        <nav className="flex-1 space-y-2">
+          {navLinks.map(link => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                `block px-4 py-2 rounded transition font-medium ${isActive ? "bg-blue-700 dark:bg-blue-800" : "hover:bg-blue-800 dark:hover:bg-blue-900"}`
+              }
+              end={link.to === "/"}
+            >
+              {link.label}
+            </NavLink>
+          ))}
+        </nav>
+        <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=400&q=80" alt="Kenyan healthcare" className="rounded-lg shadow mt-8" />
       </aside>
       <div className="flex-1 flex flex-col">
-        {/* Header placeholder */}
+        {/* Header */}
         <header className="bg-white dark:bg-gray-800 shadow p-4 flex items-center justify-between">
           <div className="font-semibold text-lg text-blue-900 dark:text-blue-100">Dashboard</div>
           <button
