@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import type { RootState, AppDispatch } from "../../store";
+import { fetchBlockchainLogs } from "../../features/blockchain/blockchainSlice";
 
 const BlockchainPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { logs, loading, error } = useSelector((state: RootState) => state.blockchain);
+
+  useEffect(() => {
+    dispatch(fetchBlockchainLogs());
+  }, [dispatch]);
+
   return (
     <div>
       <h2 className="text-2xl font-bold text-blue-900 mb-6">Blockchain Logs</h2>
+      {loading && <div className="text-blue-700 mb-4">Loading...</div>}
+      {error && <div className="text-red-600 mb-4">{error}</div>}
       <div className="overflow-x-auto rounded-lg shadow mb-8">
         <table className="min-w-full bg-white dark:bg-gray-800">
           <thead>
@@ -16,14 +28,17 @@ const BlockchainPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {/* Placeholder rows */}
-            <tr>
-              <td className="px-4 py-2">1000001</td>
-              <td className="px-4 py-2">0xabc123...</td>
-              <td className="px-4 py-2">Blood Test</td>
-              <td className="px-4 py-2">2025-07-18 10:00</td>
-              <td className="px-4 py-2"><span className="bg-green-100 text-green-800 px-2 py-1 rounded">Verified</span></td>
-            </tr>
+            {logs.map((log) => (
+              <tr key={log._id}>
+                <td className="px-4 py-2">{log.blockNumber}</td>
+                <td className="px-4 py-2">{log.hash}</td>
+                <td className="px-4 py-2">{log.record}</td>
+                <td className="px-4 py-2">{log.timestamp}</td>
+                <td className="px-4 py-2">
+                  <span className={`px-2 py-1 rounded ${log.status === "Verified" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"}`}>{log.status}</span>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
