@@ -1,105 +1,205 @@
-import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../services/api";
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
+// Types
 export interface Appointment {
   _id: string;
-  patient: string;
-  doctor: string;
+  patientId: string;
+  patientName: string;
+  doctorId: string;
+  doctorName: string;
   date: string;
   time: string;
-  reason: string;
-  status: string;
+  type: 'consultation' | 'follow-up' | 'emergency' | 'routine';
+  status: 'scheduled' | 'confirmed' | 'completed' | 'cancelled' | 'no-show';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface AppointmentsState {
+export interface AppointmentsState {
   appointments: Appointment[];
-  loading: boolean;
+  currentAppointment: Appointment | null;
+  isLoading: boolean;
   error: string | null;
 }
 
 const initialState: AppointmentsState = {
   appointments: [],
-  loading: false,
+  currentAppointment: null,
+  isLoading: false,
   error: null,
 };
 
+// Async thunks
 export const fetchAppointments = createAsyncThunk(
-  "appointments/fetchAll",
+  'appointments/fetchAll',
   async (_, { rejectWithValue }) => {
     try {
-      const res = await api.get("/appointments");
-      return res.data.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Failed to fetch appointments");
+      const response = await api.get('/appointments');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to fetch appointments';
+      toast.error(message);
+      return rejectWithValue(message);
     }
   }
 );
 
-export const addAppointment = createAsyncThunk(
-  "appointments/add",
-  async (data: Partial<Appointment>, { rejectWithValue }) => {
+export const fetchAppointmentById = createAsyncThunk(
+  'appointments/fetchById',
+  async (id: string, { rejectWithValue }) => {
     try {
-      const res = await api.post("/appointments", data);
-      return res.data.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Failed to add appointment");
+      const response = await api.get(`/appointments/${id}`);
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to fetch appointment';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const createAppointment = createAsyncThunk(
+  'appointments/create',
+  async (appointmentData: Omit<Appointment, '_id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/appointments', appointmentData);
+      toast.success('Appointment created successfully');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to create appointment';
+      toast.error(message);
+      return rejectWithValue(message);
     }
   }
 );
 
 export const updateAppointment = createAsyncThunk(
-  "appointments/update",
+  'appointments/update',
   async ({ id, data }: { id: string; data: Partial<Appointment> }, { rejectWithValue }) => {
     try {
-      const res = await api.put(`/appointments/${id}`, data);
-      return res.data.data;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Failed to update appointment");
+      const response = await api.put(`/appointments/${id}`, data);
+      toast.success('Appointment updated successfully');
+      return response.data.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to update appointment';
+      toast.error(message);
+      return rejectWithValue(message);
     }
   }
 );
 
 export const deleteAppointment = createAsyncThunk(
-  "appointments/delete",
+  'appointments/delete',
   async (id: string, { rejectWithValue }) => {
     try {
       await api.delete(`/appointments/${id}`);
+      toast.success('Appointment deleted successfully');
       return id;
-    } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Failed to delete appointment");
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to delete appointment';
+      toast.error(message);
+      return rejectWithValue(message);
     }
   }
 );
 
+// Slice
 const appointmentsSlice = createSlice({
-  name: "appointments",
+  name: 'appointments',
   initialState,
-  reducers: {},
+  reducers: {
+    clearError: (state) => {
+      state.error = null;
+    },
+    setCurrentAppointment: (state, action: PayloadAction<Appointment | null>) => {
+      state.currentAppointment = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
+      // Fetch all appointments
       .addCase(fetchAppointments.pending, (state) => {
-        state.loading = true;
+        state.isLoading = true;
         state.error = null;
       })
       .addCase(fetchAppointments.fulfilled, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.appointments = action.payload;
       })
       .addCase(fetchAppointments.rejected, (state, action) => {
-        state.loading = false;
+        state.isLoading = false;
         state.error = action.payload as string;
       })
-      .addCase(addAppointment.fulfilled, (state, action) => {
+      
+      // Fetch by ID
+      .addCase(fetchAppointmentById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAppointmentById.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.currentAppointment = action.payload;
+      })
+      .addCase(fetchAppointmentById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Create
+      .addCase(createAppointment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createAppointment.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.appointments.push(action.payload);
       })
+      .addCase(createAppointment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Update
+      .addCase(updateAppointment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
       .addCase(updateAppointment.fulfilled, (state, action) => {
-        const idx = state.appointments.findIndex(a => a._id === action.payload._id);
-        if (idx !== -1) state.appointments[idx] = action.payload;
+        state.isLoading = false;
+        const index = state.appointments.findIndex(a => a._id === action.payload._id);
+        if (index !== -1) {
+          state.appointments[index] = action.payload;
+        }
+        if (state.currentAppointment?._id === action.payload._id) {
+          state.currentAppointment = action.payload;
+        }
+      })
+      .addCase(updateAppointment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Delete
+      .addCase(deleteAppointment.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
       })
       .addCase(deleteAppointment.fulfilled, (state, action) => {
+        state.isLoading = false;
         state.appointments = state.appointments.filter(a => a._id !== action.payload);
+        if (state.currentAppointment?._id === action.payload) {
+          state.currentAppointment = null;
+        }
+      })
+      .addCase(deleteAppointment.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });
 
+export const { clearError, setCurrentAppointment } = appointmentsSlice.actions;
 export default appointmentsSlice.reducer; 

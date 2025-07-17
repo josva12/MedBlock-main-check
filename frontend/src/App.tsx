@@ -1,60 +1,201 @@
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import MainLayout from "./layouts/MainLayout";
-import LoadingSpinner from "./components/LoadingSpinner";
-import ProtectedRoute from "./components/ProtectedRoute";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Provider } from 'react-redux';
+import { store } from './store';
+import { Toaster } from 'react-hot-toast';
 
-const Dashboard = React.lazy(() => import("./pages/dashboard/DashboardPage"));
-const PatientsPage = React.lazy(() => import("./pages/patients/PatientsPage"));
-const AppointmentsPage = React.lazy(() => import("./pages/appointments/AppointmentsPage"));
-const VitalsPage = React.lazy(() => import("./pages/vitals/VitalsPage"));
-const RecordsPage = React.lazy(() => import("./pages/records/RecordsPage"));
-const ReportsPage = React.lazy(() => import("./pages/reports/ReportsPage"));
-const BlockchainPage = React.lazy(() => import("./pages/blockchain/BlockchainPage"));
-const AIPage = React.lazy(() => import("./pages/ai/AIPage"));
-const AdminPage = React.lazy(() => import("./pages/admin/AdminPage"));
+// Layout Components
+import Header from './components/layout/Header';
+import Sidebar from './components/layout/Sidebar';
 
-const LoginPage = React.lazy(() => import("./pages/auth/LoginPage"));
-const RegisterPage = React.lazy(() => import("./pages/auth/RegisterPage"));
-const ForgotPasswordPage = React.lazy(() => import("./pages/auth/ForgotPasswordPage"));
-const ResetPasswordPage = React.lazy(() => import("./pages/auth/ResetPasswordPage"));
+// Pages
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import DashboardPage from './pages/DashboardPage';
+import PatientsPage from './pages/PatientsPage';
+import AppointmentsPage from './pages/AppointmentsPage';
+import MedicalRecordsPage from './pages/MedicalRecordsPage';
+import VitalsPage from './pages/VitalsPage';
+import ReportsPage from './pages/ReportsPage';
+import AdminPage from './pages/AdminPage';
+import BlockchainPage from './pages/BlockchainPage';
+import AIChatPage from './pages/AIChatPage';
+import NotFoundPage from './pages/NotFoundPage';
 
-const UnauthorizedPage = () => (
-  <div className="flex flex-col items-center justify-center min-h-screen">
-    <h1 className="text-3xl font-bold text-red-600 mb-4">Unauthorized</h1>
-    <p className="text-gray-700">You do not have permission to view this page.</p>
-  </div>
-);
+// Protected Route Component
+import ProtectedRoute from './components/common/ProtectedRoute';
+
+// Styles
+import './index.css';
 
 function App() {
   return (
-    <Router>
-      <React.Suspense fallback={<LoadingSpinner />}>
-        <Routes>
-          <Route path="/auth/login" element={<LoginPage />} />
-          <Route path="/auth/register" element={<RegisterPage />} />
-          <Route path="/auth/forgot" element={<ForgotPasswordPage />} />
-          <Route path="/auth/reset/:token" element={<ResetPasswordPage />} />
-          <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<MainLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="patients" element={<PatientsPage />} />
-              <Route path="appointments" element={<AppointmentsPage />} />
-              <Route path="vitals" element={<VitalsPage />} />
-              <Route path="records" element={<RecordsPage />} />
-              <Route path="reports" element={<ReportsPage />} />
-              <Route path="blockchain" element={<BlockchainPage />} />
-              <Route path="ai" element={<AIPage />} />
-              <Route path="admin" element={<AdminPage />} />
-            </Route>
-          </Route>
-
-          <Route path="*" element={<Navigate to="/" />} />
-        </Routes>
-      </React.Suspense>
-    </Router>
+    <Provider store={store}>
+      <Router>
+        <div className="min-h-screen bg-gray-50">
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: '#363636',
+                color: '#fff',
+              },
+            }}
+          />
+          
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Protected Routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <DashboardPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <DashboardPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/patients" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <PatientsPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/appointments" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <AppointmentsPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/medical-records" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <MedicalRecordsPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/vitals" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <VitalsPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <ReportsPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/admin" element={
+              <ProtectedRoute requiredRole="admin">
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <AdminPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/blockchain" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <BlockchainPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/ai-chat" element={
+              <ProtectedRoute>
+                <div className="flex h-screen bg-gray-50">
+                  <Sidebar />
+                  <div className="flex-1 flex flex-col overflow-hidden">
+                    <Header />
+                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
+                      <AIChatPage />
+                    </main>
+                  </div>
+                </div>
+              </ProtectedRoute>
+            } />
+            
+            {/* 404 Route */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </div>
+      </Router>
+    </Provider>
   );
 }
 
