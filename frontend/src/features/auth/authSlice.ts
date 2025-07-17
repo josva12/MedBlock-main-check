@@ -29,7 +29,8 @@ export const login = createAsyncThunk(
       const res = await api.post("/auth/login", data);
       return res.data.data;
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Login failed");
+      console.error("❌ Login failed:", err.response?.data);
+      return rejectWithValue(err.response?.data?.message || "Login failed");
     }
   }
 );
@@ -41,7 +42,8 @@ export const register = createAsyncThunk(
       const res = await api.post("/auth/register", data);
       return res.data.data;
     } catch (err: any) {
-      return rejectWithValue(err.response?.data?.error || "Registration failed");
+      console.error("❌ Register failed:", err.response?.data);
+      return rejectWithValue(err.response?.data?.message || "Registration failed");
     }
   }
 );

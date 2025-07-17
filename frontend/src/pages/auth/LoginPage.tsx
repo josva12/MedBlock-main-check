@@ -1,34 +1,33 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "../../store";
+import { login } from "../../features/auth/authSlice";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const { user, loading, error } = useSelector((state: RootState) => state.auth);
+
+  useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError("");
-    // TODO: Call login API
-    setTimeout(() => {
-      setLoading(false);
-      if (email === "admin@medblock.com" && password === "password") {
-        navigate("/dashboard");
-      } else {
-        setError("Invalid credentials");
-      }
-    }, 1000);
+    await dispatch(login({ email, password }));
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-blue-100 to-blue-300">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-sm flex flex-col items-center mx-auto">
         <h2 className="text-2xl font-bold mb-6 text-center text-blue-900">Sign In to MedBlock</h2>
         {error && <div className="mb-4 text-red-600 text-center">{error}</div>}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 w-full">
           <div>
             <label className="block text-gray-700">Email</label>
             <input
@@ -57,7 +56,7 @@ const LoginPage: React.FC = () => {
             {loading ? "Signing in..." : "Sign In"}
           </button>
         </form>
-        <div className="flex justify-between mt-4 text-sm">
+        <div className="flex justify-between mt-4 text-sm w-full">
           <Link to="/auth/forgot" className="text-blue-700 hover:underline">Forgot password?</Link>
           <Link to="/auth/register" className="text-blue-700 hover:underline">Create account</Link>
         </div>

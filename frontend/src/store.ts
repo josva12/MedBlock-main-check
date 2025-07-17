@@ -7,6 +7,7 @@ import aiReducer from "./features/ai/aiSlice";
 import adminReducer from "./features/admin/adminSlice";
 import vitalsReducer from "./features/vitals/vitalsSlice";
 import recordsReducer from "./features/records/recordsSlice";
+import appointmentsReducer from "./features/appointments/appointmentsSlice";
 
 export const store = configureStore({
   reducer: {
@@ -18,6 +19,7 @@ export const store = configureStore({
     admin: adminReducer,
     vitals: vitalsReducer,
     records: recordsReducer,
+    appointments: appointmentsReducer,
   },
 });
 
