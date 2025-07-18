@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../features/auth/authSlice';
 import { toggleSidebar } from '../../features/ui/uiSlice';
 import {
@@ -12,8 +12,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Header: React.FC = () => {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const handleLogout = () => {

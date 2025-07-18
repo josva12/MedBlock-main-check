@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../../store';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import { getCurrentUser } from '../../features/auth/authSlice';
 
 interface ProtectedRouteProps {
@@ -10,8 +10,8 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
-  const dispatch = useDispatch();
-  const { isAuthenticated, user, isLoading } = useSelector((state: RootState) => state.auth);
+  const dispatch = useAppDispatch();
+  const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
   const token = localStorage.getItem('token');
 
   useEffect(() => {

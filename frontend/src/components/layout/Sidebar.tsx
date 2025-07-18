@@ -1,7 +1,6 @@
 import React from 'react';
-import { useSelector } from 'react-redux';
 import { NavLink } from 'react-router-dom';
-import { RootState } from '../../store';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -16,8 +15,8 @@ import {
 } from '@heroicons/react/24/outline';
 
 const Sidebar: React.FC = () => {
-  const { sidebarOpen } = useSelector((state: RootState) => state.ui);
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { sidebarOpen } = useAppSelector((state) => state.ui);
+  const { user } = useAppSelector((state) => state.auth);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: HomeIcon, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },

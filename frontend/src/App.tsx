@@ -21,6 +21,7 @@ import AdminPage from './pages/AdminPage';
 import BlockchainPage from './pages/BlockchainPage';
 import AIChatPage from './pages/AIChatPage';
 import NotFoundPage from './pages/NotFoundPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
 
 // Protected Route Component
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -48,6 +49,7 @@ function App() {
             {/* Public Routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             
             {/* Protected Routes */}
             <Route path="/" element={

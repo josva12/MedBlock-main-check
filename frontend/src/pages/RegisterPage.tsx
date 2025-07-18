@@ -1,589 +1,528 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate, Link } from 'react-router-dom';
-import { RootState } from '../store';
-import { register, clearError } from '../features/auth/authSlice';
-import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import React, { useState } from "react";
+import { Mail, Lock, User, Phone, MapPin, Building, BriefcaseMedical, Stethoscope, Hash, Eye, EyeOff } from 'lucide-react';
 
-const RegisterPage: React.FC = () => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+const API_BASE_URL = 'http://localhost:3000';
+const TITLES = ["Dr.", "Prof.", "Mr.", "Mrs.", "Ms.", "Nurse", "Pharm.", "Tech.", "Facility"];
+const LICENSING_BODIES = ["KMPDC", "NCK", "PPB", "other"];
+const COUNTIES = [
+  "Mombasa", "Kwale", "Kilifi", "Tana River", "Lamu", "Taita Taveta", "Garissa", "Wajir", "Mandera",
+  "Marsabit", "Isiolo", "Meru", "Tharaka Nithi", "Embu", "Kitui", "Machakos", "Makueni", "Nyandarua",
+  "Nyeri", "Kirinyaga", "Murang'a", "Kiambu", "Turkana", "West Pokot", "Samburu", "Trans Nzoia",
+  "Uasin Gishu", "Elgeyo Marakwet", "Nandi", "Baringo", "Laikipia", "Nakuru", "Narok", "Kajiado",
+  "Kericho", "Bomet", "Kakamega", "Vihiga", "Bungoma", "Busia", "Siaya", "Kisumu", "Homa Bay",
+  "Migori", "Kisii", "Nyamira", "Nairobi"
+];
+const ROLES = ['doctor', 'nurse', 'admin', 'front-desk', 'pharmacy', 'clinic', 'hospital'];
 
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: 'doctor' as 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy',
-    phone: '',
-    title: 'Dr.' as 'Dr.' | 'Prof.' | 'Mr.' | 'Mrs.' | 'Ms.' | 'Nurse' | 'Pharm.' | 'Tech.',
-    specialization: '',
-    department: '',
+const RegisterPage: React.FC<{ navigateTo?: (page: string) => void }> = ({ navigateTo }) => {
+  const [form, setForm] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "doctor",
+    phone: "",
+    title: "Dr.",
+    specialization: "",
+    department: "",
+    submittedLicenseNumber: "",
+    licensingBody: "",
     address: {
-      street: '',
-      city: '',
-      county: 'Nairobi',
-      subCounty: '',
-      postalCode: '',
-      country: 'Kenya',
+      street: "",
+      city: "",
+      county: "",
+      subCounty: "",
+      postalCode: "",
+      country: "Kenya",
     },
-    submittedLicenseNumber: '',
-    licensingBody: 'KMPDC' as 'KMPDC' | 'NCK' | 'PPB' | 'other',
   });
-
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState<any>({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    if (name.startsWith("address.")) {
+      setForm({ ...form, address: { ...form.address, [name.split(".")[1]]: value } });
+    } else {
+      setForm({ ...form, [name]: value });
     }
-  }, [isAuthenticated, navigate]);
-
-  useEffect(() => {
-    dispatch(clearError());
-  }, [dispatch]);
-
-  const counties = [
-    'Mombasa', 'Kwale', 'Kilifi', 'Tana River', 'Lamu', 'Taita Taveta', 'Garissa', 'Wajir', 'Mandera',
-    'Marsabit', 'Isiolo', 'Meru', 'Tharaka Nithi', 'Embu', 'Kitui', 'Machakos', 'Makueni', 'Nyandarua',
-    'Nyeri', 'Kirinyaga', 'Murang\'a', 'Kiambu', 'Turkana', 'West Pokot', 'Samburu', 'Trans Nzoia',
-    'Uasin Gishu', 'Elgeyo Marakwet', 'Nandi', 'Baringo', 'Laikipia', 'Nakuru', 'Narok', 'Kajiado',
-    'Kericho', 'Bomet', 'Kakamega', 'Vihiga', 'Bungoma', 'Busia', 'Siaya', 'Kisumu', 'Homa Bay',
-    'Migori', 'Kisii', 'Nyamira', 'Nairobi'
-  ];
-
-  const titles = [
-    { value: 'Dr.', label: 'Dr.' },
-    { value: 'Prof.', label: 'Prof.' },
-    { value: 'Mr.', label: 'Mr.' },
-    { value: 'Mrs.', label: 'Mrs.' },
-    { value: 'Ms.', label: 'Ms.' },
-    { value: 'Nurse', label: 'Nurse' },
-    { value: 'Pharm.', label: 'Pharm.' },
-    { value: 'Tech.', label: 'Tech.' },
-  ];
-
-  const roles = [
-    { value: 'doctor', label: 'Doctor' },
-    { value: 'nurse', label: 'Nurse' },
-    { value: 'admin', label: 'Administrator' },
-    { value: 'front-desk', label: 'Front Desk' },
-    { value: 'pharmacy', label: 'Pharmacist' },
-  ];
-
-  const licensingBodies = [
-    { value: 'KMPDC', label: 'KMPDC (Doctors)' },
-    { value: 'NCK', label: 'NCK (Nurses)' },
-    { value: 'PPB', label: 'PPB (Pharmacists)' },
-    { value: 'other', label: 'Other' },
-  ];
+    if (errors[name]) {
+      setErrors((prev: any) => ({ ...prev, [name]: undefined }));
+    }
+  };
 
   const validateForm = () => {
-    const errors: Record<string, string> = {};
-
-    // Basic validation
-    if (!formData.fullName.trim()) {
-      errors.fullName = 'Full name is required';
-    } else if (formData.fullName.length < 2) {
-      errors.fullName = 'Full name must be at least 2 characters';
+    const newErrors: any = {};
+    if (!form.fullName) newErrors.fullName = "Full Name is required.";
+    if (!form.email) newErrors.email = "Email is required.";
+    if (!form.password) newErrors.password = "Password is required.";
+    if (!form.confirmPassword) newErrors.confirmPassword = "Confirm Password is required.";
+    if (!form.role) newErrors.role = "Role is required.";
+    if (!form.phone) newErrors.phone = "Phone number is required.";
+    if (!form.title) newErrors.title = "Title is required.";
+    if (!form.address.street) newErrors['address.street'] = "Street is required.";
+    if (!form.address.city) newErrors['address.city'] = "City is required.";
+    if (!form.address.county) newErrors['address.county'] = "County is required.";
+    if (!form.address.subCounty) newErrors['address.subCounty'] = "Sub-County is required.";
+    if (form.password !== form.confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match.";
     }
-
-    if (!formData.email) {
-      errors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(form.password)) {
+      newErrors.password = "Password must be at least 8 characters, include uppercase, lowercase, digit, and special character.";
     }
-
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      errors.password = 'Password must be at least 8 characters long';
-    } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
-      errors.password = 'Password must contain uppercase, lowercase, number, and special character';
+    const phoneRegex = /^(\+254|0)[17]\d{8}$/;
+    if (!phoneRegex.test(form.phone)) {
+      newErrors.phone = "Phone must be a valid Kenyan number (e.g., +2547XXXXXXXX or 07XXXXXXXX).";
     }
-
-    if (formData.password !== formData.confirmPassword) {
-      errors.confirmPassword = 'Passwords do not match';
-    }
-
-    if (!formData.phone) {
-      errors.phone = 'Phone number is required';
-    } else if (!/^(\+254|0)[17]\d{8}$/.test(formData.phone)) {
-      errors.phone = 'Please enter a valid Kenyan phone number';
-    }
-
-    // Address validation
-    if (!formData.address.street.trim()) {
-      errors.street = 'Street address is required';
-    }
-
-    if (!formData.address.city.trim()) {
-      errors.city = 'City is required';
-    }
-
-    if (!formData.address.subCounty.trim()) {
-      errors.subCounty = 'Sub-county is required';
-    }
-
-    // Professional validation for doctors and nurses
-    if (['doctor', 'nurse'].includes(formData.role)) {
-      if (formData.submittedLicenseNumber && formData.submittedLicenseNumber.length < 5) {
-        errors.submittedLicenseNumber = 'License number must be at least 5 characters';
+    const isProfessionalRole = ["doctor", "nurse"].includes(form.role);
+    if (isProfessionalRole) {
+      if (!form.submittedLicenseNumber) {
+        newErrors.submittedLicenseNumber = "License number is required for doctors and nurses.";
+      } else if (form.submittedLicenseNumber.length < 5 || form.submittedLicenseNumber.length > 50) {
+        newErrors.submittedLicenseNumber = "License number must be between 5 and 50 characters.";
+      }
+      if (!form.licensingBody) {
+        newErrors.licensingBody = "Licensing body is required for doctors and nurses.";
       }
     }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setMessage("");
+    setMessageType("");
     if (!validateForm()) {
+      setMessage("Please correct the errors in the form.");
+      setMessageType("error");
       return;
     }
-
-    // Prepare data for API (remove confirmPassword and handle optional fields)
-    const registerData = {
-      ...formData,
-      submittedLicenseNumber: formData.submittedLicenseNumber || undefined,
-      licensingBody: formData.submittedLicenseNumber ? formData.licensingBody : undefined,
-    };
-    delete (registerData as any).confirmPassword;
-
-    dispatch(register(registerData));
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    
-    if (name.startsWith('address.')) {
-      const field = name.split('.')[1];
-      setFormData(prev => ({
-        ...prev,
-        address: {
-          ...prev.address,
-          [field]: value
+    setLoading(true);
+    try {
+      const { confirmPassword, ...dataToSend } = form;
+      const isProfessionalRole = ["doctor", "nurse"].includes(dataToSend.role);
+      if (!isProfessionalRole) {
+        if ('specialization' in dataToSend) dataToSend.specialization = '';
+        if ('department' in dataToSend) dataToSend.department = '';
+        if ('submittedLicenseNumber' in dataToSend) dataToSend.submittedLicenseNumber = '';
+        if ('licensingBody' in dataToSend) dataToSend.licensingBody = '';
+      } else {
+        if (!dataToSend.specialization) dataToSend.specialization = '';
+        if (!dataToSend.department) dataToSend.department = '';
+        if (!dataToSend.submittedLicenseNumber) dataToSend.submittedLicenseNumber = '';
+        if (!dataToSend.licensingBody) dataToSend.licensingBody = '';
+      }
+      if (!dataToSend.address.postalCode) dataToSend.address.postalCode = '';
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(dataToSend),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setMessage(data.message || 'Registration successful! Please log in.');
+        setMessageType('success');
+        setTimeout(() => navigateTo && navigateTo('login'), 2000);
+      } else {
+        if (response.status === 400 && data.details && Array.isArray(data.details)) {
+          const backendErrors: any = {};
+          data.details.forEach((err: any) => {
+            if (err.path) {
+              backendErrors[err.path] = err.msg;
+            }
+          });
+          setErrors(backendErrors);
+          setMessage(data.error || 'Validation failed. Please check your inputs.');
+        } else {
+          setMessage(data.error || 'Registration failed. Please try again.');
         }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
+        setMessageType('error');
+      }
+    } catch (error) {
+      setMessage('An error occurred during registration. Please try again later.');
+      setMessageType('error');
+    } finally {
+      setLoading(false);
     }
   };
+
+  const isProfessionalRole = ["doctor", "nurse"].includes(form.role);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-xl">M</span>
-          </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Create your MedBlock account
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Join our healthcare management system
-          </p>
+    <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-2xl transform transition-all duration-300 hover:scale-105 relative border-t-4 border-blue-600">
+      <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Create Your MedBlock Account</h2>
+      {message && (
+        <div className={`p-3 mb-4 rounded-lg text-sm ${messageType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+          {message}
         </div>
-
-        {/* Registration Form */}
-        <form onSubmit={handleSubmit} className="bg-white shadow-lg rounded-lg p-8 space-y-6">
-          {/* Personal Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">
-                Full Name *
-              </label>
+      )}
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* Personal Information */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <User className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type="text"
                 id="fullName"
                 name="fullName"
-                value={formData.fullName}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.fullName}
                 onChange={handleChange}
-                className={`mt-1 block w-full px-3 py-2 border ${
-                  validationErrors.fullName ? 'border-red-300' : 'border-gray-300'
-                } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                placeholder="Enter your full name"
+                required
+                placeholder="John Doe"
               />
-              {validationErrors.fullName && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.fullName}</p>
-              )}
             </div>
+            {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+          </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email Address *
-              </label>
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Mail className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type="email"
                 id="email"
                 name="email"
-                value={formData.email}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.email}
                 onChange={handleChange}
-                className={`mt-1 block w-full px-3 py-2 border ${
-                  validationErrors.email ? 'border-red-300' : 'border-gray-300'
-                } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                placeholder="Enter your email"
+                required
+                placeholder="you@example.com"
               />
-              {validationErrors.email && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.email}</p>
-              )}
             </div>
+            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+          </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number *
-              </label>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number (e.g., +2547XXXXXXXX)</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Phone className="h-5 w-5 text-gray-400" />
+              </div>
               <input
                 type="tel"
                 id="phone"
                 name="phone"
-                value={formData.phone}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.phone}
                 onChange={handleChange}
-                className={`mt-1 block w-full px-3 py-2 border ${
-                  validationErrors.phone ? 'border-red-300' : 'border-gray-300'
-                } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                placeholder="e.g., +254712345678"
+                required
+                placeholder="+254712345678"
               />
-              {validationErrors.phone && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.phone}</p>
-              )}
             </div>
+            {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
+          </div>
+        </div>
 
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-                Title *
-              </label>
+        {/* Professional Information */}
+        <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-4">Professional Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Stethoscope className="h-5 w-5 text-gray-400" />
+              </div>
               <select
                 id="title"
                 name="title"
-                value={formData.title}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.title}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
               >
-                {titles.map(title => (
-                  <option key={title.value} value={title.value}>
-                    {title.label}
-                  </option>
-                ))}
+                {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
+            {errors.title && <p className="mt-1 text-sm text-red-600">{errors.title}</p>}
           </div>
 
-          {/* Professional Information */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="role" className="block text-sm font-medium text-gray-700">
-                Role *
-              </label>
+          <div>
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <BriefcaseMedical className="h-5 w-5 text-gray-400" />
+              </div>
               <select
                 id="role"
                 name="role"
-                value={formData.role}
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.role}
                 onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                required
               >
-                {roles.map(role => (
-                  <option key={role.value} value={role.value}>
-                    {role.label}
-                  </option>
-                ))}
+                 {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
               </select>
             </div>
-
-            <div>
-              <label htmlFor="specialization" className="block text-sm font-medium text-gray-700">
-                Specialization
-              </label>
-              <input
-                type="text"
-                id="specialization"
-                name="specialization"
-                value={formData.specialization}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Cardiology, Pediatrics"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="department" className="block text-sm font-medium text-gray-700">
-                Department
-              </label>
-              <input
-                type="text"
-                id="department"
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                placeholder="e.g., Emergency, ICU"
-              />
-            </div>
+            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </div>
 
-          {/* Professional License (for doctors and nurses) */}
-          {['doctor', 'nurse'].includes(formData.role) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {isProfessionalRole && (
+            <>
               <div>
-                <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700">
-                  License Number
-                </label>
-                <input
-                  type="text"
-                  id="submittedLicenseNumber"
-                  name="submittedLicenseNumber"
-                  value={formData.submittedLicenseNumber}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 border ${
-                    validationErrors.submittedLicenseNumber ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Enter your license number"
-                />
-                {validationErrors.submittedLicenseNumber && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.submittedLicenseNumber}</p>
-                )}
+                <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1">Specialization (Optional)</label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Stethoscope className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="specialization"
+                    name="specialization"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={form.specialization}
+                    onChange={handleChange}
+                    placeholder="e.g., Cardiology"
+                  />
+                </div>
               </div>
 
               <div>
-                <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department (Optional)</label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="department"
+                    name="department"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={form.department}
+                    onChange={handleChange}
+                    placeholder="e.g., Emergency"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                  License Number for Verification
+                </label>
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Hash className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="submittedLicenseNumber"
+                    name="submittedLicenseNumber"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={form.submittedLicenseNumber}
+                    onChange={handleChange}
+                    required
+                    placeholder="e.g., MD12345"
+                  />
+                </div>
+                {errors.submittedLicenseNumber && <p className="mt-1 text-sm text-red-600">{errors.submittedLicenseNumber}</p>}
+              </div>
+
+              <div>
+                <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 mb-1">
                   Licensing Body
                 </label>
-                <select
-                  id="licensingBody"
-                  name="licensingBody"
-                  value={formData.licensingBody}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {licensingBodies.map(body => (
-                    <option key={body.value} value={body.value}>
-                      {body.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {/* Address Information */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">Address Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="street" className="block text-sm font-medium text-gray-700">
-                  Street Address *
-                </label>
-                <input
-                  type="text"
-                  id="street"
-                  name="address.street"
-                  value={formData.address.street}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 border ${
-                    validationErrors.street ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Enter street address"
-                />
-                {validationErrors.street && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.street}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="city" className="block text-sm font-medium text-gray-700">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  id="city"
-                  name="address.city"
-                  value={formData.address.city}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 border ${
-                    validationErrors.city ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Enter city"
-                />
-                {validationErrors.city && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.city}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="county" className="block text-sm font-medium text-gray-700">
-                  County *
-                </label>
-                <select
-                  id="county"
-                  name="address.county"
-                  value={formData.address.county}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                >
-                  {counties.map(county => (
-                    <option key={county} value={county}>
-                      {county}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label htmlFor="subCounty" className="block text-sm font-medium text-gray-700">
-                  Sub-County *
-                </label>
-                <input
-                  type="text"
-                  id="subCounty"
-                  name="address.subCounty"
-                  value={formData.address.subCounty}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 border ${
-                    validationErrors.subCounty ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Enter sub-county"
-                />
-                {validationErrors.subCounty && (
-                  <p className="mt-1 text-sm text-red-600">{validationErrors.subCounty}</p>
-                )}
-              </div>
-
-              <div>
-                <label htmlFor="postalCode" className="block text-sm font-medium text-gray-700">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  id="postalCode"
-                  name="address.postalCode"
-                  value={formData.address.postalCode}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter postal code"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Password Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password *
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  id="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 pr-10 border ${
-                    validationErrors.password ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Enter password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {validationErrors.password && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.password}</p>
-              )}
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password *
-              </label>
-              <div className="relative">
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className={`mt-1 block w-full px-3 py-2 pr-10 border ${
-                    validationErrors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                  } rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                  placeholder="Confirm password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <EyeIcon className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {validationErrors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{validationErrors.confirmPassword}</p>
-              )}
-            </div>
-          </div>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <p className="text-sm text-red-600">{error}</p>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <div>
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Creating account...
+                <div className="relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Building className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <select
+                    id="licensingBody"
+                    name="licensingBody"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={form.licensingBody}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Licensing Body</option>
+                    {LICENSING_BODIES.map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
                 </div>
-              ) : (
-                'Create Account'
-              )}
-            </button>
-          </div>
+                {errors.licensingBody && <p className="mt-1 text-sm text-red-600">{errors.licensingBody}</p>}
+              </div>
+            </>
+          )}
+        </div>
 
-          {/* Login Link */}
-          <div className="text-center">
-            <span className="text-sm text-gray-600">Already have an account? </span>
-            <Link to="/login" className="text-sm font-medium text-blue-600 hover:text-blue-500">
-              Sign in
-            </Link>
+        {/* Address fields */}
+        <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-4">Address Details</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="address.street" className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="address.street"
+                name="address.street"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.address.street}
+                onChange={handleChange}
+                required
+                placeholder="123 Main St"
+              />
+            </div>
+            {errors['address.street'] && <p className="mt-1 text-sm text-red-600">{errors['address.street']}</p>}
           </div>
-        </form>
-      </div>
+          <div>
+            <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="address.city"
+                name="address.city"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.address.city}
+                onChange={handleChange}
+                required
+                placeholder="Nairobi"
+              />
+            </div>
+            {errors['address.city'] && <p className="mt-1 text-sm text-red-600">{errors['address.city']}</p>}
+          </div>
+          <div>
+            <label htmlFor="address.county" className="block text-sm font-medium text-gray-700 mb-1">County</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
+              </div>
+              <select
+                id="address.county"
+                name="address.county"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.address.county}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select county...</option>
+                {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            {errors['address.county'] && <p className="mt-1 text-sm text-red-600">{errors['address.county']}</p>}
+          </div>
+          <div>
+            <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 mb-1">Sub-County</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <MapPin className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="address.subCounty"
+                name="address.subCounty"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.address.subCounty}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Westlands"
+              />
+            </div>
+            {errors['address.subCounty'] && <p className="mt-1 text-sm text-red-600">{errors['address.subCounty']}</p>}
+          </div>
+          <div>
+            <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700 mb-1">Postal Code (Optional)</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Mail className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                id="address.postalCode"
+                name="address.postalCode"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.address.postalCode}
+                onChange={handleChange}
+                placeholder="e.g., 00100"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Password fields */}
+        <h3 className="text-xl font-semibold text-gray-800 mt-6 mb-4">Set Password</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                name="password"
+                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.password}
+                onChange={handleChange}
+                required
+                placeholder="••••••••"
+              />
+              <div
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+              </div>
+            </div>
+            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+          </div>
+          <div>
+            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Lock className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                id="confirmPassword"
+                name="confirmPassword"
+                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                required
+                placeholder="••••••••"
+              />
+              <div
+                className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+              </div>
+            </div>
+            {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
+        >
+          {loading ? "Creating account..." : "Sign Up"}
+        </button>
+      </form>
+      <p className="mt-6 text-center text-sm text-gray-600">
+        Already have an account?{' '}
+        <a href="#" onClick={() => navigateTo && navigateTo('login')} className="font-medium text-blue-600 hover:text-blue-500">
+          Sign In
+        </a>
+      </p>
     </div>
   );
 };

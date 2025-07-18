@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from '../store';
+import { useAppDispatch } from '../hooks/useAppDispatch';
+import { useAppSelector } from '../hooks/useAppSelector';
 import { fetchPatients } from '../features/patients/patientsSlice';
 import { fetchAppointments } from '../features/appointments/appointmentsSlice';
 import { fetchMedicalRecords } from '../features/medicalRecords/medicalRecordsSlice';
@@ -17,12 +17,12 @@ import {
 } from '@heroicons/react/24/outline';
 
 const DashboardPage: React.FC = () => {
-  const dispatch = useDispatch();
-  const { user } = useSelector((state: RootState) => state.auth);
-  const { patients, isLoading: patientsLoading } = useSelector((state: RootState) => state.patients);
-  const { appointments, isLoading: appointmentsLoading } = useSelector((state: RootState) => state.appointments);
-  const { records, isLoading: recordsLoading } = useSelector((state: RootState) => state.medicalRecords);
-  const { vitals, isLoading: vitalsLoading } = useSelector((state: RootState) => state.vitals);
+  const dispatch = useAppDispatch();
+  const { user } = useAppSelector((state) => state.auth);
+  const { patients, isLoading: patientsLoading } = useAppSelector((state) => state.patients);
+  const { appointments, isLoading: appointmentsLoading } = useAppSelector((state) => state.appointments);
+  const { records, isLoading: recordsLoading } = useAppSelector((state) => state.medicalRecords);
+  const { vitals, isLoading: vitalsLoading } = useAppSelector((state) => state.vitals);
 
   useEffect(() => {
     // Fetch dashboard data
