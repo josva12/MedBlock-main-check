@@ -1,144 +1,213 @@
 import React, { useEffect, useState } from "react";
-import { useSelector, useDispatch } from "react-redux";
-import type { RootState, AppDispatch } from "../../store";
-import { fetchUsers, updateUser, fetchLogs, fetchSubscriptions } from "../../features/admin/adminSlice";
+import { useAppDispatch } from "../../hooks/useAppDispatch";
+import { useAppSelector } from "../../hooks/useAppSelector";
+import { 
+  fetchUsers, 
+  fetchAuditLogs, 
+  fetchReports,
+  clearError 
+} from "../../features/admin/adminSlice";
+import { 
+  Users, 
+  Shield, 
+  Activity, 
+  BarChart3, 
+  UserCheck, 
+  Clock,
+  XCircle,
+  AlertCircle
+} from "lucide-react";
+import { type RootState } from "../../store";
+
+// Components
+import UserManagementTab from "../../components/admin/UserManagementTab";
+import ProfessionalVerificationTab from "../../components/admin/ProfessionalVerificationTab";
+import AuditLogsTab from "../../components/admin/AuditLogsTab";
+import ReportsTab from "../../components/admin/ReportsTab";
+
+type TabType = 'users' | 'verification' | 'audit' | 'reports';
 
 const AdminPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const { users, logs, subscriptions, loading, error } = useSelector((state: RootState) => state.admin);
-  const [editUserId, setEditUserId] = useState<string | null>(null);
-  const [editRole, setEditRole] = useState("");
-  const [editActive, setEditActive] = useState(false);
+  const dispatch = useAppDispatch();
+  const { users, loading, error } = useAppSelector((state: RootState) => state.admin);
+  const [activeTab, setActiveTab] = useState<TabType>('users');
+
+  // ========= THE CRITICAL FIX IS HERE =========
+  // We now provide the exact arguments that each thunk expects.
+  useEffect(() => {
+    // For thunks defined with `async (_, ...)`, we pass `undefined`.
+    dispatch(fetchUsers(undefined)); 
+    dispatch(fetchReports(undefined));
+
+    // For thunks defined with `async (params = {}, ...)`, we pass an empty object.
+    dispatch(fetchAuditLogs({})); 
+  }, [dispatch]);
+  // ===========================================
 
   useEffect(() => {
-    dispatch(fetchUsers());
-    dispatch(fetchLogs());
-    dispatch(fetchSubscriptions());
-  }, [dispatch]);
+    if (error) {
+      const timer = setTimeout(() => {
+        dispatch(clearError());
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, dispatch]);
 
-  const handleEdit = (userId: string, role: string, isActive: boolean) => {
-    setEditUserId(userId);
-    setEditRole(role);
-    setEditActive(isActive);
+  const tabs = [
+    { id: 'users' as TabType, label: 'User Management', icon: Users },
+    { id: 'verification' as TabType, label: 'Professional Verification', icon: Shield },
+    { id: 'audit' as TabType, label: 'Audit Logs', icon: Activity },
+    { id: 'reports' as TabType, label: 'Reports', icon: BarChart3 },
+  ];
+
+  const getStats = () => {
+    if (!Array.isArray(users)) {
+      return { totalUsers: 0, activeUsers: 0, pendingVerification: 0, verifiedProfessionals: 0 };
+    }
+    const totalUsers = users.length;
+    const activeUsers = users.filter(u => u.isActive).length;
+    const pendingVerification = users.filter(u => 
+      u.professionalVerification?.status === 'pending'
+    ).length;
+    const verifiedProfessionals = users.filter(u => 
+      u.professionalVerification?.status === 'verified'
+    ).length;
+
+    return { totalUsers, activeUsers, pendingVerification, verifiedProfessionals };
   };
 
-  const handleSave = async () => {
-    if (editUserId) {
-      await dispatch(updateUser({ id: editUserId, data: { role: editRole, isActive: editActive } }));
-      setEditUserId(null);
+  const stats = getStats();
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'users':
+        return <UserManagementTab />;
+      case 'verification':
+        return <ProfessionalVerificationTab />;
+      case 'audit':
+        return <AuditLogsTab />;
+      case 'reports':
+        return <ReportsTab />;
+      default:
+        return <UserManagementTab />;
     }
   };
 
   return (
-    <div>
-      <h2 className="text-2xl font-bold text-blue-900 mb-6">Admin Panel</h2>
-      {loading && <div className="text-blue-700 mb-4">Loading...</div>}
-      {error && <div className="text-red-600 mb-4">{error}</div>}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {/* User Management */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-2">User Management</h3>
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr>
-                <th className="px-2 py-1 text-left">Name</th>
-                <th className="px-2 py-1 text-left">Email</th>
-                <th className="px-2 py-1 text-left">Role</th>
-                <th className="px-2 py-1 text-left">Active</th>
-                <th className="px-2 py-1 text-left">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map(u => (
-                <tr key={u._id}>
-                  <td className="px-2 py-1">{u.fullName}</td>
-                  <td className="px-2 py-1">{u.email}</td>
-                  <td className="px-2 py-1">
-                    {editUserId === u._id ? (
-                      <select value={editRole} onChange={e => setEditRole(e.target.value)} className="border rounded px-1 py-0.5">
-                        <option value="admin">Admin</option>
-                        <option value="doctor">Doctor</option>
-                        <option value="nurse">Nurse</option>
-                        <option value="pharmacy">Pharmacy</option>
-                      </select>
-                    ) : (
-                      u.role
-                    )}
-                  </td>
-                  <td className="px-2 py-1">
-                    {editUserId === u._id ? (
-                      <input type="checkbox" checked={editActive} onChange={e => setEditActive(e.target.checked)} />
-                    ) : (
-                      u.isActive ? "Yes" : "No"
-                    )}
-                  </td>
-                  <td className="px-2 py-1">
-                    {editUserId === u._id ? (
-                      <>
-                        <button className="text-green-600 mr-2" onClick={handleSave}>Save</button>
-                        <button className="text-gray-600" onClick={() => setEditUserId(null)}>Cancel</button>
-                      </>
-                    ) : (
-                      <button className="text-blue-600" onClick={() => handleEdit(u._id, u.role, u.isActive)}>Edit</button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {/* Audit Logs */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-2">Audit Logs</h3>
-          <div className="h-48 overflow-y-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="px-2 py-1 text-left">User</th>
-                  <th className="px-2 py-1 text-left">Action</th>
-                  <th className="px-2 py-1 text-left">Timestamp</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map(l => (
-                  <tr key={l._id}>
-                    <td className="px-2 py-1">{l.user}</td>
-                    <td className="px-2 py-1">{l.action}</td>
-                    <td className="px-2 py-1">{l.timestamp}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
+            <p className="text-gray-600 mt-1">Manage users, verify professionals, and monitor system activity</p>
           </div>
-        </div>
-        {/* Subscriptions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-2">Subscriptions</h3>
-          <div className="h-48 overflow-y-auto">
-            <table className="min-w-full text-sm">
-              <thead>
-                <tr>
-                  <th className="px-2 py-1 text-left">Plan</th>
-                  <th className="px-2 py-1 text-left">Facility</th>
-                  <th className="px-2 py-1 text-left">User</th>
-                  <th className="px-2 py-1 text-left">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {subscriptions.map(s => (
-                  <tr key={s._id}>
-                    <td className="px-2 py-1">{s.plan}</td>
-                    <td className="px-2 py-1">{s.facility}</td>
-                    <td className="px-2 py-1">{s.user}</td>
-                    <td className="px-2 py-1">{s.status}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            <Clock className="h-4 w-4" />
+            <span>Last updated: {new Date().toLocaleString()}</span>
           </div>
         </div>
       </div>
-      <img src="https://images.unsplash.com/photo-1507679622673-989605832e3d?auto=format&fit=crop&w=600&q=80" alt="Kenyan healthcare" className="rounded-lg shadow w-full max-w-xl mx-auto" />
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Users className="h-6 w-6 text-blue-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Total Users</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.totalUsers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <UserCheck className="h-6 w-6 text-green-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Active Users</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.activeUsers}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-yellow-100 rounded-lg">
+              <AlertCircle className="h-6 w-6 text-yellow-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Pending Verification</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.pendingVerification}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <Shield className="h-6 w-6 text-purple-600" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-gray-600">Verified Professionals</p>
+              <p className="text-2xl font-bold text-gray-900">{loading ? '...' : stats.verifiedProfessionals}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <XCircle className="h-5 w-5 text-red-400 mr-2" />
+            <p className="text-red-800">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Tabs */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6" aria-label="Tabs">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`
+                    flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm
+                    ${activeTab === tab.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <Icon className="h-5 w-5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {loading && activeTab === 'users' ? ( 
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-2 text-gray-600">Loading...</span>
+            </div>
+          ) : (
+            renderTabContent()
+          )}
+        </div>
+      </div>
     </div>
   );
 };

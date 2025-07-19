@@ -17,7 +17,7 @@ const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage'));
 const MedicalRecordsPage = React.lazy(() => import('./pages/MedicalRecordsPage'));
 const VitalsPage = React.lazy(() => import('./pages/VitalsPage'));
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
-const AdminPage = React.lazy(() => import('./pages/AdminPage'));
+const AdminPage = React.lazy(() => import('./pages/admin/AdminPage'));
 const BlockchainPage = React.lazy(() => import('./pages/BlockchainPage'));
 const AIChatPage = React.lazy(() => import('./pages/AIChatPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
