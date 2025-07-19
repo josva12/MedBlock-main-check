@@ -13,8 +13,8 @@ const LoginPage = React.lazy(() => import('./pages/LoginPage'));
 const RegisterPage = React.lazy(() => import('./pages/RegisterPage'));
 const ForgotPasswordPage = React.lazy(() => import('./pages/ForgotPasswordPage'));
 const DashboardPage = React.lazy(() => import('./pages/DashboardPage')); // Fixed path
-const PatientsPage = React.lazy(() => import('./pages/PatientsPage'));
-const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage'));
+const PatientsPage = React.lazy(() => import('./pages/patients/PatientsPage'));
+const AppointmentsPage = React.lazy(() => import('./pages/appointments/AppointmentsPage'));
 const MedicalRecordsPage = React.lazy(() => import('./pages/MedicalRecordsPage'));
 const VitalsPage = React.lazy(() => import('./pages/vitals/VitalsPage')); // Path updated
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));

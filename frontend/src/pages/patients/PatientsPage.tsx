@@ -49,6 +49,8 @@ type FormType = typeof initialForm;
 const PatientsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { patients, isLoading, error } = useAppSelector((state: RootState) => state.patients);
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormType>(initialForm);
@@ -209,14 +211,14 @@ const PatientsPage: React.FC = () => {
                     <p className="mt-2">Loading patients...</p>
                   </td>
                 </tr>
-              ) : patients.length === 0 ? (
+              ) : safePatients.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No patients found
                   </td>
                 </tr>
               ) : (
-                patients.map((patient) => (
+                safePatients.map((patient) => (
                   <tr key={patient._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">

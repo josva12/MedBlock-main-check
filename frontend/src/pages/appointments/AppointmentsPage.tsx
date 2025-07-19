@@ -32,6 +32,8 @@ const AppointmentsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { appointments, isLoading, error } = useAppSelector((state: RootState) => state.appointments);
   const { patients } = useAppSelector((state: RootState) => state.patients);
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
   const { users } = useAppSelector((state: RootState) => state.admin);
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -58,7 +60,7 @@ const AppointmentsPage: React.FC = () => {
       return;
     }
 
-    const patient = patients.find(p => p._id === form.patientId);
+    const patient = safePatients.find(p => p._id === form.patientId);
     const doctor = users.find(u => u._id === form.doctorId);
 
     if (!patient || !doctor) {
@@ -113,7 +115,7 @@ const AppointmentsPage: React.FC = () => {
   };
 
   const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p._id === patientId);
+    const patient = safePatients.find(p => p._id === patientId);
     return patient ? patient.fullName : "Unknown Patient";
   };
 
@@ -290,7 +292,7 @@ const AppointmentsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {patients.map(patient => (
+                  {safePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
                     </option>

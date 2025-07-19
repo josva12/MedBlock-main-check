@@ -1,6 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { toggleSidebar } from '../../features/ui/uiSlice';
 import {
   Home,
   Users,
@@ -14,7 +16,9 @@ import {
 import { type RootState } from '../../store';
 
 const Sidebar: React.FC = () => {
+  const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector((state: RootState) => state.ui.sidebarOpen);
+  const isSidebarCollapsed = useAppSelector((state: RootState) => state.ui.sidebarCollapsed);
   const { user } = useAppSelector((state: RootState) => state.auth);
 
   const navigation = [
@@ -32,16 +36,27 @@ const Sidebar: React.FC = () => {
   const filteredNavigation = navigation.filter(item => user && item.roles.includes(user.role));
 
   return (
-    <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
+    <div className={`fixed inset-y-0 left-0 z-40 ${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-white dark:bg-gray-800 shadow-lg transform transition-all duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
       <div className="flex flex-col h-full">
-        {/* Logo */}
-        <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-gray-700">
+        {/* Collapse/Expand Button (Desktop Only) */}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
             <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">M</span>
             </div>
-            <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">MedBlock</span>
+            {!isSidebarCollapsed && <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">MedBlock</span>}
           </div>
+          <button
+            className="hidden lg:inline-flex p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+            onClick={() => dispatch(toggleSidebar())}
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {isSidebarCollapsed ? (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            )}
+          </button>
         </div>
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
@@ -58,9 +73,10 @@ const Sidebar: React.FC = () => {
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
                   }`
                 }
+                title={isSidebarCollapsed ? item.name : undefined}
               >
                 <Icon className="mr-3 h-5 w-5" />
-                {item.name}
+                {!isSidebarCollapsed && item.name}
               </NavLink>
             );
           })}
@@ -73,10 +89,12 @@ const Sidebar: React.FC = () => {
                 {user?.fullName?.charAt(0).toUpperCase()}
               </span>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.fullName}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role?.replace('-', ' ')}</p>
-            </div>
+            {!isSidebarCollapsed && (
+              <div className="ml-3">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.fullName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">{user?.role?.replace('-', ' ')}</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
