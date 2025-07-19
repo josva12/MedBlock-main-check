@@ -12,17 +12,11 @@ import {
 } from '../../features/notifications/notificationsSlice';
 import { 
   Bell, 
-  Check, 
-  Trash2, 
   Send, 
-  Users, 
-  User,
   Info,
   CheckCircle,
   AlertTriangle,
   XCircle,
-  MessageSquare,
-  Clock,
   Settings
 } from 'lucide-react';
 

@@ -1,40 +1,50 @@
 # MedBlock Frontend
 
-A modern React application for the MedBlock healthcare management system, built with TypeScript, Redux Toolkit, and Tailwind CSS.
+A modern, responsive healthcare management system built with React, TypeScript, and Tailwind CSS.
 
 ## 🚀 Features
 
-### Core Features
-- **Responsive Design** - Mobile-first approach with Tailwind CSS
-- **Authentication System** - Login, registration, and password reset
-- **Role-based Access Control** - Dynamic UI based on user roles
-- **Lazy Loading** - Code splitting for optimal performance
-- **Real-time Updates** - Live data synchronization
-- **Dark/Light Mode** - Theme switching capability
+### 🌙 **Dark/Light Mode**
+- **System Preference Detection**: Automatically detects OS theme preference
+- **Persistent Storage**: Remembers user's theme choice
+- **Smooth Transitions**: Beautiful theme switching animations
+- **Global Integration**: Applied to all components
 
-### Pages & Components
-- **Authentication Pages** - Login, Register, Forgot Password
-- **Dashboard** - Overview with key metrics and quick actions
-- **Patient Management** - CRUD operations for patient records
-- **Appointment Scheduling** - Calendar-based appointment management
-- **Medical Records** - Document upload and management
-- **Vital Signs** - Patient vital signs tracking
-- **Reports** - Medical report generation and download
-- **Admin Panel** - User management and system administration
-- **Blockchain Integration** - Audit trail and data integrity
-- **AI Chat** - Health consultation interface
+### ⚙️ **Settings & Profile Management**
+- **Profile Updates**: Edit personal and professional information
+- **Password Security**: Secure password change functionality
+- **Theme Preferences**: Integrated theme controls
+- **Real-time Validation**: Immediate form feedback
 
-## 🛠️ Technology Stack
+### 🔔 **Real-time Notifications System**
+- **Auto-fetch**: Updates every 30 seconds
+- **Admin Controls**: Send notifications to users/roles
+- **Smart UI**: Unread count badges and status indicators
+- **Role-based Access**: Different features for different roles
 
-- **React 18** - Modern React with hooks and concurrent features
-- **TypeScript** - Type-safe development
-- **Vite** - Fast build tool and development server
-- **Redux Toolkit** - State management with RTK Query
-- **React Router DOM** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Beautiful icon library
-- **React Hot Toast** - Toast notifications
-- **Axios** - HTTP client for API communication
+### 🏥 **Healthcare Management**
+- **Patient Management**: Complete patient records
+- **Appointment Scheduling**: Calendar-based appointment system
+- **Medical Records**: Secure medical documentation
+- **Vital Signs**: Real-time vital monitoring
+- **Reports & Analytics**: Comprehensive healthcare analytics
+- **Blockchain Integration**: Secure medical data storage
+
+### 🔐 **Security & Authentication**
+- **Role-based Access Control**: Admin, Doctor, Nurse, Front Desk, Pharmacy
+- **JWT Authentication**: Secure token-based authentication
+- **Protected Routes**: Route-level security
+- **Professional Verification**: License verification system
+
+## 🛠️ Tech Stack
+
+- **Frontend Framework**: React 18 with TypeScript
+- **State Management**: Redux Toolkit with RTK Query
+- **Styling**: Tailwind CSS with Dark Mode
+- **Routing**: React Router DOM v6
+- **UI Components**: Lucide React Icons
+- **Build Tool**: Vite
+- **Package Manager**: npm
 
 ## 📁 Project Structure
 
@@ -43,67 +53,83 @@ frontend/
 ├── public/                          # Static assets
 ├── src/
 │   ├── components/                  # Reusable UI components
-│   │   ├── common/                 # Common components
-│   │   │   └── ProtectedRoute.tsx  # Route protection component
-│   │   └── layout/                 # Layout components
-│   │       ├── Header.tsx          # Top navigation bar
-│   │       └── Sidebar.tsx         # Side navigation menu
-│   ├── features/                   # Redux slices by feature
-│   │   ├── auth/                  # Authentication state
-│   │   ├── patients/              # Patient management
-│   │   ├── appointments/          # Appointment scheduling
-│   │   ├── medicalRecords/        # Medical records
-│   │   ├── vitals/                # Vital signs
-│   │   ├── reports/               # Reports generation
-│   │   ├── blockchain/            # Blockchain integration
-│   │   ├── ai/                    # AI chat functionality
-│   │   ├── admin/                 # Admin panel
-│   │   └── ui/                    # UI state (theme, etc.)
-│   ├── hooks/                     # Custom React hooks
-│   │   ├── useAppDispatch.ts      # Typed Redux dispatch
-│   │   ├── useAppSelector.ts      # Typed Redux selector
-│   │   └── useAuth.ts             # Authentication hook
-│   ├── layouts/                   # Page layouts
-│   │   ├── AuthenticatedLayout.tsx # Main app layout
-│   │   └── MainLayout.tsx         # Alternative layout
-│   ├── pages/                     # Page components
-│   │   ├── LoginPage.tsx          # User login
-│   │   ├── RegisterPage.tsx       # User registration
-│   │   ├── ForgotPasswordPage.tsx # Password reset
-│   │   ├── DashboardPage.tsx      # Main dashboard
-│   │   ├── PatientsPage.tsx       # Patient management
-│   │   ├── AppointmentsPage.tsx   # Appointment scheduling
-│   │   ├── MedicalRecordsPage.tsx # Medical records
-│   │   ├── VitalsPage.tsx         # Vital signs
-│   │   ├── ReportsPage.tsx        # Reports
-│   │   ├── AdminPage.tsx          # Admin panel
-│   │   ├── BlockchainPage.tsx     # Blockchain status
-│   │   ├── AIChatPage.tsx         # AI chat
-│   │   └── NotFoundPage.tsx       # 404 page
-│   ├── services/                  # API services
-│   │   └── api.ts                 # Centralized API client
-│   ├── App.tsx                    # Main application component
-│   ├── main.tsx                   # Application entry point
-│   ├── store.ts                   # Redux store configuration
-│   └── index.css                  # Global styles
-├── tailwind.config.js             # Tailwind CSS configuration
-├── postcss.config.js              # PostCSS configuration
-├── vite.config.ts                 # Vite build configuration
-└── package.json                   # Dependencies and scripts
+│   │   ├── admin/                   # Admin-specific components
+│   │   │   ├── UserManagementTab.tsx
+│   │   │   ├── ProfessionalVerificationTab.tsx
+│   │   │   ├── AuditLogsTab.tsx
+│   │   │   └── ReportsTab.tsx
+│   │   ├── common/                  # Common components
+│   │   │   ├── ProtectedRoute.tsx
+│   │   │   ├── ThemeToggle.tsx
+│   │   │   └── NotificationsDropdown.tsx
+│   │   └── layout/                  # Layout components
+│   │       ├── Header.tsx
+│   │       └── Sidebar.tsx
+│   ├── context/                     # React Context providers
+│   │   └── ThemeContext.tsx         # Dark/Light mode context
+│   ├── features/                    # Redux slices and features
+│   │   ├── admin/                   # Admin functionality
+│   │   │   └── adminSlice.ts
+│   │   ├── auth/                    # Authentication
+│   │   │   └── authSlice.ts
+│   │   ├── notifications/           # Notifications system
+│   │   │   └── notificationsSlice.ts
+│   │   ├── patients/                # Patient management
+│   │   │   └── patientsSlice.ts
+│   │   ├── appointments/            # Appointment management
+│   │   │   └── appointmentsSlice.ts
+│   │   ├── medicalRecords/          # Medical records
+│   │   │   └── medicalRecordsSlice.ts
+│   │   ├── vitals/                  # Vital signs
+│   │   │   └── vitalsSlice.ts
+│   │   ├── reports/                 # Reports and analytics
+│   │   │   └── reportsSlice.ts
+│   │   └── ui/                      # UI state management
+│   │       └── uiSlice.ts
+│   ├── hooks/                       # Custom React hooks
+│   │   ├── useAppDispatch.ts
+│   │   └── useAppSelector.ts
+│   ├── layouts/                     # Layout components
+│   │   └── AuthenticatedLayout.tsx
+│   ├── pages/                       # Page components
+│   │   ├── admin/                   # Admin pages
+│   │   │   └── AdminPage.tsx
+│   │   ├── vitals/                  # Vitals pages
+│   │   │   └── VitalsPage.tsx
+│   │   ├── DashboardPage.tsx
+│   │   ├── LoginPage.tsx
+│   │   ├── RegisterPage.tsx
+│   │   ├── PatientsPage.tsx
+│   │   ├── AppointmentsPage.tsx
+│   │   ├── MedicalRecordsPage.tsx
+│   │   ├── ReportsPage.tsx
+│   │   ├── SettingsPage.tsx
+│   │   ├── BlockchainPage.tsx
+│   │   ├── AIChatPage.tsx
+│   │   └── NotFoundPage.tsx
+│   ├── services/                    # API services
+│   │   └── api.ts
+│   ├── store.ts                     # Redux store configuration
+│   ├── App.tsx                      # Main app component
+│   └── index.css                    # Global styles
+├── package.json
+├── tsconfig.json                    # TypeScript configuration
+├── vite.config.ts                   # Vite configuration
+└── tailwind.config.js               # Tailwind CSS configuration
 ```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
-- npm or yarn
-- Backend server running (see main README.md)
+- Node.js 18+ 
+- npm 9+
 
 ### Installation
 
-1. **Navigate to frontend directory**
+1. **Clone the repository**
    ```bash
-   cd frontend
+   git clone <repository-url>
+   cd MedBlock-main-check/frontend
    ```
 
 2. **Install dependencies**
@@ -111,203 +137,185 @@ frontend/
    npm install
    ```
 
-3. **Environment Configuration**
-   ```bash
-   # Create .env file if it doesn't exist
-   echo "VITE_API_BASE_URL=http://localhost:3000/api/v1" > .env
-   ```
-
-4. **Start development server**
+3. **Start the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open in browser**
-   ```
-   http://localhost:5173
-   ```
-
-## 🔧 Configuration
-
-### Environment Variables
-
-Create a `.env` file in the frontend directory:
-
-```env
-VITE_API_BASE_URL=http://localhost:3000/api/v1
-```
-
-### Tailwind CSS
-
-The project uses Tailwind CSS for styling. Configuration is in `tailwind.config.js`:
-
-```javascript
-module.exports = {
-  content: ["./src/**/*.{js,jsx,ts,tsx}"],
-  darkMode: 'class',
-  theme: {
-    extend: {
-      colors: {
-        // Custom color palette
-      }
-    }
-  },
-  plugins: []
-}
-```
-
-## 📱 Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run type-check` - Run TypeScript type checking
-
-## 🎨 Styling Guidelines
-
-### Tailwind CSS Classes
-- Use utility classes for consistent styling
-- Follow mobile-first responsive design
-- Use semantic color names from the design system
-
-### Component Structure
-```tsx
-// Example component structure
-import React from 'react';
-import { useAppSelector } from '../hooks/useAppSelector';
-
-interface ComponentProps {
-  // TypeScript interfaces for props
-}
-
-const Component: React.FC<ComponentProps> = ({ prop1, prop2 }) => {
-  // Component logic here
-  
-  return (
-    <div className="container mx-auto p-4">
-      {/* JSX content */}
-    </div>
-  );
-};
-
-export default Component;
-```
-
-## 🔐 Authentication Flow
-
-1. **Login** - User enters credentials
-2. **Token Storage** - JWT tokens stored in localStorage
-3. **Route Protection** - ProtectedRoute component checks authentication
-4. **API Calls** - Automatic token inclusion in requests
-5. **Token Refresh** - Automatic refresh on 401 errors
-
-## 📊 State Management
-
-### Redux Store Structure
-```typescript
-{
-  auth: {
-    user: User | null,
-    isAuthenticated: boolean,
-    isLoading: boolean,
-    error: string | null
-  },
-  patients: {
-    items: Patient[],
-    isLoading: boolean,
-    error: string | null
-  },
-  // ... other slices
-}
-```
-
-### Using Redux
-```typescript
-import { useAppDispatch, useAppSelector } from '../hooks/useAppDispatch';
-import { login } from '../features/auth/authSlice';
-
-const Component = () => {
-  const dispatch = useAppDispatch();
-  const { user, isLoading } = useAppSelector(state => state.auth);
-  
-  const handleLogin = () => {
-    dispatch(login({ email, password }));
-  };
-};
-```
-
-## 🧪 Testing
-
-### Running Tests
-```bash
-npm test
-```
-
-### Test Structure
-- Unit tests for components
-- Integration tests for Redux slices
-- E2E tests for critical user flows
-
-## 🚀 Deployment
+4. **Open your browser**
+   Navigate to `http://localhost:5173`
 
 ### Build for Production
+
 ```bash
 npm run build
 ```
 
-### Deployment Options
-- **Vercel** - Zero-config deployment
-- **Netlify** - Drag and drop deployment
-- **AWS S3** - Static hosting
-- **Docker** - Containerized deployment
+### Preview Production Build
 
-## 🔧 Development Guidelines
+```bash
+npm run preview
+```
+
+## 🎨 Theme System
+
+### Usage
+The theme system is automatically available throughout the application:
+
+1. **Automatic Detection**: Detects OS theme preference on first visit
+2. **Manual Toggle**: Use the theme toggle in Settings → Appearance
+3. **Persistent**: Remembers your choice across sessions
+
+### Theme Options
+- **Light**: Clean, bright interface
+- **Dark**: Easy on the eyes, modern look
+- **System**: Automatically follows OS preference
+
+## 🔔 Notifications System
+
+### Features
+- **Real-time Updates**: Fetches notifications every 30 seconds
+- **Unread Indicators**: Visual badges for unread notifications
+- **Admin Controls**: Send notifications to specific users or roles
+- **Smart Filtering**: Filter by notification type and status
+
+### Admin Usage
+1. Click the bell icon in the header
+2. Click the send button (admin only)
+3. Fill in notification details
+4. Select target users or roles
+5. Send notification
+
+## ⚙️ Settings & Profile
+
+### Profile Management
+- Update personal information
+- Edit professional details
+- Change contact information
+
+### Security Settings
+- Change password securely
+- View account status
+- Manage verification status
+
+### Appearance Settings
+- Theme preferences
+- UI customization options
+
+## 🔐 Authentication & Roles
+
+### User Roles
+- **Admin**: Full system access, user management, notifications
+- **Doctor**: Patient care, medical records, appointments
+- **Nurse**: Patient care, vital signs, basic records
+- **Front Desk**: Patient registration, appointments
+- **Pharmacy**: Medication management
+
+### Security Features
+- JWT token authentication
+- Role-based route protection
+- Professional license verification
+- Audit logging
+
+## 🏥 Healthcare Features
+
+### Patient Management
+- Complete patient profiles
+- Medical history tracking
+- Contact information management
+
+### Appointment System
+- Calendar-based scheduling
+- Status tracking
+- Reminder notifications
+
+### Medical Records
+- Secure document storage
+- History tracking
+- Access control
+
+### Vital Signs
+- Real-time monitoring
+- Historical data
+- Trend analysis
+
+### Reports & Analytics
+- Patient demographics
+- Appointment utilization
+- Medical record trends
+- Export capabilities
+
+## 🛠️ Development
 
 ### Code Style
-- Use TypeScript for type safety
-- Follow ESLint configuration
-- Use Prettier for code formatting
-- Write meaningful commit messages
+- TypeScript for type safety
+- ESLint for code quality
+- Prettier for formatting
+- Tailwind CSS for styling
 
-### Component Guidelines
-- Use functional components with hooks
-- Implement proper error boundaries
-- Add loading states for async operations
-- Use semantic HTML elements
+### State Management
+- Redux Toolkit for global state
+- RTK Query for API calls
+- Local state for component-specific data
 
-### Performance
-- Implement lazy loading for routes
-- Use React.memo for expensive components
-- Optimize bundle size with code splitting
-- Monitor Core Web Vitals
+### API Integration
+- Axios for HTTP requests
+- JWT token authentication
+- Error handling and retry logic
 
-## 🆘 Troubleshooting
+## 📱 Responsive Design
 
-### Common Issues
+The application is fully responsive and works on:
+- Desktop computers
+- Tablets
+- Mobile phones
+- All modern browsers
 
-1. **Styling not working**
-   - Check PostCSS configuration
-   - Verify Tailwind CSS is properly imported
-   - Clear browser cache
+## 🔧 Configuration
 
-2. **API calls failing**
-   - Verify backend server is running
-   - Check CORS configuration
-   - Validate API base URL in .env
+### Environment Variables
+Create a `.env` file in the root directory:
 
-3. **Build errors**
-   - Clear node_modules and reinstall
-   - Check TypeScript configuration
-   - Verify all dependencies are installed
+```env
+VITE_API_BASE_URL=http://localhost:3000/api/v1
+VITE_APP_NAME=MedBlock
+```
+
+### API Configuration
+The application connects to the MedBlock backend API. Ensure the backend is running and accessible.
+
+## 🚀 Deployment
+
+### Build Process
+1. Run `npm run build`
+2. Deploy the `dist` folder to your hosting provider
+3. Configure environment variables for production
+
+### Recommended Hosting
+- Vercel
+- Netlify
+- AWS S3 + CloudFront
+- DigitalOcean App Platform
 
 ## 🤝 Contributing
 
-1. Follow the existing code style
-2. Add TypeScript types for new features
-3. Write tests for new components
-4. Update documentation as needed
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Check the documentation
+- Review existing issues
+- Create a new issue with detailed information
 
 ---
 
-**MedBlock Frontend** - Modern Healthcare UI 🇰🇪
+**MedBlock** - Modern Healthcare Management System

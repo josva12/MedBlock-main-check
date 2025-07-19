@@ -8,6 +8,8 @@ import reportsReducer from './features/reports/reportsSlice';
 import adminReducer from './features/admin/adminSlice';
 import notificationsReducer from './features/notifications/notificationsSlice';
 import uiReducer from './features/ui/uiSlice';
+import aiReducer from './features/ai/aiSlice';
+import blockchainReducer from './features/blockchain/blockchainSlice';
 
 export const store = configureStore({
   reducer: {
@@ -20,6 +22,8 @@ export const store = configureStore({
     admin: adminReducer,
     notifications: notificationsReducer,
     ui: uiReducer,
+    ai: aiReducer,
+    blockchain: blockchainReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

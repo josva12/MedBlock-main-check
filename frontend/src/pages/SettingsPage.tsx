@@ -19,7 +19,7 @@ type TabType = 'profile' | 'security' | 'appearance';
 
 const SettingsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user, isLoading } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state) => state.auth);
   const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState<TabType>('profile');
   
