@@ -156,6 +156,39 @@ export const logout = createAsyncThunk(
   }
 );
 
+export const updateUserProfile = createAsyncThunk(
+  'auth/updateUserProfile',
+  async (profileData: Partial<User>, { rejectWithValue }) => {
+    try {
+      const response = await api.put('/auth/me', profileData);
+      toast.success('Profile updated successfully');
+      return response.data.data.user;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to update profile';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
+export const changePassword = createAsyncThunk(
+  'auth/changePassword',
+  async ({ currentPassword, newPassword }: { currentPassword: string; newPassword: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.post('/auth/change-password', {
+        currentPassword,
+        newPassword,
+      });
+      toast.success('Password changed successfully');
+      return response.data;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to change password';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
 // Slice
 const authSlice = createSlice({
   name: 'auth',
@@ -226,6 +259,19 @@ const authSlice = createSlice({
         state.refreshToken = null;
         state.isAuthenticated = false;
         state.error = null;
+      })
+      .addCase(updateUserProfile.fulfilled, (state, action) => {
+        state.user = action.payload;
+        state.error = null;
+      })
+      .addCase(updateUserProfile.rejected, (state, action) => {
+        state.error = action.payload as string;
+      })
+      .addCase(changePassword.fulfilled, (state) => {
+        state.error = null;
+      })
+      .addCase(changePassword.rejected, (state, action) => {
+        state.error = action.payload as string;
       });
   },
 });

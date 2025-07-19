@@ -6,6 +6,7 @@ import medicalRecordsReducer from './features/medicalRecords/medicalRecordsSlice
 import vitalsReducer from './features/vitals/vitalsSlice';
 import reportsReducer from './features/reports/reportsSlice';
 import adminReducer from './features/admin/adminSlice';
+import notificationsReducer from './features/notifications/notificationsSlice';
 import uiReducer from './features/ui/uiSlice';
 
 export const store = configureStore({
@@ -17,6 +18,7 @@ export const store = configureStore({
     vitals: vitalsReducer,
     reports: reportsReducer,
     admin: adminReducer,
+    notifications: notificationsReducer,
     ui: uiReducer,
   },
   middleware: (getDefaultMiddleware) =>

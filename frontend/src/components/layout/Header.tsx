@@ -4,9 +4,9 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../features/auth/authSlice';
 import { toggleSidebar } from '../../features/ui/uiSlice';
+import NotificationsDropdown from '../common/NotificationsDropdown';
 import {
   Menu,
-  Bell,
   User,
   Settings,
   LogOut,
@@ -45,66 +45,67 @@ const Header: React.FC = () => {
   };
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700 transition-colors duration-200">
       <div className="flex items-center justify-between px-4 py-3">
         {/* Left side - Menu button and title */}
         <div className="flex items-center">
           <button
             onClick={() => dispatch(toggleSidebar())}
-            className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
+            className="p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
           >
             <Menu className="h-6 w-6" />
           </button>
           <div className="ml-4">
-            <h1 className="text-xl font-semibold text-gray-900">MedBlock</h1>
-            <p className="text-sm text-gray-500">Healthcare Management System</p>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">MedBlock</h1>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Healthcare Management System</p>
           </div>
         </div>
 
         {/* Right side - Notifications and user menu */}
         <div className="flex items-center space-x-4">
           {/* Notifications */}
-          <button className="p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors">
-            <Bell className="h-6 w-6" />
-          </button>
+          <NotificationsDropdown />
 
           {/* User menu */}
           <div className="relative">
             <button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="flex items-center space-x-2 p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
+              className="flex items-center space-x-2 p-2 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
             >
               <User className="h-8 w-8" />
               <div className="hidden md:block text-left">
-                <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                <p className="text-xs text-gray-500">{getRoleDisplayName(user?.role || '')}</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.fullName}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">{getRoleDisplayName(user?.role || '')}</p>
               </div>
             </button>
 
             {/* Dropdown menu */}
             {isUserMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
-                  <p className="text-xs text-gray-500">{getRoleDisplayName(user?.role || '')}</p>
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+                <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{user?.fullName}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{getRoleDisplayName(user?.role || '')}</p>
                 </div>
                 
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center transition-colors">
+                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors">
                   <User className="h-4 w-4 mr-2" />
                   Profile
                 </button>
                 
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center transition-colors">
+                <button 
+                  onClick={() => navigate('/settings')}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors"
+                >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </button>
                 
-                <div className="border-t border-gray-100">
+                <div className="border-t border-gray-100 dark:border-gray-700">
                   <button
                     onClick={handleLogout}
                     disabled={isLoggingOut || isLoading}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoggingOut ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
