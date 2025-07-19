@@ -5,6 +5,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../features/auth/authSlice';
 import { toggleSidebar } from '../../features/ui/uiSlice';
 import NotificationsDropdown from '../common/NotificationsDropdown';
+import ThemeToggle from '../common/ThemeToggle';
 import {
   Menu,
   User,
@@ -66,6 +67,9 @@ const Header: React.FC = () => {
           {/* Notifications */}
           <NotificationsDropdown />
 
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
           {/* User menu */}
           <div className="relative">
             <button
@@ -88,7 +92,10 @@ const Header: React.FC = () => {
                   <p className="text-xs text-gray-500 dark:text-gray-400">{getRoleDisplayName(user?.role || '')}</p>
                 </div>
                 
-                <button className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors">
+                <button 
+                  onClick={() => navigate('/settings')}
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center transition-colors"
+                >
                   <User className="h-4 w-4 mr-2" />
                   Profile
                 </button>

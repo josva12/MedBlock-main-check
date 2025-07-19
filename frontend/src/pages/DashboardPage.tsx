@@ -29,7 +29,7 @@ const DashboardPage: React.FC = () => {
     const canViewPatients = ['admin', 'doctor', 'nurse', 'front-desk'].includes(user.role);
     const canViewAppointments = ['admin', 'doctor', 'nurse', 'front-desk'].includes(user.role);
     const canViewMedicalRecords = ['admin', 'doctor', 'nurse'].includes(user.role);
-    const canViewVitals = ['admin', 'doctor', 'nurse'].includes(user.role);
+    const canViewVitals = ['admin', 'doctor', 'nurse', 'front-desk'].includes(user.role);
 
     if (canViewPatients) dispatch(fetchPatients());
     if (canViewAppointments) dispatch(fetchAppointments());
@@ -55,7 +55,7 @@ const DashboardPage: React.FC = () => {
     { name: 'Today\'s Appointments', value: todayAppointments.length, icon: Calendar, color: 'bg-green-500', loading: appointmentsLoading, requiredRole: ['admin', 'doctor', 'nurse', 'front-desk'] },
     { name: 'Total Patients', value: Array.isArray(patients) ? patients.length : 0, icon: Users, color: 'bg-blue-500', loading: patientsLoading, requiredRole: ['admin', 'doctor', 'nurse', 'front-desk'] },
     { name: 'Medical Records', value: Array.isArray(records) ? records.length : 0, icon: FileText, color: 'bg-purple-500', loading: recordsLoading, requiredRole: ['admin', 'doctor', 'nurse'] },
-    { name: 'Recent Vitals', value: recentVitals.length, icon: Heart, color: 'bg-red-500', loading: vitalsLoading, requiredRole: ['admin', 'doctor', 'nurse'] },
+    { name: 'Recent Vitals', value: recentVitals.length, icon: Heart, color: 'bg-red-500', loading: vitalsLoading, requiredRole: ['admin', 'doctor', 'nurse', 'front-desk'] },
   ];
 
   const visibleStats = allStats.filter(stat => user && stat.requiredRole.includes(user.role));
@@ -102,7 +102,7 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
-        {user && ['admin', 'doctor', 'nurse'].includes(user.role) && (
+        {user && ['admin', 'doctor', 'nurse', 'front-desk'].includes(user.role) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
             <div className="px-6 py-4 border-b dark:border-gray-700"><h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center"><Heart className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />Recent Vitals</h2></div>
             <div className="p-6">
