@@ -74,9 +74,9 @@ export interface RegisterData {
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem('token'),
+  token: localStorage.getItem('accessToken'), // Corrected to match what LoginPage sets
   refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('token'),
+  isAuthenticated: !!localStorage.getItem('accessToken'), // Corrected
   isLoading: false,
   error: null,
 };
@@ -89,11 +89,9 @@ export const login = createAsyncThunk(
       const response = await api.post('/auth/login', credentials);
       const { data } = response.data;
       
-      // Store tokens
-      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       
-      // Set auth header for future requests
       api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
       
       return data;
@@ -112,11 +110,9 @@ export const register = createAsyncThunk(
       const response = await api.post('/auth/register', userData);
       const { data } = response.data;
       
-      // Store tokens
-      localStorage.setItem('token', data.accessToken);
+      localStorage.setItem('accessToken', data.accessToken);
       localStorage.setItem('refreshToken', data.refreshToken);
       
-      // Set auth header for future requests
       api.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`;
       
       toast.success('Registration successful!');
@@ -143,17 +139,16 @@ export const getCurrentUser = createAsyncThunk(
 
 export const logout = createAsyncThunk(
   'auth/logout',
-  async (_, { rejectWithValue }) => {
+  // --- FIX: Removed unused 'rejectWithValue' parameter ---
+  async () => {
     try {
       await api.post('/auth/logout');
     } catch (error) {
       // Continue with logout even if API call fails
     } finally {
-      // Clear local storage
-      localStorage.removeItem('token');
+      localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       
-      // Clear auth header
       delete api.defaults.headers.common['Authorization'];
       
       toast.success('Logged out successfully');
@@ -175,7 +170,6 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      // Login
       .addCase(login.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -192,8 +186,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
-      // Register
       .addCase(register.pending, (state) => {
         state.isLoading = true;
         state.error = null;
@@ -210,8 +202,6 @@ const authSlice = createSlice({
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
-      // Get current user
       .addCase(getCurrentUser.pending, (state) => {
         state.isLoading = true;
       })
@@ -227,11 +217,9 @@ const authSlice = createSlice({
         state.user = null;
         state.token = null;
         state.refreshToken = null;
-        localStorage.removeItem('token');
+        localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
       })
-      
-      // Logout
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
         state.token = null;
@@ -243,4 +231,4 @@ const authSlice = createSlice({
 });
 
 export const { clearError, setLoading } = authSlice.actions;
-export default authSlice.reducer; 
+export default authSlice.reducer;
