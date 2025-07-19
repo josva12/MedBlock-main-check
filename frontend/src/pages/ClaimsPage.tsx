@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../store';
+import type { AppDispatch } from '../store';
 import { 
   fetchPatientClaims, 
   submitClaim, 
@@ -9,12 +9,12 @@ import {
   selectClaimsError,
   clearError 
 } from '../features/claims/claimsSlice';
-import { selectCurrentUser } from '../features/auth/authSlice';
+import { useAppSelector } from '../hooks/useAppSelector';
 import { selectCurrentPolicy } from '../features/insurance/insuranceSlice';
 
 const ClaimsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const currentUser = useSelector(selectCurrentUser);
+  const currentUser = useAppSelector((state) => state.auth.user);
   const currentPolicy = useSelector(selectCurrentPolicy);
   const claims = useSelector(selectClaims);
   const loading = useSelector(selectClaimsLoading);
@@ -300,7 +300,7 @@ const ClaimsPage: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {claims.map((claim) => (
+                    {claims.map((claim: any) => (
                       <tr key={claim._id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           {formatDate(claim.createdAt)}
@@ -310,7 +310,7 @@ const ClaimsPage: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           <div className="flex flex-wrap gap-1">
-                            {claim.servicesRendered.map((service, index) => (
+                            {claim.servicesRendered.map((service: string, index: number) => (
                               <span
                                 key={index}
                                 className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
