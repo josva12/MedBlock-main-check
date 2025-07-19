@@ -15,6 +15,7 @@ import {
   Heart,
 } from 'lucide-react';
 import { type RootState } from '../store';
+import InsuranceCard from '../components/dashboard/InsuranceCard';
 
 const DashboardPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -80,7 +81,7 @@ const DashboardPage: React.FC = () => {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {user && ['admin', 'doctor', 'nurse', 'front-desk'].includes(user.role) && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm">
             <div className="px-6 py-4 border-b dark:border-gray-700"><h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center"><Calendar className="h-5 w-5 mr-2 text-gray-500 dark:text-gray-400" />Today's Appointments</h2></div>
@@ -129,6 +130,11 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* Insurance Card */}
+        <div className="lg:col-span-1">
+          <InsuranceCard />
+        </div>
       </div>
     </div>
   );
