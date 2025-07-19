@@ -21,12 +21,14 @@ const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
 const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const AdminPage = React.lazy(() => import('./pages/admin/AdminPage'));
+const AdminClaimsPage = React.lazy(() => import('./pages/admin/AdminClaimsPage'));
 const BlockchainPage = React.lazy(() => import('./pages/BlockchainPage'));
 const AIChatPage = React.lazy(() => import('./pages/AIChatPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const SubscriptionsPage = React.lazy(() => import('./pages/SubscriptionsPage'));
 const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
 const ClaimsPage = React.lazy(() => import('./pages/ClaimsPage'));
+const InsuranceEnrollmentPage = React.lazy(() => import('./pages/InsuranceEnrollmentPage'));
 const TeleconsultationsPage = React.lazy(() => import('./pages/TeleconsultationsPage'));
 const ResourcesPage = React.lazy(() => import('./pages/ResourcesPage'));
 const FacilitiesPage = React.lazy(() => import('./pages/FacilitiesPage'));
@@ -92,6 +94,7 @@ function App() {
                 <Route path="subscriptions" element={<SubscriptionsPage />} />
                 <Route path="audit-logs" element={<AuditLogsPage />} />
                 <Route path="claims" element={<ClaimsPage />} />
+                <Route path="insurance-enrollment" element={<InsuranceEnrollmentPage />} />
                 <Route path="teleconsultations" element={<TeleconsultationsPage />} />
                 <Route path="resources" element={<ResourcesPage />} />
                 <Route path="facilities" element={<FacilitiesPage />} />
@@ -107,6 +110,7 @@ function App() {
                 }
               >
                 <Route index element={<AdminPage />} />
+                <Route path="claims" element={<AdminClaimsPage />} />
               </Route>
 
               {/* 404 Route */}

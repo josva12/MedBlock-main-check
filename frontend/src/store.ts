@@ -11,6 +11,7 @@ import uiReducer from './features/ui/uiSlice';
 import aiReducer from './features/ai/aiSlice';
 import blockchainReducer from './features/blockchain/blockchainSlice';
 import subscriptionsReducer from './features/subscriptions/subscriptionsSlice';
+import insuranceReducer from './features/insurance/insuranceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -26,6 +27,7 @@ export const store = configureStore({
     ai: aiReducer,
     blockchain: blockchainReducer,
     subscriptions: subscriptionsReducer,
+    insurance: insuranceReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
