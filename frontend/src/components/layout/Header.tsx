@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
 import { logout } from '../../features/auth/authSlice';
 import { toggleSidebar } from '../../features/ui/uiSlice';
 import { User, Settings, LogOut, ChevronDown, Menu } from 'lucide-react';
