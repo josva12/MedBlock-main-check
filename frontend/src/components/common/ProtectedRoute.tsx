@@ -1,7 +1,12 @@
 import React, { useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
+
+// ========= THE FIX IS HERE =========
+// We now import each hook from its correct source file.
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { useAppSelector } from '../../hooks/useAppSelector';
+import { useAppSelector } from '../../hooks/useAppSelector'; // This was the missing link
+// ===================================
+
 import { getCurrentUser } from '../../features/auth/authSlice';
 
 interface ProtectedRouteProps {
@@ -11,47 +16,52 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole }) => {
   const dispatch = useAppDispatch();
-  const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth);
-  const token = localStorage.getItem('token');
+  
+  // This line will now work correctly
+  const { isAuthenticated, user, isLoading, token } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    if (token && !isAuthenticated && !user) {
+    // This effect is crucial for handling page reloads.
+    if (token && !user) {
       dispatch(getCurrentUser());
     }
-  }, [dispatch, token, isAuthenticated, user]);
+  }, [dispatch, token, user]);
 
-  // Show loading while checking authentication
-  if (isLoading) {
+
+  // While we are checking for the user (on a page refresh), show a loading spinner.
+  if (isLoading || (token && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-24 w-24 border-b-4 border-blue-600"></div>
+        <p className="sr-only">Loading...</p>
       </div>
     );
   }
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated || !user) {
+  // If the loading is finished and the user is NOT authenticated, redirect to the login page.
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check role-based access if required
-  if (requiredRole && user.role !== requiredRole) {
+  // If a specific role is required and the user's role does not match, show an "Access Denied" message.
+  if (requiredRole && user && user.role !== requiredRole) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-red-600 mb-4">Access Denied</h1>
-          <p className="text-gray-700 mb-4">
-            You don't have permission to access this page.
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 p-4">
+        <div className="text-center bg-white p-10 rounded-lg shadow-xl">
+          <h1 className="text-4xl font-bold text-red-600 mb-4">Access Denied</h1>
+          <p className="text-lg text-gray-700 mb-6">
+            You do not have the required permissions to view this page.
           </p>
-          <p className="text-sm text-gray-500">
-            Required role: {requiredRole} | Your role: {user.role}
+          <p className="text-md text-gray-500">
+            Required role: <span className="font-semibold text-gray-800">{requiredRole}</span> | Your role: <span className="font-semibold text-gray-800">{user.role}</span>
           </p>
         </div>
       </div>
     );
   }
 
+  // If all checks pass, render the child components (e.g., the AuthenticatedLayout with the page).
   return <>{children}</>;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;

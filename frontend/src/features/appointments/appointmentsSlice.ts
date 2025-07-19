@@ -38,7 +38,8 @@ export const fetchAppointments = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await api.get('/appointments');
-      return response.data.data;
+      // Ensure we return an array, even if the API response is unexpected
+      return response.data?.data || [];
     } catch (error: any) {
       const message = error.response?.data?.error || 'Failed to fetch appointments';
       toast.error(message);
@@ -127,11 +128,16 @@ const appointmentsSlice = createSlice({
       })
       .addCase(fetchAppointments.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.appointments = action.payload;
+        // ========= THE FIX IS HERE =========
+        // We now check if the payload is an array. If not, we default to an empty array.
+        // This makes the slice resilient to unexpected API responses.
+        state.appointments = Array.isArray(action.payload) ? action.payload : [];
+        // ===================================
       })
       .addCase(fetchAppointments.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.appointments = []; // Also reset to an empty array on failure
       })
       
       // Fetch by ID
@@ -202,4 +208,4 @@ const appointmentsSlice = createSlice({
 });
 
 export const { clearError, setCurrentAppointment } = appointmentsSlice.actions;
-export default appointmentsSlice.reducer; 
+export default appointmentsSlice.reducer;

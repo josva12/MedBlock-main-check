@@ -1,82 +1,64 @@
-import React, { useState } from "react";
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from 'react-router-dom';
-import apiClient from '../services/api';
+import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+
+// ========= THE FIX IS HERE =========
+// We import each hook from its correct source file.
+import { useAppDispatch } from '../hooks/useAppDispatch';
+import { useAppSelector } from '../hooks/useAppSelector'; // This was the missing link
+// ===================================
+
+import { login, clearError } from '../features/auth/authSlice';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+
+  // This will now work correctly
+  const { isLoading, isAuthenticated, error } = useAppSelector((state) => state.auth);
+
+  // Clear any previous errors when the component loads
+  useEffect(() => {
+    dispatch(clearError());
+  }, [dispatch]);
+
+  // Redirect if user is already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setMessage("");
-    setMessageType("");
-    
-    try {
-      const response = await apiClient.post('/auth/login', { email, password });
-      const data = response.data;
-      
-      setMessage(data.message || 'Login successful!');
-      setMessageType('success');
-      
-      if (data.data && data.data.accessToken && data.data.refreshToken) {
-        localStorage.setItem('accessToken', data.data.accessToken);
-        localStorage.setItem('refreshToken', data.data.refreshToken);
-        // Navigate to dashboard after successful login
-        setTimeout(() => navigate('/dashboard'), 1000);
-      }
-    } catch (error: any) {
-      let errorMessage = 'Login failed. Please check your credentials.';
-      
-      if (error.response?.data?.error) {
-        const errorCode = error.response.data.error;
-        switch (errorCode) {
-          case 'ACCOUNT_LOCKED':
-            errorMessage = 'Your account has been locked. Please contact support.';
-            break;
-          case 'INVALID_EMAIL_OR_PASSWORD':
-            errorMessage = 'Invalid email or password. Please try again.';
-            break;
-          case 'ACCOUNT_DEACTIVATED':
-            errorMessage = 'Your account has been deactivated. Please contact support.';
-            break;
-          default:
-            errorMessage = error.response.data.message || errorMessage;
-        }
-      }
-      
-      setMessage(errorMessage);
-      setMessageType('error');
-    } finally {
-      setLoading(false);
-    }
+    // Dispatch the login action from your authSlice
+    dispatch(login({ email, password }));
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-500 to-purple-600 flex flex-col items-center justify-center p-4 font-inter text-gray-800">
+    <div className="min-h-screen bg-gradient-to-br from-blue-100 to-purple-200 flex flex-col items-center justify-center p-4 font-sans">
       <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-extrabold text-white drop-shadow-lg flex items-center justify-center space-x-3">
+        <h1 className="text-4xl md:text-5xl font-extrabold text-gray-800 drop-shadow-lg flex items-center justify-center space-x-3">
           <span>MEDBLOCK</span>
           <span role="img" aria-label="Kenyan Flag">🇰🇪</span>
         </h1>
-        <p className="text-lg md:text-xl text-blue-100 mt-2 font-medium">Secure Healthcare Management</p>
+        <p className="text-lg md:text-xl text-gray-600 mt-2 font-medium">Secure Healthcare Management</p>
       </div>
 
-      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md transform transition-all duration-300 hover:scale-105 relative border-t-4 border-blue-600">
+      <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md border-t-4 border-blue-600">
         <div className="text-center mb-6">
           <h2 className="text-3xl font-bold text-gray-800 mb-2">Welcome Back</h2>
           <p className="text-gray-600 text-sm">Sign in to your account</p>
         </div>
 
-        {message && (
-          <div className={`p-3 mb-4 rounded-lg text-sm font-medium text-center ${messageType === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-            {message}
+        {error && (
+          <div className="p-3 mb-4 rounded-lg text-sm font-medium text-center bg-red-100 text-red-800">
+            {error}
           </div>
         )}
 
@@ -94,6 +76,7 @@ const LoginPage: React.FC = () => {
                 required
                 className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                 placeholder="you@example.com"
+                disabled={isLoading}
               />
             </div>
           </div>
@@ -111,36 +94,38 @@ const LoginPage: React.FC = () => {
                 required
                 className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm"
                 placeholder="••••••••"
+                disabled={isLoading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <a href="#" onClick={e => { e.preventDefault(); navigate('/forgot-password'); }} className="font-medium text-blue-600 hover:text-blue-500">
+          <div className="flex items-center justify-end">
+            <Link to="/forgot-password" className="font-medium text-sm text-blue-600 hover:text-blue-500 hover:underline">
               Forgot your password?
-            </a>
+            </Link>
           </div>
 
           <button
             type="submit"
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-wait"
-            disabled={loading}
+            disabled={isLoading}
           >
-            {loading ? "Signing In..." : "Sign In"}
+            {isLoading ? "Signing In..." : "Sign In"}
           </button>
 
           <div className="text-center">
             <span className="text-gray-600 text-sm">Don't have an account? </span>
-            <a href="#" onClick={e => { e.preventDefault(); navigate('/register'); }} className="font-medium text-blue-600 hover:text-blue-500">
+            <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 hover:underline">
               Sign Up
-            </a>
+            </Link>
           </div>
         </form>
       </div>

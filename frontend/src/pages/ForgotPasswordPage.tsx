@@ -1,9 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft } from 'lucide-react';
-
-// This API base URL should ideally be in an environment variable
-const API_BASE_URL = 'http://localhost:3000';
+import apiClient from '../services/api';
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -27,15 +25,13 @@ const ForgotPasswordPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+      const response = await apiClient.post('/auth/forgot-password', {
+        email,
       });
       
-      const responseData = await response.json();
+      const responseData = response.data;
 
-      if (response.ok) {
+      if (response.status === 200) {
         // Use the secure, generic message from the backend
         setMessage(responseData.message || "If an account with that email exists, a password reset link has been sent.");
         setMessageType('success');
@@ -67,7 +63,7 @@ const ForgotPasswordPage: React.FC = () => {
         <Link 
             to="/login" 
             className="absolute top-4 left-4 text-gray-600 hover:text-blue-600 flex items-center space-x-1 transition-colors"
-        >
+         >
             <ArrowLeft className="h-5 w-5" />
             <span className="text-sm font-medium">Back to Login</span>
         </Link>
@@ -100,7 +96,7 @@ const ForgotPasswordPage: React.FC = () => {
                         />
                     </div>
                 </div>
-                
+
                 <button
                     type="submit"
                     className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-wait"
