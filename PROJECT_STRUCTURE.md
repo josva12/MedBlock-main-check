@@ -1,246 +1,292 @@
 # MedBlock Project Structure
 
-## 📁 Complete File Structure
+This document provides a detailed overview of the MedBlock healthcare management system's project structure, including both the backend (Node.js/Express) and frontend (React/TypeScript) applications.
+
+## 📁 Root Directory Structure
 
 ```
 MedBlock-main-check/
-├── 📁 ai/                          # AI/ML related files (if any)
-│   └── 📁 venv/                    # Python virtual environment
-│       ├── 📁 bin/
-│       ├── 📁 lib/
-│       └── 📁 lib64/
-│
-├── 📁 src/                         # Main source code directory
-│   ├── 📁 config/                  # Configuration files
-│   │   ├── 📄 database.js          # Database connection configuration
-│   │   └── 📄 multerConfig.js      # File upload configuration
-│   │
-│   ├── 📁 controllers/             # Business logic controllers
-│   │   ├── 📄 appointmentController.js    # Appointment management logic
-│   │   ├── 📄 auditLogController.js       # Audit log management
-│   │   ├── 📄 facilityController.js       # Facility management
-│   │   ├── 📄 notificationController.js   # Email notifications
-│   │   ├── 📄 reportController.js         # Reporting and analytics
-│   │   ├── 📄 userController.js           # User management
-│   │   └── 📄 vitalSignController.js      # Vital signs management
-│   │
-│   ├── 📁 docs/                    # API documentation
-│   │   └── 📄 openapi.yaml         # OpenAPI/Swagger specification
-│   │
-│   ├── 📁 middleware/              # Custom middleware functions
-│   │   ├── 📄 auth.js              # Authentication middleware
-│   │   ├── 📄 authMiddleware.js    # Additional auth utilities
-│   │   ├── 📄 errorHandler.js      # Global error handling
-│   │   ├── 📄 requestId.js         # Request ID generation
-│   │   └── 📄 simulateError.js     # Error simulation for testing
-│   │
-│   ├── 📁 models/                  # Database models and schemas
-│   │   ├── 📄 Appointment.js       # Appointment data model
-│   │   ├── 📄 AuditLog.js          # Audit log data model
-│   │   ├── 📄 Encounter.js         # Patient encounter model
-│   │   ├── 📄 Facility.js          # Healthcare facility model
-│   │   ├── 📄 MedicalRecord.js     # Medical record model
-│   │   ├── 📄 Patient.js           # Patient data model
-│   │   ├── 📄 User.js              # User account model
-│   │   └── 📄 VitalSign.js         # Vital signs model
-│   │
-│   ├── 📁 routes/                  # API route definitions
-│   │   ├── 📄 adminRoutes.js       # Admin-specific routes
-│   │   ├── 📄 appointments.js      # Appointment routes
-│   │   ├── 📄 auditLogs.js         # Audit log routes
-│   │   ├── 📄 auth.js              # Authentication routes
-│   │   ├── 📄 facilities.js        # Facility management routes
-│   │   ├── 📄 index.js             # Main router (route aggregator)
-│   │   ├── 📄 medicalRecords.js    # Medical record routes
-│   │   ├── 📄 notifications.js     # Notification routes
-│   │   ├── 📄 patients.js          # Patient management routes
-│   │   ├── 📄 reports.js           # Reporting routes
-│   │   ├── 📄 users.js             # User management routes
-│   │   └── 📄 vitalSigns.js        # Vital signs routes
-│   │
-│   ├── 📁 services/                # External service integrations
-│   │   └── 📄 blockchainService.js # Blockchain integration service
-│   │
-│   ├── 📁 uploads/                 # File upload storage
-│   │   ├── 📁 documents/           # Medical documents
-│   │   │   └── 📄 1751221442193-medical_report.pdf
-│   │   ├── 📁 images/              # Medical images (X-rays, etc.)
-│   │   ├── 📁 others/              # Miscellaneous files
-│   │   │   └── 📄 1751220462134-medical_report.pdf
-│   │   ├── 📁 reports/             # Generated reports
-│   │   └── 📁 temp/                # Temporary upload storage
-│   │
-│   ├── 📁 utils/                   # Utility functions and helpers
-│   │   ├── 📄 encryption.js        # Data encryption utilities
-│   │   ├── 📄 logger.js            # Logging configuration
-│   │   ├── 📄 masking.js           # PII masking utilities
-│   │   └── 📄 validation.js        # Input validation helpers
-│   │
-│   └── 📄 server.js                # Main application entry point
-│
-├── 📁 logs/                        # Application log files
-│   ├── 📄 app.log                  # General application logs
-│   ├── 📄 error.log                # Error logs
-│   ├── 📄 exceptions.log           # Unhandled exception logs
-│   ├── 📄 rejections.log           # Promise rejection logs
-│   └── 📄 security.log             # Security-related logs
-│
-├── 📄 .env                         # Environment variables
-├── 📄 .gitignore                   # Git ignore rules
-├── 📄 package.json                 # Node.js dependencies and scripts
-├── 📄 README.md                    # Project documentation
-├── 📄 PROJECT_STRUCTURE.md         # This file - project structure guide
-├── 📄 test_results_summary.md      # Comprehensive test results
-├── 📄 BLOCKCHAIN_IMPLEMENTATION_SUMMARY.md  # Blockchain implementation guide
-├── 📄 CHANGELOG.md                 # Version history and changes
-├── 📄 downloaded_dummy_report.pdf  # Sample generated report
-└── 📄 downloaded_patient_record_by_id.pdf  # Sample patient record
+├── frontend/                          # React Frontend Application
+├── src/                              # Node.js Backend Application
+├── docs/                             # Documentation files
+├── tests/                            # Test files
+├── .env                              # Backend environment variables
+├── .env.example                      # Environment variables template
+├── .gitignore                        # Git ignore rules
+├── package.json                      # Backend dependencies
+├── package-lock.json                 # Backend lock file
+├── nodemon.json                      # Nodemon configuration
+├── README.md                         # Main project documentation
+├── CHANGELOG.md                      # Project changelog
+├── PROJECT_STRUCTURE.md              # This file
+├── IMPLEMENTATION_COMPLETE.md        # Implementation status
+├── BLOCKCHAIN_IMPLEMENTATION_SUMMARY.md
+├── PII_MASKING_IMPLEMENTATION.md
+├── VITAL_SIGNS_IMPLEMENTATION.md
+└── PATIENT_SORTING_GUIDE.md
 ```
 
-## 🏗️ Architecture Overview
+## 🖥️ Backend Structure (Node.js/Express)
 
-### Core Components
+### Core Application Files
+```
+src/
+├── server.js                         # Main server entry point
+├── config/                           # Configuration files
+│   ├── database.js                   # MongoDB connection setup
+│   └── multerConfig.js               # File upload configuration
+├── middleware/                       # Express middleware
+│   ├── auth.js                       # JWT authentication middleware
+│   ├── authMiddleware.js             # Additional auth utilities
+│   ├── errorHandler.js               # Global error handling
+│   ├── requestId.js                  # Request ID generation
+│   └── simulateError.js              # Error simulation for testing
+├── models/                           # Mongoose data models
+│   ├── User.js                       # User authentication model
+│   ├── Patient.js                    # Patient data model
+│   ├── Appointment.js                # Appointment scheduling model
+│   ├── MedicalRecord.js              # Medical records model
+│   ├── VitalSign.js                  # Vital signs model
+│   ├── AuditLog.js                   # Audit trail model
+│   ├── Encounter.js                  # Patient encounters model
+│   ├── Claim.js                      # Insurance claims model
+│   ├── Insurance.js                  # Insurance provider model
+│   ├── Facility.js                   # Healthcare facility model
+│   ├── Subscription.js               # Subscription management
+│   ├── Teleconsultation.js           # Telemedicine consultations
+│   ├── Prediction.js                 # AI predictions model
+│   └── Resource.js                   # Healthcare resources
+├── routes/                           # API route definitions
+│   ├── index.js                      # Main router configuration
+│   ├── auth.js                       # Authentication routes
+│   ├── patients.js                   # Patient management routes
+│   ├── appointments.js               # Appointment routes
+│   ├── medicalRecords.js             # Medical records routes
+│   ├── vitalSigns.js                 # Vital signs routes
+│   ├── reports.js                    # Report generation routes
+│   ├── adminRoutes.js                # Admin panel routes
+│   ├── auditLogs.js                  # Audit log routes
+│   ├── claims.js                     # Insurance claim routes
+│   ├── insurance.js                  # Insurance routes
+│   ├── facilities.js                 # Facility management routes
+│   ├── subscriptions.js              # Subscription routes
+│   ├── teleconsultations.js          # Telemedicine routes
+│   ├── predictions.js                # AI prediction routes
+│   ├── resources.js                  # Resource management routes
+│   ├── notifications.js              # Notification routes
+│   └── users.js                      # User management routes
+├── controllers/                      # Route controller logic
+│   ├── appointmentController.js      # Appointment business logic
+│   ├── patients.js                   # Patient controller
+│   └── vitalSignController.js        # Vital signs controller
+├── services/                         # Business logic services
+│   └── blockchainService.js          # Blockchain integration
+├── utils/                            # Utility functions
+│   ├── encryption.js                 # Data encryption utilities
+│   ├── logger.js                     # Logging configuration
+│   ├── masking.js                    # PII masking utilities
+│   └── validation.js                 # Data validation helpers
+└── docs/                             # API documentation
+    └── openapi.yaml                  # OpenAPI specification
+```
 
-#### 1. **Controllers** (`src/controllers/`)
-Business logic layer that handles HTTP requests and responses:
-- **appointmentController.js**: Appointment CRUD operations and statistics
-- **auditLogController.js**: Audit log retrieval and filtering
-- **facilityController.js**: Healthcare facility management
-- **notificationController.js**: Email notification sending
-- **reportController.js**: Analytics and reporting generation
-- **userController.js**: User management and administration
-- **vitalSignController.js**: Vital signs management and statistics
+## 🎨 Frontend Structure (React/TypeScript)
 
-#### 2. **Models** (`src/models/`)
-Database schemas and data models:
-- **Appointment.js**: Appointment scheduling and management
-- **AuditLog.js**: System audit trail and security logging
-- **Encounter.js**: Patient visit and treatment tracking
-- **Facility.js**: Healthcare facility information
-- **MedicalRecord.js**: Encrypted medical record storage
-- **Patient.js**: Patient demographic and medical information
-- **User.js**: User accounts and authentication
-- **VitalSign.js**: Patient vital signs and health metrics
+### Core Application Files
+```
+frontend/
+├── public/                           # Static assets
+│   └── vite.svg                      # Vite logo
+├── src/                              # Source code
+│   ├── main.tsx                      # Application entry point
+│   ├── App.tsx                       # Main application component
+│   ├── index.css                     # Global styles with Tailwind
+│   ├── vite-env.d.ts                 # Vite type definitions
+│   ├── store.ts                      # Redux store configuration
+│   ├── services/                     # API services
+│   │   └── api.ts                    # Centralized API client
+│   ├── hooks/                        # Custom React hooks
+│   │   ├── useAppDispatch.ts         # Typed Redux dispatch
+│   │   ├── useAppSelector.ts         # Typed Redux selector
+│   │   └── useAuth.ts                # Authentication hook
+│   ├── layouts/                      # Page layouts
+│   │   ├── AuthenticatedLayout.tsx   # Main app layout
+│   │   └── MainLayout.tsx            # Alternative layout
+│   ├── components/                   # Reusable UI components
+│   │   ├── common/                   # Common components
+│   │   │   └── ProtectedRoute.tsx    # Route protection
+│   │   ├── layout/                   # Layout components
+│   │   │   ├── Header.tsx            # Top navigation
+│   │   │   └── Sidebar.tsx           # Side navigation
+│   │   ├── ErrorMessage.tsx          # Error display component
+│   │   ├── LoadingSpinner.tsx        # Loading indicator
+│   │   ├── Modal.tsx                 # Modal dialog component
+│   │   └── ProtectedRoute.tsx        # Route protection (duplicate)
+│   ├── features/                     # Redux slices by feature
+│   │   ├── auth/                     # Authentication state
+│   │   │   └── authSlice.ts          # Auth Redux slice
+│   │   ├── patients/                 # Patient management
+│   │   │   └── patientsSlice.ts      # Patients Redux slice
+│   │   ├── appointments/             # Appointment scheduling
+│   │   │   └── appointmentsSlice.ts  # Appointments Redux slice
+│   │   ├── medicalRecords/           # Medical records
+│   │   │   └── medicalRecordsSlice.ts # Medical records Redux slice
+│   │   ├── vitals/                   # Vital signs
+│   │   │   └── vitalsSlice.ts        # Vital signs Redux slice
+│   │   ├── reports/                  # Reports generation
+│   │   │   └── reportsSlice.ts       # Reports Redux slice
+│   │   ├── blockchain/               # Blockchain integration
+│   │   │   └── blockchainSlice.ts    # Blockchain Redux slice
+│   │   ├── ai/                       # AI chat functionality
+│   │   │   └── aiSlice.ts            # AI Redux slice
+│   │   ├── admin/                    # Admin panel
+│   │   │   └── adminSlice.ts         # Admin Redux slice
+│   │   ├── records/                  # Records management
+│   │   │   └── recordsSlice.ts       # Records Redux slice
+│   │   └── ui/                       # UI state management
+│   │       └── uiSlice.ts            # UI Redux slice
+│   ├── pages/                        # Page components
+│   │   ├── LoginPage.tsx             # User login page
+│   │   ├── RegisterPage.tsx          # User registration page
+│   │   ├── ForgotPasswordPage.tsx    # Password reset page
+│   │   ├── DashboardPage.tsx         # Main dashboard
+│   │   ├── PatientsPage.tsx          # Patient management page
+│   │   ├── AppointmentsPage.tsx      # Appointment scheduling page
+│   │   ├── MedicalRecordsPage.tsx    # Medical records page
+│   │   ├── VitalsPage.tsx            # Vital signs page
+│   │   ├── ReportsPage.tsx           # Reports page
+│   │   ├── AdminPage.tsx             # Admin panel page
+│   │   ├── BlockchainPage.tsx        # Blockchain status page
+│   │   ├── AIChatPage.tsx            # AI chat page
+│   │   ├── NotFoundPage.tsx          # 404 error page
+│   │   ├── admin/                    # Admin-specific pages
+│   │   │   └── AdminPage.tsx         # Admin page (duplicate)
+│   │   ├── ai/                       # AI-specific pages
+│   │   │   └── AIPage.tsx            # AI page (duplicate)
+│   │   ├── appointments/             # Appointment-specific pages
+│   │   │   └── AppointmentsPage.tsx  # Appointments page (duplicate)
+│   │   ├── blockchain/               # Blockchain-specific pages
+│   │   │   └── BlockchainPage.tsx    # Blockchain page (duplicate)
+│   │   ├── dashboard/                # Dashboard-specific pages
+│   │   │   └── DashboardPage.tsx     # Dashboard page (duplicate)
+│   │   ├── patients/                 # Patient-specific pages
+│   │   │   └── PatientsPage.tsx      # Patients page (duplicate)
+│   │   ├── records/                  # Records-specific pages
+│   │   │   └── RecordsPage.tsx       # Records page
+│   │   ├── reports/                  # Reports-specific pages
+│   │   │   └── ReportsPage.tsx       # Reports page (duplicate)
+│   │   └── vitals/                   # Vitals-specific pages
+│   │       └── VitalsPage.tsx        # Vitals page (duplicate)
+│   ├── assets/                       # Static assets
+│   │   ├── images/                   # Image files
+│   │   └── react.svg                 # React logo
+│   └── utils/                        # Utility functions
+├── .env                              # Frontend environment variables
+├── .gitignore                        # Frontend git ignore rules
+├── index.html                        # HTML template
+├── package.json                      # Frontend dependencies
+├── package-lock.json                 # Frontend lock file
+├── postcss.config.js                 # PostCSS configuration
+├── tailwind.config.js                # Tailwind CSS configuration
+├── tsconfig.json                     # TypeScript configuration
+├── tsconfig.app.json                 # App-specific TypeScript config
+├── tsconfig.node.json                # Node-specific TypeScript config
+├── vite.config.ts                    # Vite build configuration
+├── eslint.config.js                  # ESLint configuration
+└── README.md                         # Frontend documentation
+```
 
-#### 3. **Routes** (`src/routes/`)
-API endpoint definitions and request routing:
-- **adminRoutes.js**: Administrative functions and user management
-- **appointments.js**: Appointment-related endpoints
-- **auditLogs.js**: Audit log access and filtering
-- **auth.js**: Authentication and user registration
-- **facilities.js**: Facility management endpoints
-- **index.js**: Main router that aggregates all route modules
-- **medicalRecords.js**: Medical record CRUD and blockchain operations
-- **notifications.js**: Email notification endpoints
-- **patients.js**: Patient management endpoints
-- **reports.js**: Analytics and reporting endpoints
-- **users.js**: User management endpoints
-- **vitalSigns.js**: Vital signs management endpoints
+## 🔧 Configuration Files
 
-#### 4. **Middleware** (`src/middleware/`)
-Custom middleware functions for request processing:
-- **auth.js**: JWT authentication and token validation
-- **authMiddleware.js**: Role-based authorization and access control
-- **errorHandler.js**: Global error handling and response formatting
-- **requestId.js**: Request ID generation for tracking
-- **simulateError.js**: Error simulation for testing purposes
+### Backend Configuration
+- **package.json** - Backend dependencies and scripts
+- **nodemon.json** - Development server configuration
+- **.env** - Environment variables (database, JWT secrets, etc.)
+- **.env.example** - Environment variables template
 
-#### 5. **Services** (`src/services/`)
-External service integrations:
-- **blockchainService.js**: Mock blockchain service for medical record integrity
+### Frontend Configuration
+- **package.json** - Frontend dependencies and scripts
+- **vite.config.ts** - Vite build tool configuration
+- **tailwind.config.js** - Tailwind CSS configuration
+- **postcss.config.js** - PostCSS processing configuration
+- **tsconfig.json** - TypeScript compiler configuration
+- **eslint.config.js** - Code linting configuration
+- **.env** - Frontend environment variables
 
-#### 6. **Utils** (`src/utils/`)
-Utility functions and helper modules:
-- **encryption.js**: AES-256 encryption for sensitive data
-- **logger.js**: Winston-based logging configuration
-- **masking.js**: PII masking for privacy compliance
-- **validation.js**: Input validation and sanitization
+## 📊 Data Flow Architecture
 
-#### 7. **Config** (`src/config/`)
-Configuration files:
-- **database.js**: MongoDB connection and configuration
-- **multerConfig.js**: File upload configuration and storage
+### Backend Data Flow
+1. **Request** → Express Router
+2. **Middleware** → Authentication, Validation, Logging
+3. **Controller** → Business Logic Processing
+4. **Service** → External API Integration (Blockchain, AI)
+5. **Model** → Database Operations (MongoDB)
+6. **Response** → JSON Response to Frontend
 
-## 🔄 Data Flow
+### Frontend Data Flow
+1. **User Action** → React Component
+2. **Redux Action** → Dispatch to Store
+3. **API Service** → HTTP Request to Backend
+4. **State Update** → Redux Slice Update
+5. **UI Re-render** → Component Update
 
-### Request Processing Flow
-1. **Request Entry** → `server.js`
-2. **Route Matching** → `src/routes/index.js`
-3. **Middleware Stack** → Authentication, Authorization, Validation
-4. **Controller Logic** → Business logic processing
-5. **Model Operations** → Database interactions
-6. **Response Generation** → Formatted API response
+## 🔐 Security Architecture
 
-### Security Flow
-1. **Authentication** → JWT token validation
-2. **Authorization** → Role-based access control
-3. **Data Encryption** → Sensitive data encryption/decryption
-4. **Audit Logging** → Security event tracking
-5. **Input Validation** → Request data sanitization
+### Authentication Flow
+1. **Login** → JWT Token Generation
+2. **Token Storage** → localStorage (Frontend)
+3. **API Requests** → Automatic Token Inclusion
+4. **Token Validation** → Backend Middleware
+5. **Token Refresh** → Automatic Refresh on Expiry
 
-## 📊 Database Schema
-
-### Core Collections
-- **users**: User accounts and authentication
-- **patients**: Patient demographic information
-- **medicalRecords**: Encrypted medical records
-- **vitalSigns**: Patient vital signs data
-- **appointments**: Appointment scheduling
-- **encounters**: Patient visit tracking
-- **facilities**: Healthcare facility information
-- **auditLogs**: System audit trail
-
-### Relationships
-- **User ↔ Patient**: Doctor-patient assignments
-- **User ↔ Facility**: Staff facility assignments
-- **Patient ↔ MedicalRecord**: Patient medical history
-- **Patient ↔ VitalSign**: Patient health metrics
-- **Patient ↔ Appointment**: Patient appointments
-- **Patient ↔ Encounter**: Patient visit history
-
-## 🧪 Testing Structure
-
-### Test Coverage
-- **25 endpoints tested** across 11 modules
-- **24 successful tests** with proper functionality
-- **1 expected error** (facility assignment - no facilities in DB)
-- **Comprehensive error handling** tested
-
-### Test Documentation
-- **test_results_summary.md**: Detailed test results table
-- **BLOCKCHAIN_IMPLEMENTATION_SUMMARY.md**: Blockchain testing guide
-- **API documentation**: Complete endpoint documentation
+### Data Protection
+- **Encryption** → End-to-end data encryption
+- **PII Masking** → Automatic sensitive data masking
+- **Audit Logging** → Comprehensive activity tracking
+- **Role-based Access** → Granular permission control
 
 ## 🚀 Deployment Structure
 
-### Production Files
-- **server.js**: Main application entry point
-- **package.json**: Dependencies and scripts
-- **.env**: Environment configuration
-- **logs/**: Application logging directory
+### Backend Deployment
+- **Production Server** → Node.js with PM2
+- **Database** → MongoDB Atlas
+- **File Storage** → Cloud storage (AWS S3)
+- **Environment** → Production environment variables
 
-### Development Files
-- **ai/**: AI/ML development environment
-- **src/**: Source code directory
-- **docs/**: API documentation
-- **uploads/**: File storage for development
+### Frontend Deployment
+- **Build Process** → Vite production build
+- **Static Hosting** → CDN deployment
+- **Environment** → Production API endpoints
+- **Optimization** → Code splitting and lazy loading
 
-## 📈 Scalability Considerations
+## 📈 Performance Optimizations
 
-### Modular Architecture
-- **Separation of Concerns**: Clear separation between layers
-- **Service Layer**: External service integrations
-- **Middleware Stack**: Reusable request processing
-- **Configuration Management**: Environment-based configuration
+### Backend Optimizations
+- **Database Indexing** → Optimized MongoDB queries
+- **Caching** → Redis for session management
+- **Compression** → Gzip response compression
+- **Rate Limiting** → API request throttling
 
-### Performance Optimization
-- **Database Indexing**: Optimized query performance
-- **File Upload Management**: Efficient file storage
-- **Caching Strategy**: Redis integration ready
-- **Logging Optimization**: Structured logging for monitoring
+### Frontend Optimizations
+- **Code Splitting** → Lazy loading of routes
+- **Bundle Optimization** → Tree shaking and minification
+- **Image Optimization** → WebP format and lazy loading
+- **Caching** → Service worker for offline support
 
-### Security Features
-- **Data Encryption**: AES-256 encryption for sensitive data
-- **Blockchain Integration**: Data integrity verification
-- **Audit Logging**: Comprehensive security monitoring
-- **Role-based Access**: Granular permission control 
+## 🧪 Testing Structure
+
+### Backend Testing
+- **Unit Tests** → Individual function testing
+- **Integration Tests** → API endpoint testing
+- **Database Tests** → MongoDB operation testing
+- **Security Tests** → Authentication and authorization
+
+### Frontend Testing
+- **Component Tests** → React component testing
+- **Redux Tests** → State management testing
+- **E2E Tests** → User flow testing
+- **Performance Tests** → Core Web Vitals monitoring
+
+---
+
+This structure provides a scalable, maintainable, and secure foundation for the MedBlock healthcare management system, with clear separation of concerns between frontend and backend components. 
