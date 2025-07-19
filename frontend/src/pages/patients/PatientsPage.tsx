@@ -368,14 +368,22 @@ const PatientsPage: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Blood Type
                   </label>
-                  <input
+                  <select
                     name="bloodType"
-                    type="text"
                     value={form.bloodType}
                     onChange={handleChange}
-                    placeholder="e.g., A+, B-, O+"
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  >
+                    <option value="">Select Blood Type</option>
+                    <option value="A+">A+</option>
+                    <option value="A-">A-</option>
+                    <option value="B+">B+</option>
+                    <option value="B-">B-</option>
+                    <option value="AB+">AB+</option>
+                    <option value="AB-">AB-</option>
+                    <option value="O+">O+</option>
+                    <option value="O-">O-</option>
+                  </select>
                 </div>
               </div>
 
@@ -466,13 +474,22 @@ const PatientsPage: React.FC = () => {
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Relationship
                     </label>
-                    <input
+                    <select
                       name="emergencyContact.relationship"
-                      type="text"
                       value={form.emergencyContact.relationship}
                       onChange={handleChange}
                       className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                    />
+                    >
+                      <option value="">Select Relationship</option>
+                      <option value="parent">Parent</option>
+                      <option value="sibling">Sibling</option>
+                      <option value="spouse">Spouse</option>
+                      <option value="child">Child</option>
+                      <option value="relative">Relative</option>
+                      <option value="friend">Friend</option>
+                      <option value="guardian">Guardian</option>
+                      <option value="other">Other</option>
+                    </select>
                   </div>
                 </div>
               </div>

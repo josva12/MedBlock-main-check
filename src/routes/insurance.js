@@ -1,44 +1,52 @@
 const express = require('express');
 const router = express.Router();
-const Insurance = require('../models/Insurance');
-const { authenticateToken } = require('../middleware/auth');
+const InsurancePolicy = require('../models/InsurancePolicy');
+const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
 
-// @route   POST /api/v1/insurance
-// @desc    Create a new insurance policy
-// @access  Private
+// POST /api/v1/insurance - Enroll a user
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { patientId, plan } = req.body;
-    const insurance = new Insurance({ patientId, plan, status: 'active' });
-    await insurance.save();
-    res.status(201).json({ success: true, data: insurance });
+    const { policyTier, premiumAmount, coverageLimit, dependents } = req.body;
+    const userId = req.user._id;
+    const policy = new InsurancePolicy({
+      userId,
+      policyTier,
+      premiumAmount,
+      coverageLimit,
+      dependents,
+      status: 'pending',
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
+    await policy.save();
+    res.status(201).json({ success: true, data: policy });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to create insurance', details: error.message });
+    res.status(500).json({ error: 'Failed to enroll user', details: error.message });
   }
 });
 
-// @route   GET /api/v1/insurance
-// @desc    List all insurance policies (admin only)
-// @access  Private
-router.get('/', authenticateToken, async (req, res) => {
+// GET /api/v1/insurance/user/:userId - Get user's policy
+router.get('/user/:userId', authenticateToken, async (req, res) => {
   try {
-    const policies = await Insurance.find();
-    res.json({ success: true, data: policies });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch insurance policies', details: error.message });
-  }
-});
-
-// @route   GET /api/v1/insurance/:id
-// @desc    Get insurance policy by id
-// @access  Private
-router.get('/:id', authenticateToken, async (req, res) => {
-  try {
-    const policy = await Insurance.findById(req.params.id);
-    if (!policy) return res.status(404).json({ error: 'Insurance policy not found' });
+    const { userId } = req.params;
+    const policy = await InsurancePolicy.findOne({ userId });
+    if (!policy) return res.status(404).json({ error: 'Policy not found' });
     res.json({ success: true, data: policy });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch insurance policy', details: error.message });
+    res.status(500).json({ error: 'Failed to fetch policy', details: error.message });
+  }
+});
+
+// PATCH /api/v1/insurance/:policyId/status - Update policy status (admin only)
+router.patch('/:policyId/status', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { policyId } = req.params;
+    const { status } = req.body;
+    const policy = await InsurancePolicy.findByIdAndUpdate(policyId, { status, updatedAt: new Date() }, { new: true });
+    if (!policy) return res.status(404).json({ error: 'Policy not found' });
+    res.json({ success: true, data: policy });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update policy status', details: error.message });
   }
 });
 

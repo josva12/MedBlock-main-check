@@ -82,6 +82,7 @@ const ReportsPage: React.FC = () => {
       } else {
         await dispatch(createReport(reportData)).unwrap();
       }
+      await dispatch(fetchReports(undefined)); // Refresh the list after add
       setShowModal(false);
       setForm(initialForm);
       setEditId(null);

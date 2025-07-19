@@ -212,4 +212,11 @@ class BlockchainService {
   }
 }
 
-module.exports = new BlockchainService(); 
+// Record a claim on the blockchain (mock implementation)
+async function recordClaim({ policyId, patientId, facilityId, claimAmount }) {
+  // TODO: Integrate with real blockchain (Ethereum, etc.)
+  // For now, return a mock transaction hash
+  return '0x' + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10);
+}
+
+module.exports = { recordClaim }; 

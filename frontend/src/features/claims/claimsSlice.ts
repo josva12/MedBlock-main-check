@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createSelector } from 'reselect';
 
 export interface Claim {
   _id: string;
@@ -59,6 +60,12 @@ export const fetchClaimById = createAsyncThunk(
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch claim');
     }
   }
+);
+
+// Memoized selector for claims
+export const selectClaims = createSelector(
+  (state: any) => state.claims.claims,
+  (claims) => claims
 );
 
 const claimsSlice = createSlice({

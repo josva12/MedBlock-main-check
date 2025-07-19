@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createSelector } from 'reselect';
 
 export interface Teleconsultation {
   _id: string;
@@ -59,6 +60,12 @@ export const fetchTeleconsultationById = createAsyncThunk(
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch teleconsultation');
     }
   }
+);
+
+// Memoized selector for teleconsultations
+export const selectTeleconsultations = createSelector(
+  (state: any) => state.teleconsultations.teleconsultations,
+  (teleconsultations) => teleconsultations
 );
 
 const teleconsultationsSlice = createSlice({

@@ -54,6 +54,14 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div>
+      {/* Hero Image Banner */}
+      <div className="w-full mb-6 rounded-lg overflow-hidden shadow-lg">
+        <img
+          src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80"
+          alt="Healthcare teamwork"
+          className="w-full h-56 object-cover object-center"
+        />
+      </div>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{getGreeting()}, {user?.fullName}!</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">Welcome back. Here is a summary of the clinic's activity.</p>

@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createSelector } from 'reselect';
 
 export interface Resource {
   _id: string;
@@ -58,6 +59,12 @@ export const fetchResourceById = createAsyncThunk(
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch resource');
     }
   }
+);
+
+// Memoized selector for resources
+export const selectResources = createSelector(
+  (state: any) => state.resources.resources,
+  (resources) => resources
 );
 
 const resourcesSlice = createSlice({

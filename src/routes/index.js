@@ -94,9 +94,10 @@ router.use('/appointments', appointmentRoutes); // NEW: Use appointments routes
 router.use('/audit-logs', auditLogRoutes);
 router.use('/reports', reportRoutes);
 router.use('/notifications', notificationRoutes);
-router.use('/api/v1/subscriptions', subscriptionRoutes);
-router.use('/api/v1/claims', claimRoutes);
-router.use('/api/v1/insurance', insuranceRoutes);
+router.use('/subscriptions', subscriptionRoutes);
+router.use('/insurance', require('./insurance'));
+router.use('/claims', require('./claims'));
+router.use('/payments', require('./payments'));
 router.use('/api/v1/teleconsultations', teleconsultationRoutes);
 router.use('/api/v1/predictions', predictionRoutes);
 router.use('/api/v1/resources', resourceRoutes);

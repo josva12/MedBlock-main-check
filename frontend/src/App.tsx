@@ -26,6 +26,10 @@ const AIChatPage = React.lazy(() => import('./pages/AIChatPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const SubscriptionsPage = React.lazy(() => import('./pages/SubscriptionsPage'));
 const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
+const ClaimsPage = React.lazy(() => import('./pages/ClaimsPage'));
+const TeleconsultationsPage = React.lazy(() => import('./pages/TeleconsultationsPage'));
+const ResourcesPage = React.lazy(() => import('./pages/ResourcesPage'));
+const FacilitiesPage = React.lazy(() => import('./pages/FacilitiesPage'));
 
 // Common Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -87,6 +91,10 @@ function App() {
                 <Route path="ai-chat" element={<AIChatPage />} />
                 <Route path="subscriptions" element={<SubscriptionsPage />} />
                 <Route path="audit-logs" element={<AuditLogsPage />} />
+                <Route path="claims" element={<ClaimsPage />} />
+                <Route path="teleconsultations" element={<TeleconsultationsPage />} />
+                <Route path="resources" element={<ResourcesPage />} />
+                <Route path="facilities" element={<FacilitiesPage />} />
               </Route>
 
               {/* Admin-Only Routes */}

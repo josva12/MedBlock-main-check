@@ -12,6 +12,12 @@ import {
   BarChart3,
   MessageSquare,
   Shield,
+  Receipt,
+  Video,
+  Book,
+  Building,
+  ShieldCheck,
+  CreditCard,
 } from 'lucide-react';
 import { type RootState } from '../../store';
 
@@ -28,10 +34,14 @@ const Sidebar: React.FC = () => {
     { name: 'Medical Records', href: '/medical-records', icon: FileText, roles: ['admin', 'doctor', 'nurse'] },
     { name: 'Vital Signs', href: '/vitals', icon: Heart, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
     { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
-    { name: 'Subscriptions', href: '/subscriptions', icon: BarChart3, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
+    { name: 'Subscriptions', href: '/subscriptions', icon: CreditCard, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
     { name: 'Blockchain', href: '/blockchain', icon: MessageSquare, roles: ['admin', 'doctor', 'nurse'] },
     { name: 'AI Chat', href: '/ai-chat', icon: MessageSquare, roles: ['admin', 'doctor', 'nurse'] },
-    { name: 'Audit Logs', href: '/audit-logs', icon: BarChart3, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
+    { name: 'Audit Logs', href: '/audit-logs', icon: ShieldCheck, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
+    { name: 'Claims', href: '/claims', icon: Receipt, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
+    { name: 'Teleconsultations', href: '/teleconsultations', icon: Video, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
+    { name: 'Resources', href: '/resources', icon: Book, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
+    { name: 'Facilities', href: '/facilities', icon: Building, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
     { name: 'Admin Panel', href: '/admin', icon: Shield, roles: ['admin'] },
   ];
 

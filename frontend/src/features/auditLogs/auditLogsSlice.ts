@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createSelector } from 'reselect';
 
 export interface AuditLog {
   _id: string;
@@ -60,4 +61,10 @@ const auditLogsSlice = createSlice({
 });
 
 export const { clearError } = auditLogsSlice.actions;
-export default auditLogsSlice.reducer; 
+export default auditLogsSlice.reducer;
+
+// Memoized selector for audit logs
+export const selectAuditLogs = createSelector(
+  (state: any) => state.auditLogs.logs,
+  (logs) => logs
+); 

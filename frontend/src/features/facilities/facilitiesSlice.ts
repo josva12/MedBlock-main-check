@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
+import { createSelector } from 'reselect';
 
 export interface Facility {
   _id: string;
@@ -178,4 +179,10 @@ const facilitiesSlice = createSlice({
 });
 
 export const { clearError, setCurrentFacility } = facilitiesSlice.actions;
-export default facilitiesSlice.reducer; 
+export default facilitiesSlice.reducer;
+
+// Memoized selector for facilities
+export const selectFacilities = createSelector(
+  (state: any) => state.facilities.facilities,
+  (facilities) => facilities
+); 
