@@ -18,6 +18,7 @@ const AppointmentsPage = React.lazy(() => import('./pages/AppointmentsPage'));
 const MedicalRecordsPage = React.lazy(() => import('./pages/MedicalRecordsPage'));
 const VitalsPage = React.lazy(() => import('./pages/vitals/VitalsPage')); // Path updated
 const ReportsPage = React.lazy(() => import('./pages/ReportsPage'));
+const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const AdminPage = React.lazy(() => import('./pages/admin/AdminPage'));
 const BlockchainPage = React.lazy(() => import('./pages/BlockchainPage'));
@@ -78,6 +79,7 @@ function App() {
                 <Route path="medical-records" element={<MedicalRecordsPage />} />
                 <Route path="vitals" element={<VitalsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
                 <Route path="settings" element={<SettingsPage />} />
                 <Route path="blockchain" element={<BlockchainPage />} />
                 <Route path="ai-chat" element={<AIChatPage />} />

@@ -1,27 +1,33 @@
 import React from 'react';
-import { useTheme } from '../../context/ThemeContext';
 import { Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 const ThemeToggle: React.FC = () => {
+  // --- FIX: We now use `theme` as the source of truth ---
   const { theme, setTheme } = useTheme();
 
+  // Determine if dark mode is currently active, even if theme is 'system'
+  const isDarkModeActive = theme === 'dark' || 
+    (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
   const toggleTheme = () => {
-    setTheme(theme === 'light' ? 'dark' : 'light');
+    // This logic is now simpler and more reliable
+    setTheme(isDarkModeActive ? 'light' : 'dark');
   };
 
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors duration-200"
-      title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+      className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+      title={isDarkModeActive ? 'Switch to light mode' : 'Switch to dark mode'}
     >
-      {theme === 'light' ? (
-        <Moon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+      {isDarkModeActive ? (
+        <Sun className="h-5 w-5 text-yellow-500" />
       ) : (
-        <Sun className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        <Moon className="h-5 w-5 text-gray-600" />
       )}
     </button>
   );
 };
 
-export default ThemeToggle; 
+export default ThemeToggle;

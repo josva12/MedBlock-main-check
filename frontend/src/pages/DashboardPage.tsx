@@ -111,10 +111,17 @@ const DashboardPage: React.FC = () => {
                   {recentVitals.map((vital) => (
                     <div key={vital._id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{vital.patientName}</p>
+                        <p className="font-medium text-gray-900 dark:text-white">
+                          {vital.patient?.fullName || vital.patientName || "Unknown Patient"}
+                        </p>
                         <p className="text-sm text-gray-500 dark:text-gray-400">{new Date(vital.recordedAt).toLocaleDateString()}</p>
                       </div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">BP: {vital.bloodPressure.systolic}/{vital.bloodPressure.diastolic}</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">
+                        {vital.bloodPressure?.systolic && vital.bloodPressure?.diastolic 
+                          ? `BP: ${vital.bloodPressure.systolic}/${vital.bloodPressure.diastolic}`
+                          : "No BP"
+                        }
+                      </span>
                     </div>
                   ))}
                 </div>

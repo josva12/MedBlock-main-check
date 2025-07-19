@@ -1,26 +1,43 @@
+/* 
+  Step 1: Import Tailwind's base styles, components, and utilities.
+  This is the foundation of Tailwind CSS.
+*/
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Theme CSS Variables */
-:root {
-  --toast-bg: #363636;
-  --toast-color: #fff;
+/* 
+  Step 2: Define the foundational layout for the entire application.
+  This ensures that our main container fills the screen, which is
+  essential for full-page backgrounds and centering.
+*/
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
 }
 
-.dark {
-  --toast-bg: #1f2937;
-  --toast-color: #f9fafb;
-}
-
-/* Base styles */
+/* 
+  Step 3: Define the base styles for the body.
+  We use @apply to use Tailwind's utility classes here. This sets the default
+  background and text colors for both light and dark modes. The `transition-colors`
+  class ensures a smooth change when the theme is toggled.
+*/
 body {
-  @apply bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200;
+  @apply bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for dark mode */
+/*
+  Step 4 (Optional but Recommended): Add custom styles for a better dark mode experience,
+  like a custom scrollbar.
+*/
 ::-webkit-scrollbar {
   width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -33,19 +50,4 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400 dark:bg-gray-500;
-}
-
-/* Focus styles */
-*:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
-}
-
-/* Button focus styles */
-button:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
-}
-
-/* Input focus styles */
-input:focus, textarea:focus, select:focus {
-  @apply outline-none ring-2 ring-blue-500 ring-offset-2 ring-offset-white dark:ring-offset-gray-900;
 }

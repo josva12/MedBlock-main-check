@@ -91,8 +91,12 @@ const PatientsPage: React.FC = () => {
       dateOfBirth: form.dateOfBirth,
       gender: form.gender,
       address: {
-        ...form.address,
-        postalCode: form.address.postalCode || ""
+        street: form.address.street,
+        city: form.address.city,
+        county: form.address.county,
+        subCounty: form.address.subCounty,
+        country: form.address.country,
+        ...(form.address.postalCode && { postalCode: form.address.postalCode })
       },
       emergencyContact: form.emergencyContact,
       bloodType: form.bloodType || undefined,
@@ -124,7 +128,14 @@ const PatientsPage: React.FC = () => {
       phone: patient.phone,
       dateOfBirth: patient.dateOfBirth,
       gender: patient.gender,
-      address: patient.address,
+      address: {
+        street: patient.address.street,
+        city: patient.address.city,
+        county: patient.address.county,
+        subCounty: patient.address.subCounty,
+        postalCode: patient.address.postalCode || "",
+        country: patient.address.country
+      },
       emergencyContact: patient.emergencyContact,
       bloodType: patient.bloodType || "",
       allergies: patient.allergies ? patient.allergies.join(', ') : "",

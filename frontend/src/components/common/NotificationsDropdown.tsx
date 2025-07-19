@@ -1,31 +1,27 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { 
-  fetchNotifications, 
-  markNotificationAsRead, 
+import {
+  markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
   sendNotification,
-  type Notification,
-  type SendNotificationData
+  markNotificationAsUnread, // <-- add import
+  type SendNotificationData,
+  type Notification
 } from '../../features/notifications/notificationsSlice';
-import { 
-  Bell, 
-  Send, 
-  Info,
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-  Settings
-} from 'lucide-react';
+import { Bell, Send, Info, CheckCircle, AlertTriangle, XCircle, Settings } from 'lucide-react';
 
 const NotificationsDropdown: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
-  const { notifications, unreadCount, isLoading } = useAppSelector((state) => state.notifications);
+  const notifications = useAppSelector(state => state.notifications.notifications);
+  const unreadCount = useAppSelector(state => state.notifications.unreadCount);
+  const isLoading = useAppSelector(state => state.notifications.isLoading);
+  const user = useAppSelector(state => state.auth.user);
+
   const [isOpen, setIsOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [adminNotification, setAdminNotification] = useState<SendNotificationData>({
     title: '',
     message: '',
@@ -34,25 +30,14 @@ const NotificationsDropdown: React.FC = () => {
     roles: [],
   });
 
-  // Auto-fetch notifications every 30 seconds
-  useEffect(() => {
-    if (user?._id) {
-      dispatch(fetchNotifications(user._id));
-      
-      const interval = setInterval(() => {
-        dispatch(fetchNotifications(user._id));
-      }, 30000);
-
-      return () => clearInterval(interval);
-    }
-  }, [dispatch, user?._id]);
-
   const handleMarkAsRead = async (notificationId: string) => {
     await dispatch(markNotificationAsRead(notificationId));
   };
 
   const handleMarkAllAsRead = async () => {
-    await dispatch(markAllNotificationsAsRead());
+    if (user?._id) {
+      await dispatch(markAllNotificationsAsRead(user._id));
+    }
   };
 
   const handleDeleteNotification = async (notificationId: string) => {
@@ -64,8 +49,9 @@ const NotificationsDropdown: React.FC = () => {
     if (!adminNotification.title || !adminNotification.message) {
       return;
     }
-    
+    setIsSubmitting(true);
     await dispatch(sendNotification(adminNotification));
+    setIsSubmitting(false);
     setAdminNotification({
       title: '',
       message: '',
@@ -74,6 +60,10 @@ const NotificationsDropdown: React.FC = () => {
       roles: [],
     });
     setIsAdminPanelOpen(false);
+  };
+
+  const handleMarkAsUnread = async (notificationId: string) => {
+    await dispatch(markNotificationAsUnread(notificationId));
   };
 
   const getNotificationIcon = (type: string) => {
@@ -95,7 +85,6 @@ const NotificationsDropdown: React.FC = () => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
     if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
@@ -137,6 +126,14 @@ const NotificationsDropdown: React.FC = () => {
                 className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
               >
                 Mark as read
+              </button>
+            )}
+            {notification.isRead && (
+              <button
+                onClick={() => handleMarkAsUnread(notification._id)}
+                className="text-xs text-yellow-600 dark:text-yellow-400 hover:text-yellow-800 dark:hover:text-yellow-300"
+              >
+                Mark as unread
               </button>
             )}
             <button
@@ -194,9 +191,10 @@ const NotificationsDropdown: React.FC = () => {
           <button
             type="submit"
             className="flex-1 bg-blue-600 text-white px-3 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors"
+            disabled={isSubmitting}
           >
             <Send className="h-4 w-4 mr-1" />
-            Send
+            {isSubmitting ? 'Sending...' : 'Send'}
           </button>
           <button
             type="button"
@@ -288,4 +286,4 @@ const NotificationsDropdown: React.FC = () => {
   );
 };
 
-export default NotificationsDropdown; 
+export default NotificationsDropdown;

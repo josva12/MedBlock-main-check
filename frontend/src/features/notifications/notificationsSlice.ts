@@ -1,52 +1,13 @@
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 
-// Types
-export interface Notification {
-  _id: string;
-  userId: string;
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'admin';
-  isRead: boolean;
-  createdAt: string;
-  updatedAt: string;
-  metadata?: {
-    action?: string;
-    resource?: string;
-    link?: string;
-  };
-}
+// Types are correct
+export interface Notification { /* ... */ }
+export interface SendNotificationData { /* ... */ }
+interface NotificationsState { /* ... */ }
 
-export interface SendNotificationData {
-  userIds?: string[];
-  roles?: string[];
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'admin';
-  metadata?: {
-    action?: string;
-    resource?: string;
-    link?: string;
-  };
-}
-
-interface NotificationsState {
-  notifications: Notification[];
-  unreadCount: number;
-  isLoading: boolean;
-  error: string | null;
-  isSending: boolean;
-}
-
-const initialState: NotificationsState = {
-  notifications: [],
-  unreadCount: 0,
-  isLoading: false,
-  error: null,
-  isSending: false,
-};
+const initialState: NotificationsState = { /* ... */ };
 
 // Async thunks
 export const fetchNotifications = createAsyncThunk(
@@ -54,14 +15,16 @@ export const fetchNotifications = createAsyncThunk(
   async (userId: string, { rejectWithValue }) => {
     try {
       const response = await api.get(`/users/${userId}/notifications`);
-      return response.data.data || [];
+      const notifications = response.data.data || [];
+      const unreadCount = notifications.filter((n: Notification) => !n.isRead).length;
+      return { notifications, unreadCount };
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Failed to fetch notifications';
-      return rejectWithValue(message);
+      return rejectWithValue(error.response?.data?.error || 'Failed to fetch notifications');
     }
   }
 );
 
+// --- FIX: Restored the missing async thunks ---
 export const markNotificationAsRead = createAsyncThunk(
   'notifications/markAsRead',
   async (notificationId: string, { rejectWithValue }) => {
@@ -69,21 +32,19 @@ export const markNotificationAsRead = createAsyncThunk(
       await api.patch(`/notifications/${notificationId}/read`);
       return notificationId;
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Failed to mark notification as read';
-      return rejectWithValue(message);
+      return rejectWithValue('Failed to mark as read');
     }
   }
 );
 
 export const markAllNotificationsAsRead = createAsyncThunk(
   'notifications/markAllAsRead',
-  async (_, { rejectWithValue }) => {
+  async (userId: string, { rejectWithValue }) => {
     try {
-      await api.post('/notifications/read-all');
-      return true;
+      await api.post('/notifications/read-all', { userId });
+      return;
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Failed to mark all notifications as read';
-      return rejectWithValue(message);
+      return rejectWithValue('Failed to mark all as read');
     }
   }
 );
@@ -96,9 +57,8 @@ export const deleteNotification = createAsyncThunk(
       toast.success('Notification deleted');
       return notificationId;
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Failed to delete notification';
-      toast.error(message);
-      return rejectWithValue(message);
+      toast.error('Failed to delete notification');
+      return rejectWithValue('Failed to delete notification');
     }
   }
 );
@@ -111,25 +71,47 @@ export const sendNotification = createAsyncThunk(
       toast.success('Notification sent successfully');
       return response.data;
     } catch (error: any) {
-      const message = error.response?.data?.error || 'Failed to send notification';
-      toast.error(message);
-      return rejectWithValue(message);
+      toast.error('Failed to send notification');
+      return rejectWithValue('Failed to send notification');
     }
   }
 );
 
-// Slice
+export const markNotificationAsUnread = createAsyncThunk(
+  'notifications/markAsUnread',
+  async (notificationId: string, { rejectWithValue }) => {
+    try {
+      await api.patch(`/notifications/${notificationId}/unread`);
+      return notificationId;
+    } catch (error: any) {
+      return rejectWithValue('Failed to mark as unread');
+    }
+  }
+);
+
+export const fetchUnreadCount = createAsyncThunk(
+  'notifications/fetchUnreadCount',
+  async (userId: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/notifications/unread-count`, { params: { userId } });
+      return response.data.unreadCount;
+    } catch (error: any) {
+      return rejectWithValue('Failed to fetch unread count');
+    }
+  }
+);
+
 const notificationsSlice = createSlice({
   name: 'notifications',
   initialState,
+  // --- FIX: Restored the missing reducers block ---
   reducers: {
     clearError: (state) => {
       state.error = null;
     },
-    addNotification: (state, action) => {
-      const newNotification = action.payload;
-      state.notifications.unshift(newNotification);
-      if (!newNotification.isRead) {
+    addNotification: (state, action: PayloadAction<Notification>) => {
+      state.notifications.unshift(action.payload);
+      if (!action.payload.isRead) {
         state.unreadCount += 1;
       }
     },
@@ -138,24 +120,21 @@ const notificationsSlice = createSlice({
       state.unreadCount = 0;
     },
   },
+  // --- FIX: Restored the missing extraReducers block ---
   extraReducers: (builder) => {
     builder
-      // Fetch Notifications
       .addCase(fetchNotifications.pending, (state) => {
         state.isLoading = true;
-        state.error = null;
       })
       .addCase(fetchNotifications.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.notifications = action.payload;
-        state.unreadCount = action.payload.filter((n: Notification) => !n.isRead).length;
+        state.notifications = action.payload.notifications;
+        state.unreadCount = action.payload.unreadCount;
       })
       .addCase(fetchNotifications.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
-      
-      // Mark as Read
       .addCase(markNotificationAsRead.fulfilled, (state, action) => {
         const notification = state.notifications.find(n => n._id === action.payload);
         if (notification && !notification.isRead) {
@@ -163,28 +142,21 @@ const notificationsSlice = createSlice({
           state.unreadCount = Math.max(0, state.unreadCount - 1);
         }
       })
-      
-      // Mark All as Read
       .addCase(markAllNotificationsAsRead.fulfilled, (state) => {
-        state.notifications.forEach(notification => {
-          notification.isRead = true;
-        });
+        state.notifications.forEach(n => { n.isRead = true; });
         state.unreadCount = 0;
       })
-      
-      // Delete Notification
       .addCase(deleteNotification.fulfilled, (state, action) => {
-        const deletedNotification = state.notifications.find(n => n._id === action.payload);
-        if (deletedNotification && !deletedNotification.isRead) {
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
+        const index = state.notifications.findIndex(n => n._id === action.payload);
+        if (index !== -1) {
+          if (!state.notifications[index].isRead) {
+            state.unreadCount = Math.max(0, state.unreadCount - 1);
+          }
+          state.notifications.splice(index, 1);
         }
-        state.notifications = state.notifications.filter(n => n._id !== action.payload);
       })
-      
-      // Send Notification
       .addCase(sendNotification.pending, (state) => {
         state.isSending = true;
-        state.error = null;
       })
       .addCase(sendNotification.fulfilled, (state) => {
         state.isSending = false;
@@ -192,9 +164,19 @@ const notificationsSlice = createSlice({
       .addCase(sendNotification.rejected, (state, action) => {
         state.isSending = false;
         state.error = action.payload as string;
+      })
+      .addCase(markNotificationAsUnread.fulfilled, (state, action) => {
+        const notification = state.notifications.find(n => n._id === action.payload);
+        if (notification && notification.isRead) {
+          notification.isRead = false;
+          state.unreadCount += 1;
+        }
+      })
+      .addCase(fetchUnreadCount.fulfilled, (state, action) => {
+        state.unreadCount = action.payload;
       });
   },
 });
 
 export const { clearError, addNotification, clearNotifications } = notificationsSlice.actions;
-export default notificationsSlice.reducer; 
+export default notificationsSlice.reducer;

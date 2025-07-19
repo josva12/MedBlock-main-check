@@ -19,13 +19,16 @@ import {
 
 const initialForm = {
   patientId: "",
-  temperature: "",
+  temperature: { value: "", unit: "C" },
   bloodPressure: { systolic: "", diastolic: "" },
   heartRate: "",
   respiratoryRate: "",
   oxygenSaturation: "",
-  weight: "",
-  height: "",
+  weight: { value: "", unit: "kg" },
+  height: { value: "", unit: "cm" },
+  painLevel: "",
+  bloodGlucose: { value: "", unit: "mg/dL" },
+  status: "draft" as "draft" | "final",
   notes: "",
   recordedAt: new Date().toISOString().split('T')[0],
 };
@@ -42,6 +45,7 @@ const VitalsPage: React.FC = () => {
   const [form, setForm] = useState<FormType>(initialForm);
   const [formError, setFormError] = useState("");
   const [selectedPatient, setSelectedPatient] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   useEffect(() => {
     dispatch(fetchVitals(undefined));
@@ -81,18 +85,32 @@ const VitalsPage: React.FC = () => {
     }
 
     const vitalData = {
-      patientId: form.patientId,
-      patientName: patient.fullName,
-      temperature: form.temperature ? parseFloat(form.temperature) : 0,
-      bloodPressure: {
-        systolic: form.bloodPressure.systolic ? parseInt(form.bloodPressure.systolic) : 0,
-        diastolic: form.bloodPressure.diastolic ? parseInt(form.bloodPressure.diastolic) : 0
-      },
-      heartRate: form.heartRate ? parseInt(form.heartRate) : 0,
-      respiratoryRate: form.respiratoryRate ? parseInt(form.respiratoryRate) : 0,
-      oxygenSaturation: form.oxygenSaturation ? parseFloat(form.oxygenSaturation) : 0,
-      weight: form.weight ? parseFloat(form.weight) : undefined,
-      height: form.height ? parseFloat(form.height) : undefined,
+      patient: form.patientId,
+      temperature: form.temperature.value ? {
+        value: parseFloat(form.temperature.value),
+        unit: form.temperature.unit
+      } : undefined,
+      bloodPressure: form.bloodPressure.systolic && form.bloodPressure.diastolic ? {
+        systolic: parseInt(form.bloodPressure.systolic),
+        diastolic: parseInt(form.bloodPressure.diastolic)
+      } : undefined,
+      heartRate: form.heartRate ? parseInt(form.heartRate) : undefined,
+      respiratoryRate: form.respiratoryRate ? parseInt(form.respiratoryRate) : undefined,
+      oxygenSaturation: form.oxygenSaturation ? parseFloat(form.oxygenSaturation) : undefined,
+      weight: form.weight.value ? {
+        value: parseFloat(form.weight.value),
+        unit: form.weight.unit
+      } : undefined,
+      height: form.height.value ? {
+        value: parseFloat(form.height.value),
+        unit: form.height.unit
+      } : undefined,
+      painLevel: form.painLevel ? parseInt(form.painLevel) : undefined,
+      bloodGlucose: form.bloodGlucose.value ? {
+        value: parseFloat(form.bloodGlucose.value),
+        unit: form.bloodGlucose.unit
+      } : undefined,
+      status: form.status as 'draft' | 'final',
       notes: form.notes || undefined,
       recordedBy: user?._id || "",
       recordedAt: form.recordedAt,
@@ -100,7 +118,21 @@ const VitalsPage: React.FC = () => {
 
     try {
       if (editId) {
-        await dispatch(updateVital({ id: editId, data: vitalData })).unwrap();
+        // For updates, we need to use a different interface
+        const updateData = {
+          temperature: vitalData.temperature,
+          bloodPressure: vitalData.bloodPressure,
+          heartRate: vitalData.heartRate,
+          respiratoryRate: vitalData.respiratoryRate,
+          oxygenSaturation: vitalData.oxygenSaturation,
+          weight: vitalData.weight,
+          height: vitalData.height,
+          painLevel: vitalData.painLevel,
+          bloodGlucose: vitalData.bloodGlucose,
+          status: vitalData.status,
+          notes: vitalData.notes,
+        };
+        await dispatch(updateVital({ id: editId, data: updateData })).unwrap();
       } else {
         await dispatch(createVital(vitalData)).unwrap();
       }
@@ -115,8 +147,11 @@ const VitalsPage: React.FC = () => {
   const handleEdit = (vital: VitalSign) => {
     setEditId(vital._id);
     setForm({
-      patientId: vital.patientId,
-      temperature: vital.temperature?.toString() || "",
+      patientId: vital.patient?._id || vital.patientId || "",
+      temperature: {
+        value: vital.temperature?.value?.toString() || "",
+        unit: vital.temperature?.unit || "C"
+      },
       bloodPressure: {
         systolic: vital.bloodPressure?.systolic?.toString() || "",
         diastolic: vital.bloodPressure?.diastolic?.toString() || ""
@@ -124,8 +159,20 @@ const VitalsPage: React.FC = () => {
       heartRate: vital.heartRate?.toString() || "",
       respiratoryRate: vital.respiratoryRate?.toString() || "",
       oxygenSaturation: vital.oxygenSaturation?.toString() || "",
-      weight: vital.weight?.toString() || "",
-      height: vital.height?.toString() || "",
+      weight: {
+        value: vital.weight?.value?.toString() || "",
+        unit: vital.weight?.unit || "kg"
+      },
+      height: {
+        value: vital.height?.value?.toString() || "",
+        unit: vital.height?.unit || "cm"
+      },
+      painLevel: vital.painLevel?.toString() || "",
+      bloodGlucose: {
+        value: vital.bloodGlucose?.value?.toString() || "",
+        unit: vital.bloodGlucose?.unit || "mg/dL"
+      },
+      status: vital.status as 'draft' | 'final',
       notes: vital.notes || "",
       recordedAt: new Date(vital.recordedAt).toISOString().split('T')[0],
     });
@@ -139,13 +186,33 @@ const VitalsPage: React.FC = () => {
   };
 
   const filteredVitals = vitals.filter(vital => {
-    const matchesPatient = !selectedPatient || vital.patientId === selectedPatient;
-    return matchesPatient;
+    const patientId = vital.patient?._id || vital.patientId;
+    const matchesPatient = !selectedPatient || patientId === selectedPatient;
+    const matchesStatus = statusFilter === "all" || vital.status === statusFilter;
+    return matchesPatient && matchesStatus;
   });
 
-  const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p._id === patientId);
+  const getPatientName = (vital: VitalSign) => {
+    if (vital.patient?.fullName) {
+      return vital.patient.fullName;
+    }
+    if (vital.patient?.firstName && vital.patient?.lastName) {
+      return `${vital.patient.firstName} ${vital.patient.lastName}`;
+    }
+    if (vital.patientName) {
+      return vital.patientName;
+    }
+    const patient = patients.find(p => p._id === (vital.patient?._id || vital.patientId));
     return patient ? patient.fullName : "Unknown Patient";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "final": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
+      case "draft": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300";
+      case "amended": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
+      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+    }
   };
 
   return (
@@ -167,7 +234,7 @@ const VitalsPage: React.FC = () => {
 
       {/* Filters */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Filter by Patient
@@ -183,6 +250,21 @@ const VitalsPage: React.FC = () => {
                   {patient.fullName}
                 </option>
               ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Filter by Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="final">Final</option>
+              <option value="amended">Amended</option>
             </select>
           </div>
         </div>
@@ -213,6 +295,9 @@ const VitalsPage: React.FC = () => {
                   Heart Rate
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                   Date
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -223,14 +308,14 @@ const VitalsPage: React.FC = () => {
             <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                     <p className="mt-2">Loading vital signs...</p>
                   </td>
                 </tr>
               ) : filteredVitals.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                  <td colSpan={7} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No vital signs found
                   </td>
                 </tr>
@@ -242,16 +327,16 @@ const VitalsPage: React.FC = () => {
                         <User className="h-5 w-5 text-gray-400 mr-2" />
                         <div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {getPatientName(vital.patientId)}
+                            {getPatientName(vital)}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      {vital.temperature ? (
+                      {vital.temperature?.value ? (
                         <div className="flex items-center">
                           <Thermometer className="h-4 w-4 mr-1" />
-                          {vital.temperature}°C
+                          {vital.temperature.value}°{vital.temperature.unit}
                         </div>
                       ) : (
                         <span className="text-gray-400">-</span>
@@ -276,6 +361,11 @@ const VitalsPage: React.FC = () => {
                       ) : (
                         <span className="text-gray-400">-</span>
                       )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(vital.status)}`}>
+                        {vital.status}
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                       <div className="flex items-center">
@@ -351,18 +441,34 @@ const VitalsPage: React.FC = () => {
                 </select>
               </div>
 
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Recorded Date
-                </label>
-                <input
-                  name="recordedAt"
-                  type="date"
-                  value={form.recordedAt}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                />
+              {/* Status and Date */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Status
+                  </label>
+                  <select
+                    name="status"
+                    value={form.status}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="draft">Draft</option>
+                    <option value="final">Final</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Recorded Date
+                  </label>
+                  <input
+                    name="recordedAt"
+                    type="date"
+                    value={form.recordedAt}
+                    onChange={handleChange}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Vital Signs Grid */}
@@ -370,17 +476,28 @@ const VitalsPage: React.FC = () => {
                 {/* Temperature */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Temperature (°C)
+                    Temperature
                   </label>
-                  <input
-                    name="temperature"
-                    type="number"
-                    step="0.1"
-                    placeholder="36.5"
-                    value={form.temperature}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      name="temperature.value"
+                      type="number"
+                      step="0.1"
+                      placeholder="36.5"
+                      value={form.temperature.value}
+                      onChange={handleChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <select
+                      name="temperature.unit"
+                      value={form.temperature.unit}
+                      onChange={handleChange}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="C">°C</option>
+                      <option value="F">°F</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* Blood Pressure */}
@@ -455,36 +572,102 @@ const VitalsPage: React.FC = () => {
                   />
                 </div>
 
-                {/* Weight */}
+                {/* Pain Level */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Weight (kg)
+                    Pain Level (0-10)
                   </label>
                   <input
-                    name="weight"
+                    name="painLevel"
                     type="number"
-                    step="0.1"
-                    placeholder="70"
-                    value={form.weight}
+                    min="0"
+                    max="10"
+                    placeholder="0"
+                    value={form.painLevel}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
 
+                {/* Weight */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Weight
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      name="weight.value"
+                      type="number"
+                      step="0.1"
+                      placeholder="70"
+                      value={form.weight.value}
+                      onChange={handleChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <select
+                      name="weight.unit"
+                      value={form.weight.unit}
+                      onChange={handleChange}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="kg">kg</option>
+                      <option value="lbs">lbs</option>
+                    </select>
+                  </div>
+                </div>
+
                 {/* Height */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Height (cm)
+                    Height
                   </label>
-                  <input
-                    name="height"
-                    type="number"
-                    step="0.1"
-                    placeholder="170"
-                    value={form.height}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  <div className="flex gap-2">
+                    <input
+                      name="height.value"
+                      type="number"
+                      step="0.1"
+                      placeholder="170"
+                      value={form.height.value}
+                      onChange={handleChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <select
+                      name="height.unit"
+                      value={form.height.unit}
+                      onChange={handleChange}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="cm">cm</option>
+                      <option value="in">in</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Blood Glucose */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Blood Glucose
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      name="bloodGlucose.value"
+                      type="number"
+                      step="0.1"
+                      placeholder="100"
+                      value={form.bloodGlucose.value}
+                      onChange={handleChange}
+                      className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <select
+                      name="bloodGlucose.unit"
+                      value={form.bloodGlucose.unit}
+                      onChange={handleChange}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="mg/dL">mg/dL</option>
+                      <option value="mmol/L">mmol/L</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 

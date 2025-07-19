@@ -5,24 +5,80 @@ import toast from 'react-hot-toast';
 // Types
 export interface VitalSign {
   _id: string;
-  patientId: string;
-  patientName: string;
-  temperature: number;
-  bloodPressure: {
+  patient: {
+    _id: string;
+    patientId: string;
+    firstName: string;
+    lastName: string;
+    fullName?: string;
+    dateOfBirth: string;
+    gender: string;
+  };
+  patientId?: string; // For backward compatibility
+  patientName?: string; // For backward compatibility
+  temperature?: {
+    value: number;
+    unit: string;
+  };
+  bloodPressure?: {
     systolic: number;
     diastolic: number;
   };
-  heartRate: number;
-  respiratoryRate: number;
-  oxygenSaturation: number;
-  weight?: number;
-  height?: number;
+  heartRate?: number;
+  respiratoryRate?: number;
+  oxygenSaturation?: number;
+  weight?: {
+    value: number;
+    unit: string;
+  };
+  height?: {
+    value: number;
+    unit: string;
+  };
   bmi?: number;
+  painLevel?: number;
+  bloodGlucose?: {
+    value: number;
+    unit: string;
+  };
+  status: 'draft' | 'final' | 'amended';
   notes?: string;
   recordedBy: string;
   recordedAt: string;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CreateVitalSignData {
+  patient: string; // Patient ID
+  temperature?: {
+    value: number;
+    unit: string;
+  };
+  bloodPressure?: {
+    systolic: number;
+    diastolic: number;
+  };
+  heartRate?: number;
+  respiratoryRate?: number;
+  oxygenSaturation?: number;
+  weight?: {
+    value: number;
+    unit: string;
+  };
+  height?: {
+    value: number;
+    unit: string;
+  };
+  painLevel?: number;
+  bloodGlucose?: {
+    value: number;
+    unit: string;
+  };
+  status: 'draft' | 'final';
+  notes?: string;
+  recordedBy: string;
+  recordedAt: string;
 }
 
 export interface VitalsState {
@@ -70,7 +126,7 @@ export const fetchVitalById = createAsyncThunk(
 
 export const createVital = createAsyncThunk(
   'vitals/create',
-  async (vitalData: Omit<VitalSign, '_id' | 'createdAt' | 'updatedAt'>, { rejectWithValue }) => {
+  async (vitalData: CreateVitalSignData, { rejectWithValue }) => {
     try {
       const response = await api.post('/vital-signs', vitalData);
       toast.success('Vital signs recorded successfully');

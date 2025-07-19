@@ -1,19 +1,26 @@
 import React, { useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAppDispatch } from '../hooks/useAppDispatch';
+// --- FIX: Corrected the import for useAppSelector ---
 import { useAppSelector } from '../hooks/useAppSelector';
-import { fetchNotifications } from '../features/notifications/notificationsSlice';
+import { fetchNotifications, fetchUnreadCount } from '../features/notifications/notificationsSlice';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
+import { type RootState } from '../store';
 
 const AuthenticatedLayout: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
-  // Fetch notifications when user is available
   useEffect(() => {
     if (user?._id) {
       dispatch(fetchNotifications(user._id));
+      dispatch(fetchUnreadCount(user._id));
+      const interval = setInterval(() => {
+        dispatch(fetchNotifications(user._id));
+        dispatch(fetchUnreadCount(user._id));
+      }, 30000);
+      return () => clearInterval(interval);
     }
   }, [dispatch, user?._id]);
 
@@ -30,4 +37,4 @@ const AuthenticatedLayout: React.FC = () => {
   );
 };
 
-export default AuthenticatedLayout; 
+export default AuthenticatedLayout;
