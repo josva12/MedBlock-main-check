@@ -25,6 +25,7 @@ const BlockchainPage = React.lazy(() => import('./pages/BlockchainPage'));
 const AIChatPage = React.lazy(() => import('./pages/AIChatPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const SubscriptionsPage = React.lazy(() => import('./pages/SubscriptionsPage'));
+const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
 
 // Common Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -85,6 +86,7 @@ function App() {
                 <Route path="blockchain" element={<BlockchainPage />} />
                 <Route path="ai-chat" element={<AIChatPage />} />
                 <Route path="subscriptions" element={<SubscriptionsPage />} />
+                <Route path="audit-logs" element={<AuditLogsPage />} />
               </Route>
 
               {/* Admin-Only Routes */}

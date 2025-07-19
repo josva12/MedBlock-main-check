@@ -16,7 +16,7 @@ const paymentMethods = [
 
 const SubscriptionsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { subscriptions, isLoading, error } = useAppSelector((state: RootState) => state.subscriptions);
+  const { subscriptions = [], isLoading, error } = useAppSelector((state: RootState) => state.subscriptions || { subscriptions: [], isLoading: false, error: null });
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ plan: 'basic', facilityId: '', paymentMethod: 'mpesa', mpesaReceipt: '' });
   const [formError, setFormError] = useState('');

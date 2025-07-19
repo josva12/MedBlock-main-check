@@ -111,7 +111,8 @@ const ReportsPage: React.FC = () => {
   };
 
   const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p._id === patientId);
+    const safePatients = Array.isArray(patients) ? patients : [];
+    const patient = safePatients.find(p => p._id === patientId);
     return patient ? patient.fullName : "Unknown Patient";
   };
 

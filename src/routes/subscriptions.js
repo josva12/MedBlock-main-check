@@ -24,11 +24,18 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 // @route   GET /api/v1/subscriptions
-// @desc    List all subscriptions (admin only)
+// @desc    List subscriptions (user sees own, admin sees all, filter by userId)
 // @access  Private
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const subs = await Subscription.find();
+    let query = {};
+    if (req.user.role !== 'admin') {
+      query.userId = req.user._id;
+    }
+    if (req.query.userId) {
+      query.userId = req.query.userId;
+    }
+    const subs = await Subscription.find(query);
     res.json({ success: true, data: subs });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch subscriptions', details: error.message });
