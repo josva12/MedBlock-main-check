@@ -609,22 +609,30 @@ router.get('/statistics/overview', requireRole(['admin', 'doctor']), async (req,
 // @route   GET /api/v1/medical-records/blockchain/status
 // @desc    Get blockchain service status
 // @access  Private (admin, service_account)
-router.get('/blockchain/status', requireRole(['admin', 'service_account']), async (req, res) => {
+router.get('/blockchain/status', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
   try {
-    const blockchainService = require('../services/blockchainService');
-    const status = await blockchainService.getNetworkStatus();
-
-    res.json({
-      success: true,
-      data: status
-    });
+    // TODO: Replace with real blockchain log fetching logic
+    const logs = [
+      {
+        _id: '1',
+        blockNumber: 1,
+        hash: 'abc123',
+        record: 'Medical record created',
+        timestamp: new Date().toISOString(),
+        status: 'Verified',
+      },
+      {
+        _id: '2',
+        blockNumber: 2,
+        hash: 'def456',
+        record: 'Medical record updated',
+        timestamp: new Date().toISOString(),
+        status: 'Verified',
+      },
+    ];
+    res.json({ success: true, data: logs });
   } catch (error) {
-    logger.error('Get blockchain status failed:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to get blockchain status',
-      details: error.message
-    });
+    res.status(500).json({ error: 'Failed to fetch blockchain status', details: error.message });
   }
 });
 

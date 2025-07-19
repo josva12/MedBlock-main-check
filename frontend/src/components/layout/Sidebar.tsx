@@ -28,6 +28,7 @@ const Sidebar: React.FC = () => {
     { name: 'Medical Records', href: '/medical-records', icon: FileText, roles: ['admin', 'doctor', 'nurse'] },
     { name: 'Vital Signs', href: '/vitals', icon: Heart, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
     { name: 'Reports', href: '/reports', icon: BarChart3, roles: ['admin', 'doctor', 'nurse', 'front-desk'] },
+    { name: 'Subscriptions', href: '/subscriptions', icon: BarChart3, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
     { name: 'Blockchain', href: '/blockchain', icon: MessageSquare, roles: ['admin', 'doctor', 'nurse'] },
     { name: 'AI Chat', href: '/ai-chat', icon: MessageSquare, roles: ['admin', 'doctor', 'nurse'] },
     { name: 'Admin Panel', href: '/admin', icon: Shield, roles: ['admin'] },
