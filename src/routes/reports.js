@@ -64,6 +64,16 @@ router.delete('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse'
 // GET /api/v1/reports/medical-record-trends
 router.get('/medical-record-trends', authenticateToken, async (req, res) => {
   try {
+    // Check if MedicalRecord collection exists and has data
+    const recordCount = await MedicalRecord.countDocuments();
+    if (recordCount === 0) {
+      return res.json({ 
+        success: true, 
+        data: [],
+        message: 'No medical records found for trend analysis'
+      });
+    }
+
     // Example: count records by type per month
     const trends = await MedicalRecord.aggregate([
       { $group: {
@@ -75,13 +85,27 @@ router.get('/medical-record-trends', authenticateToken, async (req, res) => {
     res.json({ success: true, data: trends });
   } catch (error) {
     logger.error('Failed to generate medical record trends report:', error);
-    res.status(500).json({ error: 'Failed to generate report', details: error.message });
+    res.status(500).json({ 
+      error: 'Failed to generate report', 
+      details: error.message,
+      fallback: 'Try again later or contact support'
+    });
   }
 });
 
 // GET /api/v1/reports/appointment-utilization
 router.get('/appointment-utilization', authenticateToken, async (req, res) => {
   try {
+    // Check if Appointment collection exists and has data
+    const appointmentCount = await Appointment.countDocuments();
+    if (appointmentCount === 0) {
+      return res.json({ 
+        success: true, 
+        data: [],
+        message: 'No appointments found for utilization analysis'
+      });
+    }
+
     // Example: count appointments by status per month
     const utilization = await Appointment.aggregate([
       { $group: {
@@ -93,17 +117,36 @@ router.get('/appointment-utilization', authenticateToken, async (req, res) => {
     res.json({ success: true, data: utilization });
   } catch (error) {
     logger.error('Failed to generate appointment utilization report:', error);
-    res.status(500).json({ error: 'Failed to generate report', details: error.message });
+    res.status(500).json({ 
+      error: 'Failed to generate report', 
+      details: error.message,
+      fallback: 'Try again later or contact support'
+    });
   }
 });
 
 // GET /api/v1/reports/patient-demographics
 router.get('/patient-demographics', authenticateToken, async (req, res) => {
   try {
+    // Check if Patient collection exists and has data
+    const patientCount = await Patient.countDocuments();
+    if (patientCount === 0) {
+      return res.json({ 
+        success: true, 
+        data: {
+          gender: [],
+          ageGroups: [],
+          county: []
+        },
+        message: 'No patients found for demographic analysis'
+      });
+    }
+
     // Gender distribution
     const genderStats = await Patient.aggregate([
       { $group: { _id: '$gender', count: { $sum: 1 } } }
     ]);
+    
     // Age group distribution
     const now = new Date();
     const ageGroups = [
@@ -119,10 +162,12 @@ router.get('/patient-demographics', authenticateToken, async (req, res) => {
       const count = await Patient.countDocuments({ dateOfBirth: { $gte: minDate, $lte: maxDate } });
       ageStats.push({ group: group.label, count });
     }
+    
     // County distribution
     const countyStats = await Patient.aggregate([
       { $group: { _id: '$address.county', count: { $sum: 1 } } }
     ]);
+    
     res.json({
       success: true,
       data: {
@@ -133,7 +178,11 @@ router.get('/patient-demographics', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Failed to generate patient demographics report:', error);
-    res.status(500).json({ error: 'Failed to generate report', details: error.message });
+    res.status(500).json({ 
+      error: 'Failed to generate report', 
+      details: error.message,
+      fallback: 'Try again later or contact support'
+    });
   }
 });
 

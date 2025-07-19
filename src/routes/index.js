@@ -98,6 +98,7 @@ router.use('/subscriptions', subscriptionRoutes);
 router.use('/insurance', require('./insurance'));
 router.use('/claims', require('./claims'));
 router.use('/payments', require('./payments'));
+router.use('/chat', require('./chat'));
 router.use('/api/v1/teleconsultations', teleconsultationRoutes);
 router.use('/api/v1/predictions', predictionRoutes);
 router.use('/api/v1/resources', resourceRoutes);

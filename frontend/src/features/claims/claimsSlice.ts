@@ -100,13 +100,25 @@ export const processClaim = createAsyncThunk(
 );
 
 // Memoized selectors
-export const selectClaims = (state: any) => state.claims?.claims || [];
+export const selectClaims = createSelector(
+  (state: any) => state.claims?.claims || [],
+  (claims) => claims
+);
 
-export const selectCurrentClaim = (state: any) => state.claims?.currentClaim || null;
+export const selectCurrentClaim = createSelector(
+  (state: any) => state.claims?.currentClaim || null,
+  (claim) => claim
+);
 
-export const selectClaimsLoading = (state: any) => state.claims?.isLoading || false;
+export const selectClaimsLoading = createSelector(
+  (state: any) => state.claims?.isLoading || false,
+  (loading) => loading
+);
 
-export const selectClaimsError = (state: any) => state.claims?.error || null;
+export const selectClaimsError = createSelector(
+  (state: any) => state.claims?.error || null,
+  (error) => error
+);
 
 export const selectClaimsByStatus = createSelector(
   [selectClaims],

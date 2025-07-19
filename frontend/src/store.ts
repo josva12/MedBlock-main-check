@@ -12,6 +12,7 @@ import aiReducer from './features/ai/aiSlice';
 import blockchainReducer from './features/blockchain/blockchainSlice';
 import subscriptionsReducer from './features/subscriptions/subscriptionsSlice';
 import insuranceReducer from './features/insurance/insuranceSlice';
+import claimsReducer from './features/claims/claimsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     blockchain: blockchainReducer,
     subscriptions: subscriptionsReducer,
     insurance: insuranceReducer,
+    claims: claimsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
