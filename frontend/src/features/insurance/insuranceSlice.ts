@@ -81,25 +81,13 @@ export const updatePolicyStatus = createAsyncThunk(
 );
 
 // Memoized selectors
-export const selectPolicies = createSelector(
-  (state: any) => state.insurance.policies,
-  (policies) => policies
-);
+export const selectPolicies = (state: any) => state.insurance.policies;
 
-export const selectCurrentPolicy = createSelector(
-  (state: any) => state.insurance.currentPolicy,
-  (policy) => policy
-);
+export const selectCurrentPolicy = (state: any) => state.insurance.currentPolicy;
 
-export const selectInsuranceLoading = createSelector(
-  (state: any) => state.insurance.isLoading,
-  (loading) => loading
-);
+export const selectInsuranceLoading = (state: any) => state.insurance.isLoading;
 
-export const selectInsuranceError = createSelector(
-  (state: any) => state.insurance.error,
-  (error) => error
-);
+export const selectInsuranceError = (state: any) => state.insurance.error;
 
 const insuranceSlice = createSlice({
   name: 'insurance',

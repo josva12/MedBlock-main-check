@@ -54,7 +54,7 @@ export const submitClaim = createAsyncThunk(
 // Fetch all claims (admin)
 export const fetchAllClaims = createAsyncThunk(
   'claims/fetchAll',
-  async (status?: string, { rejectWithValue }) => {
+  async (status: string | undefined, { rejectWithValue }) => {
     try {
       const url = status ? `/claims?status=${status}` : '/claims';
       const response = await api.get(url);
@@ -100,29 +100,17 @@ export const processClaim = createAsyncThunk(
 );
 
 // Memoized selectors
-export const selectClaims = createSelector(
-  (state: any) => state.claims.claims,
-  (claims) => claims
-);
+export const selectClaims = (state: any) => state.claims?.claims || [];
 
-export const selectCurrentClaim = createSelector(
-  (state: any) => state.claims.currentClaim,
-  (claim) => claim
-);
+export const selectCurrentClaim = (state: any) => state.claims?.currentClaim || null;
 
-export const selectClaimsLoading = createSelector(
-  (state: any) => state.claims.isLoading,
-  (loading) => loading
-);
+export const selectClaimsLoading = (state: any) => state.claims?.isLoading || false;
 
-export const selectClaimsError = createSelector(
-  (state: any) => state.claims.error,
-  (error) => error
-);
+export const selectClaimsError = (state: any) => state.claims?.error || null;
 
 export const selectClaimsByStatus = createSelector(
-  (state: any) => state.claims.claims,
-  (claims) => (status: string) => claims.filter(claim => claim.status === status)
+  [selectClaims],
+  (claims) => (status: string) => claims.filter((claim: any) => claim.status === status)
 );
 
 const claimsSlice = createSlice({

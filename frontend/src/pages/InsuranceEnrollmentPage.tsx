@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { AppDispatch, RootState } from '../store';
+import type { AppDispatch } from '../store';
 import { enrollUser, selectInsuranceLoading, selectInsuranceError, clearError } from '../features/insurance/insuranceSlice';
-import { selectCurrentUser } from '../features/auth/authSlice';
+import { useAppSelector } from '../hooks/useAppSelector';
 
 interface Dependent {
   name: string;
@@ -50,7 +50,7 @@ const InsuranceEnrollmentPage: React.FC = () => {
   const navigate = useNavigate();
   const loading = useSelector(selectInsuranceLoading);
   const error = useSelector(selectInsuranceError);
-  const currentUser = useSelector(selectCurrentUser);
+  const currentUser = useAppSelector((state) => state.auth.user);
 
   const [selectedTier, setSelectedTier] = useState('');
   const [dependents, setDependents] = useState<Dependent[]>([]);

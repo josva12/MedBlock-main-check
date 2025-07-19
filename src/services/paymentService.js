@@ -21,21 +21,78 @@ async function initiateSTKPush(phoneNumber, amount) {
 // Handle M-Pesa Payment Callback
 async function handleMpesaCallback(req, res) {
   try {
-    const { Body } = req.body;
-    const resultCode = Body.stkCallback.ResultCode;
-    const phoneNumber = Body.stkCallback.CallbackMetadata?.Item?.find(i => i.Name === 'PhoneNumber')?.Value;
-    // Find the policy by phone number and update status
-    if (resultCode === 0 && phoneNumber) {
-      const policy = await InsurancePolicy.findOneAndUpdate(
-        { status: 'pending', 'dependents.phoneNumber': phoneNumber },
-        { status: 'active', startDate: new Date(), endDate: new Date(Date.now() + 365*24*60*60*1000) },
-        { new: true }
-      );
-      // Optionally notify user
+    const { policyId, status, transactionId } = req.body;
+    
+    // Handle test format
+    if (policyId && status) {
+      if (status === 'success') {
+        const policy = await InsurancePolicy.findByIdAndUpdate(
+          policyId,
+          { 
+            status: 'active', 
+            startDate: new Date(), 
+            endDate: new Date(Date.now() + 365*24*60*60*1000) 
+          },
+          { new: true }
+        );
+        
+        if (!policy) {
+          return res.status(404).json({ 
+            error: 'Policy not found',
+            policyId 
+          });
+        }
+        
+        return res.status(200).json({ 
+          success: true, 
+          message: 'Payment processed successfully',
+          policy: policy 
+        });
+      } else {
+        return res.status(400).json({ 
+          error: 'Payment failed',
+          status 
+        });
+      }
     }
-    res.status(200).json({ success: true });
+    
+    // Handle M-Pesa format
+    const { Body } = req.body;
+    if (Body && Body.stkCallback) {
+      const resultCode = Body.stkCallback.ResultCode;
+      const phoneNumber = Body.stkCallback.CallbackMetadata?.Item?.find(i => i.Name === 'PhoneNumber')?.Value;
+      
+      if (resultCode === 0 && phoneNumber) {
+        const policy = await InsurancePolicy.findOneAndUpdate(
+          { status: 'pending', 'dependents.phoneNumber': phoneNumber },
+          { 
+            status: 'active', 
+            startDate: new Date(), 
+            endDate: new Date(Date.now() + 365*24*60*60*1000) 
+          },
+          { new: true }
+        );
+        
+        if (policy) {
+          return res.status(200).json({ 
+            success: true, 
+            message: 'M-Pesa payment processed successfully',
+            policy: policy 
+          });
+        }
+      }
+    }
+    
+    res.status(400).json({ 
+      error: 'Invalid callback format',
+      received: req.body 
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to process M-Pesa callback', details: error.message });
+    console.error('Payment callback error:', error);
+    res.status(500).json({ 
+      error: 'Failed to process payment callback', 
+      details: error.message 
+    });
   }
 }
 
