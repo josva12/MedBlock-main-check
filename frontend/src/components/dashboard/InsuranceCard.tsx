@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../store';
+import type { AppDispatch } from '../../store';
 import { getUserPolicy, selectCurrentPolicy, selectInsuranceLoading } from '../../features/insurance/insuranceSlice';
-import { selectCurrentUser } from '../../features/auth/authSlice';
+import { useAppSelector } from '../../hooks/useAppSelector';
 
 const InsuranceCard: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const currentUser = useSelector(selectCurrentUser);
+  const currentUser = useAppSelector((state) => state.auth.user);
   const currentPolicy = useSelector(selectCurrentPolicy);
   const loading = useSelector(selectInsuranceLoading);
 
@@ -105,7 +105,7 @@ const InsuranceCard: React.FC = () => {
           <div>
             <span className="text-sm text-gray-600">Dependents</span>
             <div className="mt-1 space-y-1">
-              {currentPolicy.dependents.map((dependent, index) => (
+              {currentPolicy.dependents.map((dependent: any, index: number) => (
                 <div key={index} className="flex items-center justify-between text-sm">
                   <span className="text-gray-900">{dependent.name}</span>
                   <span className="text-gray-500">{dependent.relationship}</span>
