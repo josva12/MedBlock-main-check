@@ -11,10 +11,11 @@ import {
   MessageSquare,
   Shield,
 } from 'lucide-react';
+import { type RootState } from '../../store';
 
 const Sidebar: React.FC = () => {
-  const { sidebarOpen } = useAppSelector((state) => state.ui);
-  const { user } = useAppSelector((state) => state.auth);
+  const isSidebarOpen = useAppSelector((state: RootState) => state.ui.sidebarOpen);
+  const { user } = useAppSelector((state: RootState) => state.auth);
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home, roles: ['admin', 'doctor', 'nurse', 'front-desk', 'pharmacy'] },
@@ -28,12 +29,10 @@ const Sidebar: React.FC = () => {
     { name: 'Admin Panel', href: '/admin', icon: Shield, roles: ['admin'] },
   ];
 
-  const filteredNavigation = navigation.filter(item => 
-    item.roles.includes(user?.role || '')
-  );
+  const filteredNavigation = navigation.filter(item => user && item.roles.includes(user.role));
 
   return (
-    <div className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
+    <div className={`fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
       <div className="flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 dark:border-gray-700">
@@ -44,7 +43,6 @@ const Sidebar: React.FC = () => {
             <span className="ml-2 text-xl font-semibold text-gray-900 dark:text-white">MedBlock</span>
           </div>
         </div>
-
         {/* Navigation */}
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           {filteredNavigation.map((item) => {
@@ -67,7 +65,6 @@ const Sidebar: React.FC = () => {
             );
           })}
         </nav>
-
         {/* User info */}
         <div className="p-4 border-t border-gray-200 dark:border-gray-700">
           <div className="flex items-center">

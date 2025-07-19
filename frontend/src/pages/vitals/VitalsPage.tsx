@@ -50,7 +50,7 @@ const VitalsPage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchVitals(undefined));
     dispatch(fetchPatients());
-  }, [dispatch]);
+  }, []); // Only run once on mount
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -185,7 +185,10 @@ const VitalsPage: React.FC = () => {
     }
   };
 
-  const filteredVitals = vitals.filter(vital => {
+  // Defensive check for vitals array
+  const safeVitals = Array.isArray(vitals) ? vitals : [];
+
+  const filteredVitals = safeVitals.filter(vital => {
     const patientId = vital.patient?._id || vital.patientId;
     const matchesPatient = !selectedPatient || patientId === selectedPatient;
     const matchesStatus = statusFilter === "all" || vital.status === statusFilter;
@@ -214,6 +217,9 @@ const VitalsPage: React.FC = () => {
       default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
     }
   };
+
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
 
   return (
     <div className="space-y-6">
@@ -245,7 +251,7 @@ const VitalsPage: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Patients</option>
-              {patients.map(patient => (
+              {safePatients.map(patient => (
                 <option key={patient._id} value={patient._id}>
                   {patient.fullName}
                 </option>
@@ -433,7 +439,7 @@ const VitalsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {patients.map(patient => (
+                  {safePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
                     </option>

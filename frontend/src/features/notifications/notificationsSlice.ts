@@ -3,11 +3,41 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 // Types are correct
-export interface Notification { /* ... */ }
-export interface SendNotificationData { /* ... */ }
-interface NotificationsState { /* ... */ }
+export interface Notification {
+  _id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'admin';
+  isRead: boolean;
+  createdAt: string;
+  userId: string;
+  metadata?: Record<string, any>;
+}
 
-const initialState: NotificationsState = { /* ... */ };
+export interface SendNotificationData {
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'admin';
+  userIds?: string[];
+  roles?: string[];
+  metadata?: Record<string, any>;
+}
+
+interface NotificationsState {
+  notifications: Notification[];
+  unreadCount: number;
+  isLoading: boolean;
+  isSending: boolean;
+  error: string | null;
+}
+
+const initialState: NotificationsState = {
+  notifications: [],
+  unreadCount: 0,
+  isLoading: false,
+  isSending: false,
+  error: null,
+};
 
 // Async thunks
 export const fetchNotifications = createAsyncThunk(

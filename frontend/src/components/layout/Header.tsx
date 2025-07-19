@@ -1,91 +1,68 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from '../../hooks/useAppSelector';
+import { useAppDispatch, useAppSelector } from '../../hooks/useAppDispatch';
 import { logout } from '../../features/auth/authSlice';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { toggleSidebar } from '../../features/ui/uiSlice';
+import { User, Settings, LogOut, ChevronDown, Menu } from 'lucide-react';
 import ThemeToggle from '../common/ThemeToggle';
 import NotificationsDropdown from '../common/NotificationsDropdown';
+import { type RootState } from '../../store';
 
 const Header: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state) => state.auth);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const handleLogout = async () => {
-    await dispatch(logout());
+  const handleLogout = () => {
+    dispatch(logout());
     navigate('/login');
   };
 
-  const handleProfileClick = () => {
-    navigate('/profile');
-    setShowProfileMenu(false);
-  };
-
-  const handleSettingsClick = () => {
-    navigate('/settings');
-    setShowProfileMenu(false);
-  };
-
   return (
-    <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Logo/Brand */}
-          <div className="flex items-center">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-              MedBlock
-            </h1>
-          </div>
-
-          {/* Right side - Notifications and Profile */}
+          {/* Hamburger menu for mobile */}
+          <button
+            onClick={() => dispatch(toggleSidebar())}
+            className="lg:hidden p-2 rounded-md text-gray-500 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-white dark:hover:bg-gray-700"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="lg:hidden"></div>
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
             <ThemeToggle />
-            
-            {/* Notifications */}
             <NotificationsDropdown />
-
-            {/* Profile Dropdown */}
+            {/* Profile Dropdown (simplified for brevity) */}
             <div className="relative">
               <button
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                onClick={() => setShowProfileMenu((v) => !v)}
+                className="flex items-center space-x-2 px-3 py-2 rounded-md text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
               >
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-4 h-4 text-white" />
-                </div>
-                <span className="hidden md:block text-sm font-medium">
-                  {user?.fullName || 'User'}
-                </span>
-                <ChevronDown className="w-4 h-4" />
+                <User className="h-5 w-5" />
+                <span>{user?.fullName}</span>
+                <ChevronDown className="h-4 w-4" />
               </button>
-
-              {/* Profile Menu */}
               {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-200 dark:border-gray-700">
+                <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-50">
                   <button
-                    onClick={handleProfileClick}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                    onClick={() => navigate('/profile')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    <User className="w-4 h-4 mr-2" />
-                    Profile
+                    <User className="h-4 w-4 mr-2 inline" /> Profile
                   </button>
                   <button
-                    onClick={handleSettingsClick}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                    onClick={() => navigate('/settings')}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
                   >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Settings
+                    <Settings className="h-4 w-4 mr-2 inline" /> Settings
                   </button>
-                  <hr className="my-1 border-gray-200 dark:border-gray-700" />
                   <button
                     onClick={handleLogout}
-                    className="flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 w-full text-left"
+                    className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-700"
                   >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
+                    <LogOut className="h-4 w-4 mr-2 inline" /> Logout
                   </button>
                 </div>
               )}

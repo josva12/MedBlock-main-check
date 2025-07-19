@@ -360,7 +360,7 @@ const validateAllergy = [
 // @route   GET /api/v1/patients
 // @desc    Get all patients with pagination and filtering
 // @access  Private
-router.get('/', requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+router.get('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
   try {
     // --- Robust Pagination Validation ---
     const { page, limit } = req.query;

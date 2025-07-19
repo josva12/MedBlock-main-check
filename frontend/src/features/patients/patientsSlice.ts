@@ -149,6 +149,7 @@ const patientsSlice = createSlice({
       .addCase(fetchPatients.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.patients = [];
       })
       
       // Fetch by ID

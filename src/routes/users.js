@@ -5,6 +5,7 @@ const User = require('../models/User');
 const logger = require('../utils/logger');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const Patient = require('../models/Patient');
+const Notification = require('../models/Notification');
 
 const router = express.Router();
 
@@ -449,6 +450,29 @@ router.get('/:doctorId/assigned-patients', requireRole(['admin', 'doctor', 'nurs
   } catch (error) {
     logger.error('Get assigned patients failed:', error);
     res.status(500).json({ error: 'Failed to get assigned patients' });
+  }
+});
+
+// @route   GET /api/v1/users/:id/notifications
+// @desc    Get all notifications for a specific user
+// @access  Private (user can only access their own notifications)
+router.get('/:id/notifications', authenticateToken, async (req, res) => {
+  try {
+    // Security check: ensure the logged-in user is requesting their own notifications
+    if (req.user._id.toString() !== req.params.id) {
+      logger.warn(`SECURITY_EVENT: User ${req.user._id} attempted to access notifications for user ${req.params.id}`);
+      return res.status(403).json({ error: 'Forbidden: You can only access your own notifications.' });
+    }
+
+    const notifications = await Notification.find({ userId: req.params.id }).sort({ createdAt: -1 });
+    res.json({
+      success: true,
+      count: notifications.length,
+      data: notifications
+    });
+  } catch (error) {
+    logger.error(`Failed to fetch notifications for user ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Server error while fetching notifications.' });
   }
 });
 

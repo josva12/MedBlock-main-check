@@ -19,6 +19,9 @@ const NotificationsDropdown: React.FC = () => {
   const isLoading = useAppSelector(state => state.notifications.isLoading);
   const user = useAppSelector(state => state.auth.user);
 
+  // Defensive check to ensure notifications is always an array
+  const notificationList = Array.isArray(notifications) ? notifications : [];
+
   const [isOpen, setIsOpen] = useState(false);
   const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -263,13 +266,13 @@ const NotificationsDropdown: React.FC = () => {
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
                 <p className="mt-2 text-sm">Loading notifications...</p>
               </div>
-            ) : notifications.length === 0 ? (
+            ) : notificationList.length === 0 ? (
               <div className="p-4 text-center text-gray-500 dark:text-gray-400">
                 <Bell className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No notifications</p>
               </div>
             ) : (
-              notifications.map(renderNotification)
+              notificationList.map(renderNotification)
             )}
           </div>
         </div>

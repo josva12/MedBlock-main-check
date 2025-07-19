@@ -195,6 +195,7 @@ const vitalsSlice = createSlice({
       .addCase(fetchVitals.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+        state.vitals = [];
       })
       
       // Fetch by ID

@@ -3,7 +3,7 @@ const router = express.Router();
 const VitalSign = require('../models/VitalSign');
 const Patient = require('../models/Patient');
 const User = require('../models/User');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 const { validateObjectId } = require('../utils/validation');
 const logger = require('../utils/logger');
 const vitalSignController = require('../controllers/vitalSignController');
@@ -110,7 +110,7 @@ router.post('/', authenticateToken, async (req, res) => {
  * @desc    Get vital signs with filtering and pagination
  * @access  Private (doctors, nurses, admins)
  */
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
   try {
     const {
       patientId,

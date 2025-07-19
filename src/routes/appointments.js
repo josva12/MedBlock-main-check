@@ -21,7 +21,7 @@ const validateAppointment = [
 router.use(authenticateToken);
 
 router.post('/', requireRole(['admin', 'doctor', 'nurse']), validateAppointment, appointmentController.createAppointment);
-router.get('/', requireRole(['admin', 'doctor', 'nurse']), appointmentController.getAppointments);
+router.get('/', requireRole(['admin', 'doctor', 'nurse', 'front-desk']), appointmentController.getAppointments);
 // @route   GET /api/v1/appointments/statistics/overview
 // @desc    Get appointment statistics overview
 // @access  Private (admin, doctor, nurse)

@@ -1,35 +1,15 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Outlet } from 'react-router-dom';
-import { useAppDispatch } from '../hooks/useAppDispatch';
-// --- FIX: Corrected the import for useAppSelector ---
-import { useAppSelector } from '../hooks/useAppSelector';
-import { fetchNotifications, fetchUnreadCount } from '../features/notifications/notificationsSlice';
 import Sidebar from '../components/layout/Sidebar';
 import Header from '../components/layout/Header';
-import { type RootState } from '../store';
 
 const AuthenticatedLayout: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const { user } = useAppSelector((state: RootState) => state.auth);
-
-  useEffect(() => {
-    if (user?._id) {
-      dispatch(fetchNotifications(user._id));
-      dispatch(fetchUnreadCount(user._id));
-      const interval = setInterval(() => {
-        dispatch(fetchNotifications(user._id));
-        dispatch(fetchUnreadCount(user._id));
-      }, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [dispatch, user?._id]);
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Sidebar />
-      <div className="lg:pl-64">
+      <div className="lg:pl-64 flex flex-col flex-1">
         <Header />
-        <main className="p-6">
+        <main className="flex-1 p-6">
           <Outlet />
         </main>
       </div>
