@@ -42,11 +42,11 @@ const initialState: NotificationsState = {
 // Async thunks
 export const fetchNotifications = createAsyncThunk(
   'notifications/fetchNotifications',
-  async (userId: string, { rejectWithValue }) => {
+  async (_, { rejectWithValue }) => { // Removed userId argument
     try {
-      const response = await api.get(`/users/${userId}/notifications`);
+      const response = await api.get(`/notifications`); // Changed endpoint
       const notifications = response.data.data || [];
-      const unreadCount = notifications.filter((n: Notification) => !n.isRead).length;
+      const unreadCount = response.data.unreadCount || 0; // Use unreadCount from response
       return { notifications, unreadCount };
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch notifications');

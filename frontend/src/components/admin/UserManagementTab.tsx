@@ -1,64 +1,51 @@
-import React, { useState } from 'react';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
+import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
-// ========= THE FIX IS HERE =========
-// We import `AdminUser` as a `type` to satisfy TypeScript's modern module rules.
-import { updateUser, deleteUser, type AdminUser } from '../../features/admin/adminSlice';
-// ===================================
-import { 
-  Edit, 
-  Trash2, 
-  Save, 
-  X, 
-  Search,
-  User,
-  Phone,
-  MapPin
-} from 'lucide-react';
-import { type RootState } from '../../store'; // Import RootState for correct typing
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { fetchAllUsers, updateUserStatus, deleteUser } from '../../features/admin/adminSlice';
+import { User, TrashIcon, PencilIcon, EyeIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { RootState } from '../../store';
 
-const UserManagementTab: React.FC = () => {
+interface UserManagementTabProps {
+  activeTab: string;
+}
+
+const UserManagementTab: React.FC<UserManagementTabProps> = ({ activeTab }) => {
   const dispatch = useAppDispatch();
-  const { users, loading } = useAppSelector((state: RootState) => state.admin);
-  const [editingUser, setEditingUser] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [showDeleteModal, setShowDeleteModal] = useState<string | null>(null);
+  const [filterRole, setFilterRole] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
-  // Edit form state
-  const [editForm, setEditForm] = useState<Partial<AdminUser>>({});
+  const { users, loading } = useAppSelector((state: RootState) => state.admin);
 
-  const handleEdit = (user: AdminUser) => {
-    setEditingUser(user._id);
-    setEditForm({
-      fullName: user.fullName,
-      email: user.email,
-      role: user.role,
-      title: user.title,
-      specialization: user.specialization,
-      department: user.department,
-      phone: user.phone,
-      isActive: user.isActive,
-    });
+  useEffect(() => {
+    dispatch(fetchAllUsers());
+  }, [dispatch]);
+
+  const handleEdit = (user: any) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
   };
 
   const handleSave = async () => {
-    if (editingUser && editForm) {
-      await dispatch(updateUser({ id: editingUser, data: editForm }));
-      setEditingUser(null);
-      setEditForm({});
+    if (selectedUser) {
+      await dispatch(updateUserStatus({ id: selectedUser._id, status: selectedUser.isActive }));
+      setSelectedUser(null);
+      setShowUserModal(false);
     }
   };
 
   const handleCancel = () => {
-    setEditingUser(null);
-    setEditForm({});
+    setSelectedUser(null);
+    setShowUserModal(false);
   };
 
   const handleDelete = async (userId: string) => {
     await dispatch(deleteUser(userId));
-    setShowDeleteModal(null);
+    setShowDeleteModal(false);
   };
 
   const getRoleDisplayName = (role: string) => {
@@ -72,7 +59,7 @@ const UserManagementTab: React.FC = () => {
     return roleMap[role] || role;
   };
 
-  const getStatusBadge = (user: AdminUser) => {
+  const getStatusBadge = (user: any) => {
     if (!user.isActive) {
       return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Inactive</span>;
     }
@@ -102,10 +89,10 @@ const UserManagementTab: React.FC = () => {
     const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.phone && user.phone.includes(searchTerm)); // Add check for user.phone
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    const matchesStatus = statusFilter === 'all' || 
-                         (statusFilter === 'active' && user.isActive) ||
-                         (statusFilter === 'inactive' && !user.isActive);
+    const matchesRole = filterRole === 'all' || user.role === filterRole;
+    const matchesStatus = filterStatus === 'all' || 
+                         (filterStatus === 'active' && user.isActive) ||
+                         (filterStatus === 'inactive' && !user.isActive);
     
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -128,7 +115,6 @@ const UserManagementTab: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Search by name, email, or phone..."
@@ -140,8 +126,8 @@ const UserManagementTab: React.FC = () => {
 
           {/* Role Filter */}
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            value={filterRole}
+            onChange={(e) => setFilterRole(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Roles</option>
@@ -154,8 +140,8 @@ const UserManagementTab: React.FC = () => {
 
           {/* Status Filter */}
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Status</option>
@@ -207,11 +193,11 @@ const UserManagementTab: React.FC = () => {
                       </div>
                       <div className="ml-4">
                         <div className="text-sm font-medium text-gray-900">
-                          {editingUser === user._id ? (
+                          {selectedUser?._id === user._id ? (
                             <input
                               type="text"
-                              value={editForm.fullName || ''}
-                              onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })}
+                              value={selectedUser.fullName || ''}
+                              onChange={(e) => setSelectedUser({ ...selectedUser, fullName: e.target.value })}
                               className="border border-gray-300 rounded px-2 py-1 text-sm"
                             />
                           ) : (
@@ -219,11 +205,11 @@ const UserManagementTab: React.FC = () => {
                           )}
                         </div>
                         <div className="text-sm text-gray-500">
-                          {editingUser === user._id ? (
+                          {selectedUser?._id === user._id ? (
                             <input
                               type="email"
-                              value={editForm.email || ''}
-                              onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                              value={selectedUser.email || ''}
+                              onChange={(e) => setSelectedUser({ ...selectedUser, email: e.target.value })}
                               className="border border-gray-300 rounded px-2 py-1 text-sm"
                             />
                           ) : (
@@ -234,10 +220,10 @@ const UserManagementTab: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {editingUser === user._id ? (
+                    {selectedUser?._id === user._id ? (
                       <select
-                        value={editForm.role || ''}
-                        onChange={(e) => setEditForm({ ...editForm, role: e.target.value as any })}
+                        value={selectedUser.role || ''}
+                        onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value as any })}
                         className="border border-gray-300 rounded px-2 py-1 text-sm"
                       >
                         <option value="admin">Administrator</option>
@@ -269,7 +255,7 @@ const UserManagementTab: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {editingUser === user._id ? (
+                    {selectedUser?._id === user._id ? (
                       <div className="flex space-x-2">
                         <button
                           onClick={handleSave}

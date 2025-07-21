@@ -40,6 +40,12 @@ const notificationSchema = new mongoose.Schema({
     index: true
   },
   
+  archived: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+
   // Optional metadata for additional context
   metadata: {
     action: String, // e.g., 'appointment_created', 'vital_signs_updated'
@@ -64,6 +70,7 @@ const notificationSchema = new mongoose.Schema({
 notificationSchema.index({ userId: 1, createdAt: -1 });
 notificationSchema.index({ userId: 1, isRead: 1 });
 notificationSchema.index({ type: 1, createdAt: -1 });
+notificationSchema.index({ archived: 1 });
 
 // Virtual for time ago
 notificationSchema.virtual('timeAgo').get(function() {

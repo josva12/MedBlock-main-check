@@ -11,6 +11,13 @@ const {
 } = require('../utils/masking');
 
 const patientSchema = new mongoose.Schema({
+  // Link to the User account for authentication and basic info
+  userAccount: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+    unique: true
+  },
   // Basic Information
   patientId: {
     type: String,
@@ -216,31 +223,6 @@ const patientSchema = new mongoose.Schema({
     }
   },
   
-  // Contact Information
-  phoneNumber: {
-    type: String,
-    required: true,
-    validate: {
-      validator: function(v) {
-        return /^(\+254|0)[17]\d{8}$/.test(v);
-      },
-      message: 'Please provide a valid Kenyan phone number'
-    }
-  },
-  email: {
-    type: String,
-    unique: true,
-    sparse: true,
-    lowercase: true,
-    trim: true,
-    validate: {
-      validator: function(v) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-      },
-      message: 'Please provide a valid email address'
-    }
-  },
-  
   // Embedded Clinical Data (Frequently accessed together)
   allergies: [{
     allergen: {
@@ -358,32 +340,6 @@ const patientSchema = new mongoose.Schema({
     enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'unknown'],
     default: 'unknown'
   },
-  
-  // Security and Access
-  password: {
-    type: String,
-    required: false,
-    select: false,
-    minlength: 8,
-    validate: {
-      validator: function(v) {
-        if (!v) return true; // Allow empty passwords for patients
-        return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(v);
-      },
-      message: 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-    }
-  },
-  
-  // Account Status
-  isActive: {
-    type: Boolean,
-    default: true
-  },
-  isVerified: {
-    type: Boolean,
-    default: false
-  },
-  lastLogin: Date,
   
   // Audit Fields
   createdAt: {

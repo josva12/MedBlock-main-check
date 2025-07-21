@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import {
@@ -7,6 +7,7 @@ import {
   deleteNotification,
   sendNotification,
   markNotificationAsUnread, // <-- add import
+  fetchNotifications, // <-- add import
   type SendNotificationData,
   type Notification
 } from '../../features/notifications/notificationsSlice';
@@ -14,17 +15,22 @@ import { Bell, Send, Info, CheckCircle, AlertTriangle, XCircle, Settings } from 
 
 const NotificationsDropdown: React.FC = () => {
   const dispatch = useAppDispatch();
-  const notifications = useAppSelector(state => state.notifications.notifications);
-  const unreadCount = useAppSelector(state => state.notifications.unreadCount);
-  const isLoading = useAppSelector(state => state.notifications.isLoading);
+  const [isOpen, setIsOpen] = useState(false); // Moved state declaration up
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { notifications, unreadCount, isLoading } = useAppSelector(state => state.notifications); // Destructure state
   const user = useAppSelector(state => state.auth.user);
+
+  // Fetch notifications when the dropdown is opened
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchNotifications());
+    }
+  }, [isOpen, dispatch]);
 
   // Defensive check to ensure notifications is always an array
   const notificationList = Array.isArray(notifications) ? notifications : [];
 
-  const [isOpen, setIsOpen] = useState(false);
-  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [adminNotification, setAdminNotification] = useState<SendNotificationData>({
     title: '',
     message: '',

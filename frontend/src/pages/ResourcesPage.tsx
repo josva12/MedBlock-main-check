@@ -2,11 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { fetchResources, createResource } from '../features/resources/resourcesSlice';
-import { type RootState } from '../store';
 
 const ResourcesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { resources = [], isLoading, error } = useAppSelector((state: RootState) => state.resources || { resources: [], isLoading: false, error: null });
+  const { resources = [], isLoading, error } = useAppSelector((state) => state.resources || { resources: [], isLoading: false, error: null });
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', category: '' });
   const [formError, setFormError] = useState('');
@@ -67,7 +66,7 @@ const ResourcesPage: React.FC = () => {
                 <td colSpan={3} className="text-center py-8 text-gray-500 dark:text-gray-400">No resources found</td>
               </tr>
             ) : (
-              resources.map((r) => (
+              resources.map((r: any) => (
                 <tr key={r._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{r.title}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{r.category || '-'}</td>

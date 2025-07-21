@@ -7,7 +7,7 @@ export interface User {
   _id: string;
   fullName: string;
   email: string;
-  role: 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy';
+  role: 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy' | 'patient';
   title: string;
   specialization?: string;
   department?: string;
@@ -55,7 +55,7 @@ export interface RegisterData {
   fullName: string;
   email: string;
   password: string;
-  role: 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy';
+  role: 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy' | 'patient';
   phone: string;
   title: string;
   specialization?: string;
@@ -73,10 +73,10 @@ export interface RegisterData {
 }
 
 const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('accessToken'), // Corrected to match what LoginPage sets
+  user: localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')!) : null,
+  token: localStorage.getItem('accessToken'),
   refreshToken: localStorage.getItem('refreshToken'),
-  isAuthenticated: !!localStorage.getItem('accessToken'), // Corrected
+  isAuthenticated: !!localStorage.getItem('accessToken'),
   isLoading: false,
   error: null,
 };
@@ -189,6 +189,21 @@ export const changePassword = createAsyncThunk(
   }
 );
 
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (payload: { email: string }, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/forgot-password', payload);
+      toast.success('Password reset link sent!');
+      return true;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to send reset link';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
 // Slice
 const authSlice = createSlice({
   name: 'auth',
@@ -214,6 +229,7 @@ const authSlice = createSlice({
         state.token = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.error = null;
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
       })
       .addCase(login.rejected, (state, action) => {
         state.isLoading = false;
@@ -230,6 +246,7 @@ const authSlice = createSlice({
         state.token = action.payload.accessToken;
         state.refreshToken = action.payload.refreshToken;
         state.error = null;
+        localStorage.setItem('user', JSON.stringify(action.payload.user));
       })
       .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
@@ -243,6 +260,7 @@ const authSlice = createSlice({
         state.isAuthenticated = true;
         state.user = action.payload;
         state.error = null;
+        localStorage.setItem('user', JSON.stringify(action.payload));
       })
       .addCase(getCurrentUser.rejected, (state) => {
         state.isLoading = false;
@@ -252,6 +270,7 @@ const authSlice = createSlice({
         state.refreshToken = null;
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
       })
       .addCase(logout.fulfilled, (state) => {
         state.user = null;
@@ -259,6 +278,7 @@ const authSlice = createSlice({
         state.refreshToken = null;
         state.isAuthenticated = false;
         state.error = null;
+        localStorage.removeItem('user');
       })
       .addCase(updateUserProfile.fulfilled, (state, action) => {
         state.user = action.payload;

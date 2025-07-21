@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { fetchSubscriptions, createSubscription } from '../features/subscriptions/subscriptionsSlice';
-import { type RootState } from '../store';
+import type { RootState } from '../store';
+import type { Subscription } from '../features/subscriptions/subscriptionsSlice';
 
 const plans = [
   { value: 'basic', label: 'Basic' },
@@ -16,12 +17,10 @@ const paymentMethods = [
 
 const SubscriptionsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const subscriptionsState = useAppSelector((state: RootState) => state.subscriptions);
-  const subscriptions = subscriptionsState?.subscriptions ?? [];
-  const isLoading = subscriptionsState?.isLoading ?? false;
-  const error = subscriptionsState?.error ?? null;
+  const { subscriptions, isLoading, error } = useAppSelector((state: RootState) => state.subscriptions);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ plan: 'basic', facilityId: '', paymentMethod: 'mpesa', mpesaReceipt: '' });
+  const [form, setForm] = useState({ plan: 'basic' as 'basic' | 'premium', facilityId: '', paymentMethod: 'mpesa' as 'mpesa' | 'card', mpesaReceipt: '' });
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -30,18 +29,18 @@ const SubscriptionsPage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value as any }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-    if (!form.plan || !form.facilityId) {
-      setFormError('Plan and Facility are required');
+    if (!form.plan || !form.facilityId || !user?._id) {
+      setFormError('Plan, Facility, and User ID are required');
       return;
     }
     try {
-      await dispatch(createSubscription(form)).unwrap();
+      await dispatch(createSubscription({ ...form, userId: user._id })).unwrap();
       setShowModal(false);
       setForm({ plan: 'basic', facilityId: '', paymentMethod: 'mpesa', mpesaReceipt: '' });
     } catch (err: any) {
@@ -82,7 +81,7 @@ const SubscriptionsPage: React.FC = () => {
                 <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">No subscriptions found</td>
               </tr>
             ) : (
-              subscriptions.map((sub) => (
+              subscriptions.map((sub: Subscription) => (
                 <tr key={sub._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{sub.plan}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{sub.facilityId}</td>

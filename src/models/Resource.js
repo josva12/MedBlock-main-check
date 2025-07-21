@@ -1,8 +1,18 @@
 const mongoose = require('mongoose');
+
 const ResourceSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
-  category: { type: String }, // e.g., "diabetes", "malaria", "insurance"
+  category: { type: String, enum: ['health', 'finance', 'educational'] },
+  author: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  reactions: {
+    happy: { type: Number, default: 0 },
+    sad: { type: Number, default: 0 },
+    helpful: { type: Number, default: 0 },
+    unhelpful: { type: Number, default: 0 },
+    neutral: { type: Number, default: 0 },
+  },
   createdAt: { type: Date, default: Date.now }
 });
+
 module.exports = mongoose.model('Resource', ResourceSchema); 

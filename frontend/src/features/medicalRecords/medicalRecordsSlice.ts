@@ -11,6 +11,7 @@ export interface MedicalRecord {
   treatment: string;
   prescription?: string;
   notes?: string;
+  status?: string; // Added status field
   doctorId: string;
   doctorName: string;
   date: string;

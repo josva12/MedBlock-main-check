@@ -101,7 +101,7 @@ router.use('/payments', require('./payments'));
 router.use('/chat', require('./chat'));
 router.use('/api/v1/teleconsultations', teleconsultationRoutes);
 router.use('/api/v1/predictions', predictionRoutes);
-router.use('/api/v1/resources', resourceRoutes);
+router.use('/resources', require('./resources'));
 
 // The admin routes for managing admins are mounted at the root of the API
 // This makes the routes inside it like /api/v1/admin/admins and /api/v1/admin/users/:id

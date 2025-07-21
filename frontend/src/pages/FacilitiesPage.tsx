@@ -2,13 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { fetchFacilities, createFacility } from '../features/facilities/facilitiesSlice';
-import { type RootState } from '../store';
 
 const FacilitiesPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { facilities = [], isLoading, error } = useAppSelector((state: RootState) => state.facilities || { facilities: [], isLoading: false, error: null });
+  const { facilities = [], isLoading, error } = useAppSelector((state) => state.facilities || { facilities: [], isLoading: false, error: null });
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ name: '', type: '', registrationNumber: '', licensingBody: '', address: '', contact: '' });
+  const [form, setForm] = useState({ 
+    name: '', 
+    type: '', 
+    registrationNumber: '', 
+    licensingBody: '', 
+    address: '', 
+    contact: '',
+    status: 'pending',
+    submissionDate: new Date().toISOString(),
+    createdBy: ''
+  });
   const [formError, setFormError] = useState('');
 
   useEffect(() => {
@@ -30,7 +39,17 @@ const FacilitiesPage: React.FC = () => {
     try {
       await dispatch(createFacility(form)).unwrap();
       setShowModal(false);
-      setForm({ name: '', type: '', registrationNumber: '', licensingBody: '', address: '', contact: '' });
+      setForm({ 
+        name: '', 
+        type: '', 
+        registrationNumber: '', 
+        licensingBody: '', 
+        address: '', 
+        contact: '',
+        status: 'pending',
+        submissionDate: new Date().toISOString(),
+        createdBy: ''
+      });
     } catch (err: any) {
       setFormError(err.message || 'Failed to create facility');
     }
@@ -69,7 +88,7 @@ const FacilitiesPage: React.FC = () => {
                 <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">No facilities found</td>
               </tr>
             ) : (
-              facilities.map((f) => (
+              facilities.map((f: any) => (
                 <tr key={f._id}>
                   <td className="px-6 py-4 whitespace-nowrap">{f.name}</td>
                   <td className="px-6 py-4 whitespace-nowrap">{f.type}</td>

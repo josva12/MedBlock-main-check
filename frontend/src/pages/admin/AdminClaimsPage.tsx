@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../store';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
+import type { RootState } from '../../store';
 import { 
   fetchAllClaims, 
   processClaim, 
@@ -9,15 +10,16 @@ import {
   selectClaimsError,
   clearError 
 } from '../../features/claims/claimsSlice';
+import type { Claim } from '../../features/claims/claimsSlice';
 
 const AdminClaimsPage: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const claims = useSelector(selectClaims);
-  const loading = useSelector(selectClaimsLoading);
-  const error = useSelector(selectClaimsError);
+  const dispatch = useAppDispatch();
+  const claims = useAppSelector(selectClaims);
+  const loading = useAppSelector(selectClaimsLoading);
+  const error = useAppSelector(selectClaimsError);
 
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedClaim, setSelectedClaim] = useState<any>(null);
+  const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [showProcessModal, setShowProcessModal] = useState(false);
   const [processData, setProcessData] = useState({
     status: '',
@@ -69,7 +71,7 @@ const AdminClaimsPage: React.FC = () => {
     });
   };
 
-  const openProcessModal = (claim: any) => {
+  const openProcessModal = (claim: Claim) => {
     setSelectedClaim(claim);
     setShowProcessModal(true);
   };
@@ -159,7 +161,7 @@ const AdminClaimsPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {claims.map((claim) => (
+                  {claims.map((claim: Claim) => (
                     <tr key={claim._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDate(claim.createdAt)}
@@ -172,7 +174,7 @@ const AdminClaimsPage: React.FC = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         <div className="flex flex-wrap gap-1">
-                          {claim.servicesRendered.map((service, index) => (
+                          {claim.servicesRendered.map((service: string, index: number) => (
                             <span
                               key={index}
                               className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"
@@ -301,7 +303,7 @@ const AdminClaimsPage: React.FC = () => {
                 <div>
                   <span className="font-medium">Services:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {selectedClaim.servicesRendered.map((service, index) => (
+                    {selectedClaim.servicesRendered.map((service: string, index: number) => (
                       <span
                         key={index}
                         className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800"

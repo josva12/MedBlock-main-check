@@ -8,7 +8,6 @@ import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 
 // --- FIX: Used `type` keyword for type-only imports ---
-import { type RootState } from '../store'; 
 import { register, clearError, type RegisterData } from '../features/auth/authSlice';
 
 
@@ -38,7 +37,7 @@ const RegisterPage: React.FC = () => {
   const dispatch = useAppDispatch();
 
   // --- FIX: Typed the `state` parameter with `RootState` ---
-  const { isLoading, isAuthenticated, error } = useAppSelector((state: RootState) => state.auth);
+  const { isLoading, isAuthenticated, error } = useAppSelector((state) => state.auth);
 
   const [form, setForm] = useState<FormState>({
     fullName: "",
@@ -199,39 +198,40 @@ const RegisterPage: React.FC = () => {
                     <div className="relative">
                         <BriefcaseMedical className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                         <select id="role" name="role" value={form.role} onChange={handleChange} required className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.role ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}>
-                            {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
+                            {ROLES.map(role => <option key={role} value={role}>{role.charAt(0).toUpperCase() + role.slice(1).replace('-', ' ')}</option>)}
                         </select>
                     </div>
                 </div>
-                {isProfessionalRole && (
-                    <>
-                        <div>
-                            <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1">Specialization <span className="text-gray-500">(Optional)</span></label>
-                            <input type="text" id="specialization" name="specialization" value={form.specialization} onChange={handleChange} placeholder="e.g., Cardiology" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm border-gray-300 focus:ring-blue-500"/>
-                        </div>
-                        <div>
-                            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department <span className="text-gray-500">(Optional)</span></label>
-                            <input type="text" id="department" name="department" value={form.department} onChange={handleChange} placeholder="e.g., Outpatient" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm border-gray-300 focus:ring-blue-500"/>
-                        </div>
-                        <div>
-                            <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number <span className="text-gray-500">(Optional)</span></label>
-                            <input type="text" id="submittedLicenseNumber" name="submittedLicenseNumber" value={form.submittedLicenseNumber} onChange={handleChange} placeholder="e.g., P1234" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm border-gray-300 focus:ring-blue-500" />
-                        </div>
-                        <div>
-                            <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 mb-1">Licensing Body <span className="text-gray-500">(Optional)</span></label>
-                            <select id="licensingBody" name="licensingBody" value={form.licensingBody} onChange={handleChange} className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm border-gray-300 focus:ring-blue-500">
-                                <option value="">Select if applicable</option>
-                                {LICENSING_BODIES.map(b => <option key={b} value={b}>{b}</option>)}
-                            </select>
-                        </div>
-                    </>
-                )}
             </div>
+
+            {isProfessionalRole && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
+                  <input type="text" id="specialization" name="specialization" value={form.specialization} onChange={handleChange} placeholder="e.g., Cardiology" className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                  <input type="text" id="department" name="department" value={form.department} onChange={handleChange} placeholder="e.g., Internal Medicine" className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
+                  <input type="text" id="submittedLicenseNumber" name="submittedLicenseNumber" value={form.submittedLicenseNumber} onChange={handleChange} placeholder="e.g., 12345" className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
+                </div>
+                <div>
+                  <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 mb-1">Licensing Body</label>
+                  <select id="licensingBody" name="licensingBody" value={form.licensingBody} onChange={handleChange} className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm">
+                    <option value="">Select Licensing Body</option>
+                    {LICENSING_BODIES.map(body => <option key={body} value={body}>{body}</option>)}
+                  </select>
+                </div>
+              </div>
+            )}
           </fieldset>
 
-          {/* Address & Contact */}
+          {/* Contact Information */}
           <fieldset>
-            <legend className="text-lg font-semibold text-gray-700 mb-4">Address & Contact</legend>
+            <legend className="text-lg font-semibold text-gray-700 mb-4">Contact Information</legend>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
@@ -241,40 +241,54 @@ const RegisterPage: React.FC = () => {
                 </div>
                 {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
               </div>
+            </div>
+          </fieldset>
+
+          {/* Address Information */}
+          <fieldset>
+            <legend className="text-lg font-semibold text-gray-700 mb-4">Address Information</legend>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="address.street" className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
-                <input type="text" id="address.street" name="address.street" value={form.address.street} onChange={handleChange} required placeholder="123 Main St" className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.street'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                <input type="text" id="address.street" name="address.street" value={form.address.street} onChange={handleChange} required placeholder="123 Main Street" className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.street'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
                 {errors['address.street'] && <p className="mt-1 text-xs text-red-600">{errors['address.street']}</p>}
               </div>
               <div>
-                <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 mb-1">City / Town</label>
+                <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <input type="text" id="address.city" name="address.city" value={form.address.city} onChange={handleChange} required placeholder="Nairobi" className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.city'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
                 {errors['address.city'] && <p className="mt-1 text-xs text-red-600">{errors['address.city']}</p>}
               </div>
               <div>
                 <label htmlFor="address.county" className="block text-sm font-medium text-gray-700 mb-1">County</label>
                 <select id="address.county" name="address.county" value={form.address.county} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.county'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}>
-                  {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {COUNTIES.map(county => <option key={county} value={county}>{county}</option>)}
                 </select>
+                {errors['address.county'] && <p className="mt-1 text-xs text-red-600">{errors['address.county']}</p>}
               </div>
               <div>
-                <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 mb-1">Sub-County / Estate</label>
-                <input type="text" id="address.subCounty" name="address.subCounty" value={form.address.subCounty} onChange={handleChange} required placeholder="e.g., Westlands" className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.subCounty'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 mb-1">Sub-County</label>
+                <input type="text" id="address.subCounty" name="address.subCounty" value={form.address.subCounty} onChange={handleChange} required placeholder="Westlands" className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.subCounty'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
                 {errors['address.subCounty'] && <p className="mt-1 text-xs text-red-600">{errors['address.subCounty']}</p>}
+              </div>
+              <div>
+                <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
+                <input type="text" id="address.postalCode" name="address.postalCode" value={form.address.postalCode} onChange={handleChange} placeholder="00100" className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" />
               </div>
             </div>
           </fieldset>
-          
+
           {/* Password */}
           <fieldset>
-            <legend className="text-lg font-semibold text-gray-700 mb-4">Set Your Password</legend>
+            <legend className="text-lg font-semibold text-gray-700 mb-4">Security</legend>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={form.password} onChange={handleChange} required placeholder="••••••••" className={`block w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" aria-label={showPassword ? "Hide password" : "Show password"}><Eye className="h-5 w-5" /></button>
+                  <input type={showPassword ? "text" : "password"} id="password" name="password" value={form.password} onChange={handleChange} required placeholder="••••••••" className={`block w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  </button>
                 </div>
                 {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
               </div>
@@ -282,29 +296,31 @@ const RegisterPage: React.FC = () => {
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required placeholder="••••••••" className={`block w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
-                   <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" aria-label={showConfirmPassword ? "Hide password" : "Show password"}><Eye className="h-5 w-5" /></button>
+                  <input type={showConfirmPassword ? "text" : "password"} id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required placeholder="••••••••" className={`block w-full pl-10 pr-10 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Eye className="h-5 w-5 text-gray-400" />
+                  </button>
                 </div>
                 {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
               </div>
             </div>
           </fieldset>
 
-          <button
-            type="submit"
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out disabled:opacity-50 disabled:cursor-wait"
-            disabled={isLoading}
-          >
-            {isLoading ? "Creating Account..." : "Create Account"}
-          </button>
-        </form>
+          <div className="flex items-center justify-between">
+            <button type="submit" disabled={isLoading} className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium">
+              {isLoading ? "Creating Account..." : "Create Account"}
+            </button>
+          </div>
 
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account?{' '}
-          <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 hover:underline">
-            Sign In
-          </Link>
-        </p>
+          <div className="text-center">
+            <p className="text-sm text-gray-600">
+              Already have an account?{" "}
+              <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
+                Sign in here
+              </Link>
+            </p>
+          </div>
+        </form>
       </div>
     </div>
   );

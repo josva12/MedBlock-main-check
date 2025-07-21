@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   
   role: {
     type: String,
-    enum: ['doctor', 'nurse', 'admin', 'front-desk', 'pharmacy', 'clinic', 'hospital'], // Added facility roles
+    enum: ['doctor', 'nurse', 'admin', 'front-desk', 'pharmacy', 'clinic', 'hospital', 'patient'], // Added 'patient'
     required: true
   },
   
@@ -266,6 +266,13 @@ const userSchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
+  },
+  
+  preferences: {
+    darkMode: {
+      type: Boolean,
+      default: false
+    }
   }
 }, {
   timestamps: true,

@@ -1,35 +1,46 @@
 // ========= THE FIX IS HERE =========
 // Correctly import useState within the curly braces.
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 // ===================================
-import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
-import { verifyProfessional, type ProfessionalVerificationData } from '../../features/admin/adminSlice';
-import { 
-  Shield, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { fetchUsers, verifyProfessional } from '../../features/admin/adminSlice';
+import type { ProfessionalVerificationData } from '../../features/admin/adminSlice';
+import type { RootState } from '../../store';
+import type { AdminUser } from '../../features/admin/adminSlice';
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
   AlertCircle,
+  Search,
+  User,
   FileText,
   Calendar,
-  User,
-  Search,
+  Shield
 } from 'lucide-react';
-import { type RootState } from '../../store';
+import LoadingSpinner from '../common/LoadingSpinner';
 
 const ProfessionalVerificationTab: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { users } = useAppSelector((state: RootState) => state.admin);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [roleFilter, setRoleFilter] = useState<string>('all');
-  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProfession, setFilterProfession] = useState('all');
+
+  const { users, loading, error } = useAppSelector((state: RootState) => state.admin);
   const [verificationForm, setVerificationForm] = useState<ProfessionalVerificationData>({
     status: 'pending',
     rejectionReason: '',
     notes: '',
   });
+
+  useEffect(() => {
+    dispatch(fetchUsers());
+  }, [dispatch]);
+
+  if (loading) return <LoadingSpinner />;
+  if (error) return <div className="text-red-600 p-4">{error}</div>;
 
   const professionals = users.filter(user => 
     ['doctor', 'nurse'].includes(user.role)
@@ -39,8 +50,8 @@ const ProfessionalVerificationTab: React.FC = () => {
     const matchesSearch = user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          (user.phone && user.phone.includes(searchTerm));
-    const matchesStatus = statusFilter === 'all' || user.professionalVerification.status === statusFilter;
-    const matchesRole = roleFilter === 'all' || user.role === roleFilter;
+    const matchesStatus = filterStatus === 'all' || user.professionalVerification.status === filterStatus;
+    const matchesRole = filterProfession === 'all' || user.role === filterProfession;
     
     return matchesSearch && matchesStatus && matchesRole;
   });
@@ -169,8 +180,8 @@ const ProfessionalVerificationTab: React.FC = () => {
           </div>
 
           <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Status</option>
@@ -181,8 +192,8 @@ const ProfessionalVerificationTab: React.FC = () => {
           </select>
 
           <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
+            value={filterProfession}
+            onChange={(e) => setFilterProfession(e.target.value)}
             className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Roles</option>
@@ -216,7 +227,7 @@ const ProfessionalVerificationTab: React.FC = () => {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredProfessionals.map((user) => (
+              {filteredProfessionals.map((user: AdminUser) => (
                 <tr key={user._id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">

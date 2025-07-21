@@ -6,6 +6,50 @@ const router = express.Router();
 // Notification model (we'll create this)
 const Notification = require("../models/Notification");
 
+// GET /api/v1/notifications
+// Fetches notifications for the authenticated user
+router.get("/", authenticateToken, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, unreadOnly = false, archived = false } = req.query;
+
+    const query = { userId: req.user._id }; // Corrected from req.user.userId to req.user._id
+    if (unreadOnly === "true") {
+      query.isRead = false;
+    }
+    query.archived = archived === "true"; // Filter by archived status
+
+    const notifications = await Notification.find(query)
+      .sort({ createdAt: -1 })
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+
+    const total = await Notification.countDocuments(query);
+    const unreadCount = await Notification.countDocuments({
+      userId: req.user._id, // Corrected from req.user.userId to req.user._id
+      isRead: false,
+      archived: false
+    });
+
+    res.json({
+      success: true,
+      data: notifications,
+      pagination: {
+        currentPage: parseInt(page),
+        totalPages: Math.ceil(total / parseInt(limit)),
+        totalItems: total,
+        itemsPerPage: parseInt(limit),
+      },
+      unreadCount,
+    });
+  } catch (error) {
+    logger.error("Failed to fetch user notifications:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to fetch notifications", details: error.message });
+  }
+});
+
+
 // POST /api/v1/notifications/sms
 router.post("/sms", authenticateToken, async (req, res) => {
   try {
@@ -259,6 +303,46 @@ router.get("/unread-count", authenticateToken, async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to fetch unread count", details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/notifications/:id/archive
+// @desc    Archive a notification
+// @access  Private
+router.patch('/:id/archive', authenticateToken, async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { archived: true },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    res.json({ success: true, data: notification });
+  } catch (error) {
+    logger.error('Failed to archive notification:', error);
+    res.status(500).json({ error: 'Failed to archive notification', details: error.message });
+  }
+});
+
+// @route   PATCH /api/v1/notifications/:id/unarchive
+// @desc    Unarchive a notification
+// @access  Private
+router.patch('/:id/unarchive', authenticateToken, async (req, res) => {
+  try {
+    const notification = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { archived: false },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    res.json({ success: true, data: notification });
+  } catch (error) {
+    logger.error('Failed to unarchive notification:', error);
+    res.status(500).json({ error: 'Failed to unarchive notification', details: error.message });
   }
 });
 

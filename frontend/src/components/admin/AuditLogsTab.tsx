@@ -1,45 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { fetchAuditLogs } from '../../features/admin/adminSlice';
-import { 
-  Activity, 
-  Search, 
-  Clock,
-  Eye,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  User,
-} from 'lucide-react';
-import { type RootState } from '../../store';
+import { ClockIcon, UserIcon, InformationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
+import LoadingSpinner from '../common/LoadingSpinner';
+import { RootState } from '../../store';
 
-const AuditLogsTab: React.FC = () => {
+interface AuditLogsTabProps {
+  activeTab: string;
+}
+
+const AuditLogsTab: React.FC<AuditLogsTabProps> = ({ activeTab }) => {
   const dispatch = useAppDispatch();
-  const { auditLogs, loading } = useAppSelector((state: RootState) => state.admin);
   const [searchTerm, setSearchTerm] = useState('');
-  const [actionFilter, setActionFilter] = useState<string>('all');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [filterAction, setFilterAction] = useState('all');
+  const [filterUser, setFilterUser] = useState('all');
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+
+  const { auditLogs, loading } = useAppSelector((state: RootState) => state.admin);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(15); // A good number for logs
 
   useEffect(() => {
     const params = {
-      action: actionFilter === 'all' ? undefined : actionFilter,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      action: filterAction === 'all' ? undefined : filterAction,
+      startDate: dateRange.start || undefined,
+      endDate: dateRange.end || undefined,
       page: currentPage,
       limit: itemsPerPage,
     };
     dispatch(fetchAuditLogs(params));
-  }, [dispatch, actionFilter, startDate, endDate, currentPage, itemsPerPage]);
+  }, [dispatch, filterAction, dateRange.start, dateRange.end, currentPage, itemsPerPage]);
 
   const getActionIcon = (action: string) => {
-    if (action.includes('user')) return User;
-    if (action.includes('password')) return Activity;
-    if (action.includes('verification')) return Activity;
-    return Activity;
+    if (action.includes('user')) return UserIcon;
+    if (action.includes('password')) return InformationCircleIcon;
+    if (action.includes('verification')) return CheckCircleIcon;
+    return ExclamationTriangleIcon;
   };
 
   const getActionColor = (action: string) => {
@@ -105,7 +102,7 @@ const AuditLogsTab: React.FC = () => {
           <p className="text-sm text-gray-600">Monitor system activity and user actions</p>
         </div>
         <button onClick={handleExport} className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
-          <Download className="h-4 w-4 mr-2" />
+          <InformationCircleIcon className="h-4 w-4 mr-2" />
           Export CSV
         </button>
       </div>
@@ -113,17 +110,17 @@ const AuditLogsTab: React.FC = () => {
       {/* Filters */}
       <div className="bg-gray-50 rounded-lg p-4 grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <InformationCircleIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input type="text" placeholder="Search logs..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" />
         </div>
-        <select value={actionFilter} onChange={(e) => setActionFilter(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+        <select value={filterAction} onChange={(e) => setFilterAction(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
           <option value="all">All Actions</option>
           <option value="user_login">User Login</option>
           <option value="user_logout">User Logout</option>
           {/* ... other options */}
         </select>
-        <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-500" />
-        <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-500" />
+        <input type="date" value={dateRange.start} onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-500" />
+        <input type="date" value={dateRange.end} onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))} className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-500" />
       </div>
 
       {/* Logs Table */}
@@ -149,7 +146,7 @@ const AuditLogsTab: React.FC = () => {
                 return (
                   <tr key={log._id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center"><Clock className="h-4 w-4 mr-2 text-gray-400" />{formatTimestamp(log.timestamp)}</div>
+                      <div className="flex items-center"><ClockIcon className="h-4 w-4 mr-2 text-gray-400" />{formatTimestamp(log.timestamp)}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.userId}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -159,7 +156,7 @@ const AuditLogsTab: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{log.ip}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button onClick={() => alert(JSON.stringify(log.details, null, 2))} className="text-blue-600 hover:text-blue-900">
-                        <Eye className="h-4 w-4" />
+                        <InformationCircleIcon className="h-4 w-4" />
                       </button>
                     </td>
                   </tr>
@@ -178,8 +175,8 @@ const AuditLogsTab: React.FC = () => {
               <div><p className="text-sm text-gray-700">Showing <span className="font-medium">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredLogs.length)}</span> of <span className="font-medium">{filteredLogs.length}</span> results</p></div>
               <div>
                 <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"><ChevronLeft className="h-5 w-5" /></button>
-                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"><ChevronRight className="h-5 w-5" /></button>
+                  <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage === 1} className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"><ExclamationTriangleIcon className="h-5 w-5" /></button>
+                  <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage === totalPages} className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"><CheckCircleIcon className="h-5 w-5" /></button>
                 </nav>
               </div>
             </div>

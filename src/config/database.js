@@ -138,4 +138,11 @@ class Database {
 }
 console.log('✅ Database class defined');
 
-module.exports = new Database(); 
+module.exports = {
+  Database,
+  connect: async () => {
+    const instance = new Database();
+    await instance.connect();
+    return instance;
+  }
+}; 

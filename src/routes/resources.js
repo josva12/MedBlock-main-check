@@ -1,12 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const Resource = require('../models/Resource');
-const { authenticateToken } = require('../middleware/auth');
+const { authenticateToken, requireRole } = require('../middleware/auth');
 
 // @route   POST /api/v1/resources
 // @desc    Create a new health resource
 // @access  Private (admin)
-router.post('/', authenticateToken, async (req, res) => {
+router.post('/', authenticateToken, requireRole(['admin']), async (req, res) => {
   try {
     const { title, content, category } = req.body;
     const resource = new Resource({ title, content, category });
@@ -41,6 +41,31 @@ router.get('/:id', async (req, res) => {
     res.json({ success: true, data: resource });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch resource', details: error.message });
+  }
+});
+
+// @route   POST /api/v1/resources/:id/react
+// @desc    React to a resource
+// @access  Private
+router.post('/:id/react', authenticateToken, async (req, res) => {
+  try {
+    const { reaction } = req.body;
+    const validReactions = ['happy', 'sad', 'helpful', 'unhelpful', 'neutral'];
+    if (!validReactions.includes(reaction)) {
+      return res.status(400).json({ error: 'Invalid reaction type' });
+    }
+
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    resource.reactions[reaction]++;
+    await resource.save();
+
+    res.json({ success: true, data: resource.reactions });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to react to resource', details: error.message });
   }
 });
 

@@ -100,29 +100,46 @@ export const processClaim = createAsyncThunk(
 );
 
 // Memoized selectors
+const selectClaimsState = (state: any) => state.claims;
+
 export const selectClaims = createSelector(
-  (state: any) => state.claims?.claims || [],
-  (claims) => claims
+  [selectClaimsState],
+  (claimsState) => claimsState?.claims || []
 );
 
 export const selectCurrentClaim = createSelector(
-  (state: any) => state.claims?.currentClaim || null,
-  (claim) => claim
+  [selectClaimsState],
+  (claimsState) => claimsState?.currentClaim || null
 );
 
 export const selectClaimsLoading = createSelector(
-  (state: any) => state.claims?.isLoading || false,
-  (loading) => loading
+  [selectClaimsState],
+  (claimsState) => claimsState?.isLoading || false
 );
 
 export const selectClaimsError = createSelector(
-  (state: any) => state.claims?.error || null,
-  (error) => error
+  [selectClaimsState],
+  (claimsState) => claimsState?.error || null
 );
 
 export const selectClaimsByStatus = createSelector(
   [selectClaims],
   (claims) => (status: string) => claims.filter((claim: any) => claim.status === status)
+);
+
+export const selectPendingClaims = createSelector(
+  [selectClaims],
+  (claims) => claims.filter((claim: any) => claim.status === 'pending')
+);
+
+export const selectApprovedClaims = createSelector(
+  [selectClaims],
+  (claims) => claims.filter((claim: any) => claim.status === 'approved')
+);
+
+export const selectRejectedClaims = createSelector(
+  [selectClaims],
+  (claims) => claims.filter((claim: any) => claim.status === 'rejected')
 );
 
 const claimsSlice = createSlice({

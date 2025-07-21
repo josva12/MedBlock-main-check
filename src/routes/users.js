@@ -573,4 +573,29 @@ router.patch('/:id/remove-facility', requireRole(['admin']), async (req, res) =>
   }
 });
 
+// @route   PATCH /api/v1/users/me/preferences
+// @desc    Update user preferences (e.g., dark mode)
+// @access  Private
+router.patch('/me/preferences', authenticateToken, async (req, res) => {
+  try {
+    const { darkMode } = req.body;
+    if (typeof darkMode !== 'boolean') {
+      return res.status(400).json({ error: 'Invalid preference value' });
+    }
+
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    user.preferences.darkMode = darkMode;
+    await user.save();
+
+    res.json({ success: true, data: user.preferences });
+  } catch (error) {
+    logger.error('Failed to update user preferences:', error);
+    res.status(500).json({ error: 'Failed to update preferences', details: error.message });
+  }
+});
+
 module.exports = router; 
