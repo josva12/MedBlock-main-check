@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 const AdminLayout: React.FC = () => (
   <>
     <Header />
-    <Outlet />
+          <Outlet />
   </>
-);
+  );
 export default AdminLayout; 

@@ -96,8 +96,8 @@ function AppContent() {
 
   return (
     <>
-      <Suspense fallback={<LoadingSpinner />}>
-        <Routes>
+          <Suspense fallback={<LoadingSpinner />}>
+            <Routes>
               {/* --- Public Routes --- */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -217,7 +217,7 @@ function AppContent() {
                 </button>
               </>
             )}
-      </Suspense>
+          </Suspense>
     </>
   );
 }

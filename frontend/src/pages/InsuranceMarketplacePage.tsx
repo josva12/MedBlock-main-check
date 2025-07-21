@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../store';
+import axios from 'axios';
+import QuoteRequestModal from '../components/insurance/QuoteRequestModal';
 
 interface InsuranceCompany {
   id: string;
@@ -36,6 +38,21 @@ const InsuranceMarketplacePage: React.FC = () => {
   const [sortBy, setSortBy] = useState<string>('rating');
   const [isLoading, setIsLoading] = useState(true);
   const user = useSelector((state: RootState) => state.auth.user);
+
+  const [showExpertModal, setShowExpertModal] = useState(false);
+  const [expertForm, setExpertForm] = useState({ name: '', email: '', phone: '', message: '' });
+  const [expertLoading, setExpertLoading] = useState(false);
+  const [expertSuccess, setExpertSuccess] = useState<string | null>(null);
+  const [expertError, setExpertError] = useState<string | null>(null);
+
+  const [selectedPolicies, setSelectedPolicies] = useState<string[]>([]);
+  const [showCompareModal, setShowCompareModal] = useState(false);
+  const [compareResult, setCompareResult] = useState<any>(null);
+  const [compareLoading, setCompareLoading] = useState(false);
+  const [compareError, setCompareError] = useState<string | null>(null);
+
+  const [showQuoteModal, setShowQuoteModal] = useState(false);
+  const [selectedQuotePolicy, setSelectedQuotePolicy] = useState<InsurancePolicy | null>(null);
 
   // Mock data - replace with API call
   const mockCompanies: InsuranceCompany[] = [
@@ -181,6 +198,56 @@ const InsuranceMarketplacePage: React.FC = () => {
     }
   };
 
+  // Speak to an Expert handlers
+  const handleExpertInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setExpertForm({ ...expertForm, [e.target.name]: e.target.value });
+  };
+  const handleExpertSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setExpertLoading(true);
+    setExpertSuccess(null);
+    setExpertError(null);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await axios.post('/api/v1/insurance/expert-request', expertForm, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setExpertSuccess(res.data.message || 'Request sent!');
+      setExpertForm({ name: '', email: '', phone: '', message: '' });
+    } catch (err: any) {
+      setExpertError(err.response?.data?.error || 'Failed to send request.');
+    }
+    setExpertLoading(false);
+  };
+
+  // Compare Plans handlers
+  const handlePolicySelect = (policyId: string) => {
+    setSelectedPolicies(prev => prev.includes(policyId)
+      ? prev.filter(id => id !== policyId)
+      : [...prev, policyId]);
+  };
+  const handleCompare = async () => {
+    setCompareLoading(true);
+    setCompareError(null);
+    setCompareResult(null);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const res = await axios.post('/api/v1/insurance/compare', { policyIds: selectedPolicies }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setCompareResult(res.data.data);
+      setShowCompareModal(true);
+    } catch (err: any) {
+      setCompareError(err.response?.data?.error || 'Failed to compare plans.');
+    }
+    setCompareLoading(false);
+  };
+
+  const handleGetQuote = (policy: InsurancePolicy) => {
+    setSelectedQuotePolicy(policy);
+    setShowQuoteModal(true);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -266,7 +333,7 @@ const InsuranceMarketplacePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Companies Grid */}
+      {/* Companies Grid with policy selection checkboxes */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           {sortedCompanies.map(company => (
@@ -299,42 +366,44 @@ const InsuranceMarketplacePage: React.FC = () => {
                 <h4 className="font-semibold text-gray-900 mb-4">Available Plans</h4>
                 <div className="space-y-4">
                   {company.policies.map(policy => (
-                    <div key={policy.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <h5 className="font-medium text-gray-900">{policy.name}</h5>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTierColor(policy.tier)}`}>
-                          {getTierLabel(policy.tier)}
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <div>
-                          <p className="text-sm text-gray-600">Monthly Premium</p>
-                          <p className="font-semibold text-green-600">KES {policy.premium.toLocaleString()}</p>
+                    <div key={policy.id} className="border rounded-lg p-4 hover:bg-gray-50 flex items-center">
+                      <input
+                        type="checkbox"
+                        className="mr-3"
+                        checked={selectedPolicies.includes(policy.id)}
+                        onChange={() => handlePolicySelect(policy.id)}
+                        aria-label={`Select ${policy.name} for comparison`}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <h5 className="font-medium text-gray-900">{policy.name}</h5>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTierColor(policy.tier)}`}>{getTierLabel(policy.tier)}</span>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-600">Coverage Limit</p>
-                          <p className="font-semibold">KES {policy.coverage.toLocaleString()}</p>
+                        <div className="grid grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <p className="text-sm text-gray-600">Monthly Premium</p>
+                            <p className="font-semibold text-green-600">KES {policy.premium.toLocaleString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">Coverage Limit</p>
+                            <p className="font-semibold">KES {policy.coverage.toLocaleString()}</p>
+                          </div>
                         </div>
-                      </div>
-
-                      <div className="mb-3">
-                        <p className="text-sm text-gray-600 mb-1">Key Features:</p>
-                        <div className="flex flex-wrap gap-1">
-                          {policy.features.slice(0, 3).map((feature, index) => (
-                            <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              {feature}
-                            </span>
-                          ))}
-                          {policy.features.length > 3 && (
-                            <span className="text-xs text-gray-500">+{policy.features.length - 3} more</span>
-                          )}
+                        <div className="mb-3">
+                          <p className="text-sm text-gray-600 mb-1">Key Features:</p>
+                          <div className="flex flex-wrap gap-1">
+                            {policy.features.slice(0, 3).map((feature, index) => (
+                              <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{feature}</span>
+                            ))}
+                            {policy.features.length > 3 && (
+                              <span className="text-xs text-gray-500">+{policy.features.length - 3} more</span>
+                            )}
+                          </div>
                         </div>
+                        <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors" onClick={() => handleGetQuote(policy)}>
+                          Get Quote
+                        </button>
                       </div>
-
-                      <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors">
-                        Get Quote
-                      </button>
                     </div>
                   ))}
                 </div>
@@ -383,15 +452,83 @@ const InsuranceMarketplacePage: React.FC = () => {
             Get personalized recommendations and compare options side by side.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-white text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors">
+            <button
+              className="bg-white text-blue-600 px-6 py-3 rounded-md font-medium hover:bg-gray-100 transition-colors"
+              onClick={() => setShowExpertModal(true)}
+            >
               Speak to an Expert
             </button>
-            <button className="border border-white text-white px-6 py-3 rounded-md font-medium hover:bg-white hover:text-blue-600 transition-colors">
-              Compare Plans
+            <button
+              className="border border-white text-white px-6 py-3 rounded-md font-medium hover:bg-white hover:text-blue-600 transition-colors"
+              onClick={handleCompare}
+              disabled={selectedPolicies.length < 2 || compareLoading}
+            >
+              {compareLoading ? 'Comparing...' : 'Compare Plans'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* Speak to an Expert Modal */}
+      {showExpertModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6 relative">
+            <button onClick={() => setShowExpertModal(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h3 className="text-xl font-bold mb-4 text-blue-700">Speak to an Insurance Expert</h3>
+            <form onSubmit={handleExpertSubmit} className="space-y-4">
+              <input type="text" name="name" value={expertForm.name} onChange={handleExpertInputChange} placeholder="Your Name" className="w-full border rounded px-3 py-2" required />
+              <input type="email" name="email" value={expertForm.email} onChange={handleExpertInputChange} placeholder="Your Email" className="w-full border rounded px-3 py-2" required />
+              <input type="tel" name="phone" value={expertForm.phone} onChange={handleExpertInputChange} placeholder="Your Phone" className="w-full border rounded px-3 py-2" required />
+              <textarea name="message" value={expertForm.message} onChange={handleExpertInputChange} placeholder="How can we help you?" className="w-full border rounded px-3 py-2" rows={3} required />
+              <button type="submit" className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors" disabled={expertLoading}>{expertLoading ? 'Sending...' : 'Send Request'}</button>
+              {expertSuccess && <div className="text-green-600 text-center mt-2">{expertSuccess}</div>}
+              {expertError && <div className="text-red-600 text-center mt-2">{expertError}</div>}
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Compare Plans Modal */}
+      {showCompareModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl mx-4 p-6 relative">
+            <button onClick={() => setShowCompareModal(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-700 text-2xl font-bold">&times;</button>
+            <h3 className="text-xl font-bold mb-4 text-blue-700">Plan Comparison</h3>
+            {compareError && <div className="text-red-600 mb-2">{compareError}</div>}
+            {compareResult && (
+              <>
+                <div className="mb-2 text-gray-700">{compareResult.summary}</div>
+                <table className="w-full border rounded">
+                  <thead>
+                    <tr className="bg-blue-100">
+                      <th className="p-2 border">Policy ID</th>
+                      <th className="p-2 border">Score</th>
+                      <th className="p-2 border">Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {compareResult.details.map((row: any) => (
+                      <tr key={row.policyId}>
+                        <td className="p-2 border">{row.policyId}</td>
+                        <td className="p-2 border">{row.score}</td>
+                        <td className="p-2 border">{row.notes}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {showQuoteModal && selectedQuotePolicy && (
+        <QuoteRequestModal
+          isOpen={showQuoteModal}
+          onClose={() => setShowQuoteModal(false)}
+          policy={selectedQuotePolicy}
+        />
+      )}
     </div>
   );
 };

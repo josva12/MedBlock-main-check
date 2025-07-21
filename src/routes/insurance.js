@@ -50,4 +50,99 @@ router.patch('/:policyId/status', authenticateToken, requireRole(['admin']), asy
   }
 });
 
+// POST /api/v1/insurance/expert-request - Request to speak to an insurance expert
+router.post('/expert-request', authenticateToken, async (req, res) => {
+  try {
+    const { name, email, phone, message } = req.body;
+    // In a real app, this would notify an admin/expert or create a support ticket
+    // For now, just return a mock response
+    res.status(200).json({
+      success: true,
+      message: 'Your request to speak to an expert has been received. An expert will contact you soon.',
+      data: { name, email, phone, message }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit expert request', details: error.message });
+  }
+});
+
+// POST /api/v1/insurance/quote - Request a quote for a policy
+router.post('/quote', authenticateToken, async (req, res) => {
+  try {
+    const { policyId, name, email, phone, message } = req.body;
+    // In a real app, this would notify an admin/insurance rep or create a quote request
+    // For now, just return a mock response
+    res.status(200).json({
+      success: true,
+      message: 'Your quote request has been received. An insurance representative will contact you soon.',
+      data: { policyId, name, email, phone, message }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to submit quote request', details: error.message });
+  }
+});
+
+// GET /api/v1/insurance/policy/:policyId - Get detailed info about a policy
+router.get('/policy/:policyId', authenticateToken, async (req, res) => {
+  try {
+    const { policyId } = req.params;
+    // In a real app, fetch policy details from DB
+    // For now, return mock details
+    res.status(200).json({
+      success: true,
+      data: {
+        policyId,
+        name: 'Mock Policy Name',
+        description: 'This is a detailed description of the insurance policy.',
+        premium: 12000,
+        coverage: 1000000,
+        deductible: 2000,
+        features: ['Inpatient', 'Outpatient', 'Dental', 'Vision', 'Maternity'],
+        waitingPeriod: 30,
+        maxAge: 65,
+        exclusions: ['Pre-existing conditions (first year)', 'Cosmetic surgery'],
+        provider: 'Mock Insurance Company',
+        contact: {
+          phone: '+254 700 000 000',
+          email: 'info@mockinsurance.co.ke',
+          website: 'www.mockinsurance.co.ke'
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch policy details', details: error.message });
+  }
+});
+
+// PATCH /api/v1/insurance/compare - Improved mock comparison
+router.post('/compare', authenticateToken, async (req, res) => {
+  try {
+    const { policyIds } = req.body;
+    if (!Array.isArray(policyIds) || policyIds.length < 2) {
+      return res.status(400).json({ error: 'Please provide at least two policy IDs to compare.' });
+    }
+    // Improved mock: Return more realistic comparison
+    const details = policyIds.map((id, idx) => ({
+      policyId: id,
+      name: `Mock Policy ${id}`,
+      premium: 10000 + idx * 2000,
+      coverage: 500000 + idx * 250000,
+      deductible: 2000 - idx * 200,
+      features: ['Inpatient', 'Outpatient', idx % 2 === 0 ? 'Dental' : 'Vision'],
+      score: 80 + idx * 5,
+      notes: 'Mock policy comparison details.'
+    }));
+    res.status(200).json({
+      success: true,
+      data: {
+        comparedPolicies: policyIds,
+        summary: 'Comparison complete. (This is a mock response.)',
+        details
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to compare policies', details: error.message });
+  }
+});
+
 module.exports = router; 

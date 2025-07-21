@@ -1,60 +1,63 @@
-# MedBlock Healthcare Management System
-
-## Overview
-MedBlock is a full-stack healthcare management system with blockchain integration, real-time notifications, AI chat, and robust auditing. It features a modern React + Redux frontend and a Node.js/Express/MongoDB backend.
-
-## Features
-- **Medical Records, Reports, Blockchain, AI Chat**: Real data, not placeholders
-- **Responsive Layout**: Sidebar, sticky header, mobile-friendly
-- **Subscriptions, Auditing, Claims, Teleconsultation, Resources, Facilities**: Full CRUD, unique icons, backend integration
-- **Redux Toolkit**: Async thunks, memoized selectors (using Reselect) to prevent unnecessary rerenders
-- **JWT Authentication & Role-Based Access**
-- **Real-Time Notifications**: Unread counts, role-based delivery
-- **Defensive Programming**: Handles API failures gracefully
-- **Attractive UI**: Modern icons, Unsplash images, dropdowns for key fields
+# MedBlock
 
 ## Project Structure
-- **Backend**: `src/` (Express, MongoDB, Mongoose)
-- **Frontend**: `frontend/src/` (React 18, Redux Toolkit, Vite, Tailwind CSS)
-- **AI**: `ai/` (optional, for future AI features)
 
-## How to Run
-1. **Backend**
-   - Install dependencies: `npm install` in project root
-   - Set up `.env` with MongoDB URI and JWT secret
-   - Start server: `node src/server.js` (default port 3000)
-2. **Frontend**
-   - `cd frontend`
-   - Install dependencies: `npm install`
-   - Start dev server: `npm run dev` (default port 5173)
+```
+MedBlock-main-check/
+  - ai/
+    - venv/
+      ...
+  - frontend/
+    - src/
+      - App.css
+      - App.tsx
+      - assets/
+      - components/
+        - admin/
+        - chat/
+        - common/
+        - dashboard/
+        - insurance/
+          - QuoteRequestModal.tsx
+        - layout/
+        - LoadingSpinner.tsx
+        - Modal.tsx
+      - context/
+      - features/
+      - hooks/
+      - layouts/
+      - pages/
+        - InsuranceMarketplacePage.tsx
+      - services/
+      - store/
+      - types/
+      - utils/
+  - src/
+    - config/
+    - controllers/
+    - docs/
+    - middleware/
+    - models/
+    - routes/
+      - insurance.js
+    - server.js
+    - services/
+    - uploads/
+    - utils/
+  - ...
+```
 
-## API Endpoints
-- All endpoints are prefixed with `/api/v1/`
-- Key routes: `/patients`, `/appointments`, `/medical-records`, `/reports`, `/subscriptions`, `/claims`, `/teleconsultations`, `/resources`, `/facilities`, `/notifications`, `/audit-logs`
+## Insurance Marketplace Features
 
-## Redux Memoized Selectors
-- All slices now export memoized selectors using `createSelector` from `reselect`.
-- Example usage:
-  ```js
-  import { useSelector } from 'react-redux';
-  import { selectClaims } from '../features/claims/claimsSlice';
-  const claims = useSelector(selectClaims);
-  ```
-- Prevents unnecessary rerenders and selector warnings.
+- **Get Quote**: Users can request a quote for any insurance policy. Opens a modal form, submits to `/api/v1/insurance/quote` with JWT.
+- **Learn More**: (To be implemented) Users can view detailed policy info in a modal, fetched from `/api/v1/insurance/policy/:policyId`.
+- **Compare Plans**: Users can select multiple policies and compare them using `/api/v1/insurance/compare`. Results are shown in a modal.
 
-## Troubleshooting
-- **404 Errors**: Ensure backend is running and routes are mounted at `/api/v1/`
-- **Selector Warnings**: Use memoized selectors from each slice
-- **Add Report Not Working**: Ensure backend uses MongoDB, user is authenticated, and required fields are filled
-
-## Recent Updates
-- Switched all report, claim, teleconsultation, resource, and facility endpoints to persistent MongoDB storage
-- Added memoized selectors for all Redux slices
-- Improved error handling and defensive checks in all pages
-- Added attractive Unsplash images and unique icons
-
-## Contributors
-- [Your Name]
+## How to Use
+- Log in as an admin or user.
+- Navigate to the Insurance Marketplace page.
+- Use filters, select plans, and use the Get Quote or Compare features as needed.
 
 ---
-For more details, see `CHANGELOG.md` and `BLOCKCHAIN_IMPLEMENTATION_SUMMARY.md`. 
+
+For more details, see `MEDBLOCK ACHIEVEMENTS.md`. 
