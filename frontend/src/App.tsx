@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Provider, useSelector } from 'react-redux';
 import { store } from './store';
 import type { RootState } from './store';
@@ -16,6 +16,7 @@ import MainLayout from './layouts/MainLayout';
 // Common Components
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
+import AIChatWidget from './components/ai/AIChatWidget';
 
 // --- Page Components (Lazy Loaded) ---
 
@@ -86,13 +87,17 @@ const PlaceholderPage: React.FC<{ feature: string }> = ({ feature }) => (
 
 // --- Main App Component ---
 
-function App() {
+function AppContent() {
+  const [showAIChat, setShowAIChat] = React.useState(false);
+  const location = useLocation();
+  const { user } = useSelector((state: RootState) => state.auth);
+  // Hide floating widget on dedicated AI chat page
+  const isAIChatPage = location.pathname.startsWith('/ai-chat') || location.pathname.startsWith('/ai');
+
   return (
-    <Provider store={store}>
-      <ThemeManager>
-        <Router>
-          <Suspense fallback={<LoadingSpinner />}>
-            <Routes>
+    <>
+      <Suspense fallback={<LoadingSpinner />}>
+        <Routes>
               {/* --- Public Routes --- */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
@@ -195,7 +200,34 @@ function App() {
               {/* --- Catch-all 404 Route --- */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
-          </Suspense>
+            {/* Floating AI Chat Widget (global, except on AI chat page) */}
+            {user && !isAIChatPage && (
+              <>
+                {showAIChat && (
+                  <AIChatWidget floating onClose={() => setShowAIChat(false)} />
+                )}
+                <button
+                  className="fixed bottom-6 right-6 z-50 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-lg hover:scale-105 transition-transform focus:outline-none"
+                  onClick={() => setShowAIChat((v) => !v)}
+                  title="Open MedBlock AI Assistant"
+                  style={{ boxShadow: '0 4px 24px rgba(80, 80, 200, 0.15)' }}
+                >
+                  <span className="sr-only">Open AI Chat</span>
+                  <svg width="32" height="32" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="url(#paint0_linear)"/><path d="M12 7a5 5 0 100 10 5 5 0 000-10zm0 2a3 3 0 110 6 3 3 0 010-6z" fill="#fff"/><defs><linearGradient id="paint0_linear" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse"><stop stopColor="#6366F1"/><stop offset="1" stopColor="#8B5CF6"/></linearGradient></defs></svg>
+                </button>
+              </>
+            )}
+      </Suspense>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <Provider store={store}>
+      <ThemeManager>
+        <Router>
+          <AppContent />
         </Router>
       </ThemeManager>
     </Provider>
