@@ -76,11 +76,11 @@ const AdminDashboardPage: React.FC = () => {
   const handleAddUser = () => setShowAddUserModal(true);
   const handleVerifyBusiness = () => setShowVerifyBusinessModal(true);
   const handleSendNotification = () => setShowSendNotificationModal(true);
-  const handleViewAuditLogs = () => navigate('/audit-logs');
+  const handleViewAuditLogs = () => navigate('/admin/audit-logs');
   const handleAIChat = () => navigate('/ai-chat');
   const handleBlockchain = () => navigate('/blockchain');
-  const handleReports = () => navigate('/reports');
-  const handleSettings = () => navigate('/settings');
+  const handleReports = () => navigate('/admin/reports');
+  const handleSettings = () => navigate('/admin/settings');
   const handleUserVerification = () => navigate('/admin/user-management?filter=pending');
   const handleManageBusinesses = () => navigate('/facilities');
   const handleManagePartners = () => navigate('/insurance-marketplace');

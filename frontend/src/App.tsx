@@ -17,6 +17,7 @@ import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/common/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import AIChatWidget from './components/ai/AIChatWidget';
+import { ThemeProvider } from './context/ThemeContext';
 
 // --- Page Components (Lazy Loaded) ---
 
@@ -30,6 +31,7 @@ const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPag
 const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminUsersPage = React.lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminClaimsPage = React.lazy(() => import('./pages/admin/AdminClaimsPage'));
+const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
 
 // General Pages
 const DashboardPage = React.lazy(() => import('./pages/dashboard/DashboardPage'));
@@ -53,17 +55,6 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const FrontDeskDashboardPage = React.lazy(() => import('./pages/frontdesk/FrontDeskDashboardPage'));
 
 // --- Helper Components ---
-
-const ThemeManager: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const theme = useSelector((state: RootState) => state.ui.theme);
-  useEffect(() => {
-    const root = window.document.documentElement;
-    const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    root.classList.toggle('dark', isDark);
-    root.classList.toggle('light', !isDark);
-  }, [theme]);
-  return <>{children}</>;
-};
 
 const RootRedirector: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -115,12 +106,13 @@ function AppContent() {
                       <Route index element={<Navigate to="dashboard" replace />} />
                         <Route path="dashboard" element={<AdminDashboardPage />} />
                       <Route path="users" element={<AdminUsersPage />} />
+                      <Route path="user-management" element={<AdminUsersPage />} />
                       <Route path="patients" element={<PatientsPage />} />
                       <Route path="appointments" element={<AppointmentsPage />} />
                       <Route path="claims" element={<AdminClaimsPage />} />
                       <Route path="insurance" element={<PlaceholderPage feature="Insurance Management" />} />
                       <Route path="reports" element={<ReportsPage />} />
-                      <Route path="audit-logs" element={<PlaceholderPage feature="Audit Logs" />} />
+                      <Route path="audit-logs" element={<AuditLogsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                   </Route>
               </Route>
@@ -225,11 +217,11 @@ function AppContent() {
 function App() {
   return (
     <Provider store={store}>
-      <ThemeManager>
+      <ThemeProvider>
         <Router>
           <AppContent />
         </Router>
-      </ThemeManager>
+      </ThemeProvider>
     </Provider>
   );
 }

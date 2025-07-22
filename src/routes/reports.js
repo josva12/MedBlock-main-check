@@ -7,60 +7,7 @@ const logger = require('../utils/logger');
 const router = express.Router();
 const Report = require('../models/Report');
 
-// List all reports
-router.get('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
-  try {
-    const reports = await Report.find();
-    res.json({ success: true, data: reports });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch reports', details: error.message });
-  }
-});
-
-// Create a new report
-router.post('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
-  try {
-    const report = new Report({ ...req.body });
-    await report.save();
-    res.status(201).json({ success: true, data: report });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to create report', details: error.message });
-  }
-});
-
-// Get report by id
-router.get('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
-  try {
-    const report = await Report.findById(req.params.id);
-    if (!report) return res.status(404).json({ error: 'Report not found' });
-    res.json({ success: true, data: report });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch report', details: error.message });
-  }
-});
-
-// Update report
-router.put('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
-  try {
-    const report = await Report.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    if (!report) return res.status(404).json({ error: 'Report not found' });
-    res.json({ success: true, data: report });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to update report', details: error.message });
-  }
-});
-
-// Delete report
-router.delete('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
-  try {
-    const report = await Report.findByIdAndDelete(req.params.id);
-    if (!report) return res.status(404).json({ error: 'Report not found' });
-    res.json({ success: true, data: report });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete report', details: error.message });
-  }
-});
-
+// --- ANALYTICS ENDPOINTS MUST BE FIRST ---
 // GET /api/v1/reports/medical-record-trends
 router.get('/medical-record-trends', authenticateToken, async (req, res) => {
   try {
@@ -183,6 +130,61 @@ router.get('/patient-demographics', authenticateToken, async (req, res) => {
       details: error.message,
       fallback: 'Try again later or contact support'
     });
+  }
+});
+// --- END ANALYTICS ENDPOINTS ---
+
+// List all reports
+router.get('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
+  try {
+    const reports = await Report.find();
+    res.json({ success: true, data: reports });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch reports', details: error.message });
+  }
+});
+
+// Create a new report
+router.post('/', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  try {
+    const report = new Report({ ...req.body });
+    await report.save();
+    res.status(201).json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create report', details: error.message });
+  }
+});
+
+// Get report by id
+router.get('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse', 'front-desk']), async (req, res) => {
+  try {
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch report', details: error.message });
+  }
+});
+
+// Update report
+router.put('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  try {
+    const report = await Report.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update report', details: error.message });
+  }
+});
+
+// Delete report
+router.delete('/:id', authenticateToken, requireRole(['admin', 'doctor', 'nurse']), async (req, res) => {
+  try {
+    const report = await Report.findByIdAndDelete(req.params.id);
+    if (!report) return res.status(404).json({ error: 'Report not found' });
+    res.json({ success: true, data: report });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to delete report', details: error.message });
   }
 });
 

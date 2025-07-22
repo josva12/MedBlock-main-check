@@ -12,6 +12,7 @@ import facilitiesReducer from '../features/facilities/facilitiesSlice';
 import uiReducer from '../features/ui/uiSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice'; // Import notifications reducer
 import teleconsultationsReducer from '../features/teleconsultations/teleconsultationsSlice';
+import reportsReducer from '../features/reports/reportsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -28,6 +29,7 @@ export const store = configureStore({
     notifications: notificationsReducer, // Add notifications reducer
     teleconsultations: teleconsultationsReducer, // Add teleconsultations reducer
     ui: uiReducer,
+    reports: reportsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

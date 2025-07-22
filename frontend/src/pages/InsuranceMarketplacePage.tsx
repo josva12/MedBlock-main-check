@@ -375,34 +375,34 @@ const InsuranceMarketplacePage: React.FC = () => {
                         aria-label={`Select ${policy.name} for comparison`}
                       />
                       <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <h5 className="font-medium text-gray-900">{policy.name}</h5>
+                      <div className="flex items-center justify-between mb-2">
+                        <h5 className="font-medium text-gray-900">{policy.name}</h5>
                           <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTierColor(policy.tier)}`}>{getTierLabel(policy.tier)}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-gray-600">Monthly Premium</p>
+                          <p className="font-semibold text-green-600">KES {policy.premium.toLocaleString()}</p>
                         </div>
-                        <div className="grid grid-cols-2 gap-4 mb-3">
-                          <div>
-                            <p className="text-sm text-gray-600">Monthly Premium</p>
-                            <p className="font-semibold text-green-600">KES {policy.premium.toLocaleString()}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm text-gray-600">Coverage Limit</p>
-                            <p className="font-semibold">KES {policy.coverage.toLocaleString()}</p>
-                          </div>
+                        <div>
+                          <p className="text-sm text-gray-600">Coverage Limit</p>
+                          <p className="font-semibold">KES {policy.coverage.toLocaleString()}</p>
                         </div>
-                        <div className="mb-3">
-                          <p className="text-sm text-gray-600 mb-1">Key Features:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {policy.features.slice(0, 3).map((feature, index) => (
+                      </div>
+                      <div className="mb-3">
+                        <p className="text-sm text-gray-600 mb-1">Key Features:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {policy.features.slice(0, 3).map((feature, index) => (
                               <span key={index} className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">{feature}</span>
-                            ))}
-                            {policy.features.length > 3 && (
-                              <span className="text-xs text-gray-500">+{policy.features.length - 3} more</span>
-                            )}
-                          </div>
+                          ))}
+                          {policy.features.length > 3 && (
+                            <span className="text-xs text-gray-500">+{policy.features.length - 3} more</span>
+                          )}
                         </div>
+                      </div>
                         <button className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors" onClick={() => handleGetQuote(policy)}>
-                          Get Quote
-                        </button>
+                        Get Quote
+                      </button>
                       </div>
                     </div>
                   ))}
