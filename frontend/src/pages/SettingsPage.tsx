@@ -117,11 +117,13 @@ const SettingsPage: React.FC = () => {
       <form onSubmit={handleProfileSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-fullName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Full Name
             </label>
             <input
+              id="settings-fullName"
               type="text"
+              autoComplete="name"
               value={profileForm.fullName}
               onChange={(e) => setProfileForm({ ...profileForm, fullName: e.target.value })}
               className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -130,11 +132,13 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-phone" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Phone Number
             </label>
             <input
+              id="settings-phone"
               type="tel"
+              autoComplete="tel"
               value={profileForm.phone}
               onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
               className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -143,11 +147,13 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-specialization" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Specialization
             </label>
             <input
+              id="settings-specialization"
               type="text"
+              autoComplete="organization-title"
               value={profileForm.specialization}
               onChange={(e) => setProfileForm({ ...profileForm, specialization: e.target.value })}
               className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -155,11 +161,13 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-department" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Department
             </label>
             <input
+              id="settings-department"
               type="text"
+              autoComplete="organization"
               value={profileForm.department}
               onChange={(e) => setProfileForm({ ...profileForm, department: e.target.value })}
               className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -219,12 +227,14 @@ const SettingsPage: React.FC = () => {
       <form onSubmit={handlePasswordSubmit} className="space-y-6">
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-currentPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Current Password
             </label>
             <div className="mt-1 relative">
               <input
+                id="settings-currentPassword"
                 type={showPasswords.current ? 'text' : 'password'}
+                autoComplete="current-password"
                 value={passwordForm.currentPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
                 className="block w-full pr-10 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -245,12 +255,14 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               New Password
             </label>
             <div className="mt-1 relative">
               <input
+                id="settings-newPassword"
                 type={showPasswords.new ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={passwordForm.newPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, newPassword: e.target.value })}
                 className="block w-full pr-10 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -271,12 +283,14 @@ const SettingsPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label htmlFor="settings-confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Confirm New Password
             </label>
             <div className="mt-1 relative">
               <input
+                id="settings-confirmPassword"
                 type={showPasswords.confirm ? 'text' : 'password'}
+                autoComplete="new-password"
                 value={passwordForm.confirmPassword}
                 onChange={(e) => setPasswordForm({ ...passwordForm, confirmPassword: e.target.value })}
                 className="block w-full pr-10 border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"

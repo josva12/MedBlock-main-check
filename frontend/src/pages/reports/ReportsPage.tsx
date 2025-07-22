@@ -284,11 +284,13 @@ const ReportsPage: React.FC = () => {
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Patient Selection */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="report-patientId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Patient *
                 </label>
                 <select
+                  id="report-patientId"
                   name="patientId"
+                  autoComplete="off"
                   value={form.patientId}
                   onChange={handleChange}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -306,11 +308,13 @@ const ReportsPage: React.FC = () => {
               {/* Report Type and Status */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="report-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Report Type
                   </label>
                   <select
+                    id="report-type"
                     name="reportType"
+                    autoComplete="off"
                     value={form.reportType}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -323,11 +327,13 @@ const ReportsPage: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label htmlFor="report-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Status
                   </label>
                   <select
+                    id="report-status"
                     name="status"
+                    autoComplete="off"
                     value={form.status}
                     onChange={handleChange}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
@@ -342,12 +348,14 @@ const ReportsPage: React.FC = () => {
 
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="report-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Title *
                 </label>
                 <input
+                  id="report-title"
                   name="title"
                   type="text"
+                  autoComplete="off"
                   value={form.title}
                   onChange={handleChange}
                   placeholder="Report title"
@@ -358,12 +366,14 @@ const ReportsPage: React.FC = () => {
 
               {/* Content */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Content *
                 </label>
                 <textarea
+                  id="report-content"
                   name="content"
                   rows={6}
+                  autoComplete="off"
                   value={form.content}
                   onChange={handleChange}
                   placeholder="Report content..."
@@ -374,12 +384,14 @@ const ReportsPage: React.FC = () => {
 
               {/* Findings */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="report-findings" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Findings
                 </label>
                 <textarea
+                  id="report-findings"
                   name="findings"
                   rows={4}
+                  autoComplete="off"
                   value={form.findings}
                   onChange={handleChange}
                   placeholder="Key findings..."
@@ -389,12 +401,14 @@ const ReportsPage: React.FC = () => {
 
               {/* Recommendations */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label htmlFor="report-recommendations" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Recommendations
                 </label>
                 <textarea
+                  id="report-recommendations"
                   name="recommendations"
                   rows={4}
+                  autoComplete="off"
                   value={form.recommendations}
                   onChange={handleChange}
                   placeholder="Recommendations..."

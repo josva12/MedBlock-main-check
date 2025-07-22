@@ -3,7 +3,6 @@ import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchPatients } from '../../features/patients/patientsSlice';
 import { fetchAppointments } from '../../features/appointments/appointmentsSlice';
-import { fetchMedicalRecords } from '../../features/medicalRecords/medicalRecordsSlice';
 import { fetchVitals } from '../../features/vitals/vitalsSlice';
 import { fetchNotifications } from '../../features/notifications/notificationsSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -23,7 +22,6 @@ const FrontDeskDashboardPage: React.FC = () => {
   useEffect(() => {
     dispatch(fetchPatients());
     dispatch(fetchAppointments());
-    dispatch(fetchMedicalRecords(undefined));
     dispatch(fetchVitals());
     dispatch(fetchNotifications());
   }, [dispatch]);
