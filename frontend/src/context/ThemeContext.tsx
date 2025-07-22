@@ -1,11 +1,11 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, type ReactNode, useMemo } from 'react';
 
 type Theme = 'light' | 'dark' | 'system';
 
 interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  isDark: boolean;
+  // Note: We removed `isDark` from here. It will be calculated instead.
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -16,7 +16,6 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>(() => {
-    // Check localStorage first
     const savedTheme = localStorage.getItem('theme') as Theme;
     if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
       return savedTheme;
@@ -24,55 +23,37 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return 'system';
   });
 
-  const [isDark, setIsDark] = useState(false);
-
-  // Function to get the actual theme (light/dark) based on system preference
-  const getSystemTheme = (): boolean => {
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
-  };
-
-  // Function to apply theme to document
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-    const isDarkMode = newTheme === 'dark' || (newTheme === 'system' && getSystemTheme());
-    
-    setIsDark(isDarkMode);
-    
-    if (isDarkMode) {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  };
-
-  // Set theme and save to localStorage
   const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
+    setThemeState(newTheme);
   };
 
-  // Listen for system theme changes
   useEffect(() => {
+    const root = document.documentElement;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
+
+    const applyTheme = () => {
+      const isDarkMode = theme === 'dark' || (theme === 'system' && mediaQuery.matches);
+      root.classList.toggle('dark', isDarkMode);
+    };
+
+    applyTheme(); // Apply theme on initial load and when `theme` changes
+
+    // Listen for OS theme changes to update the UI if the theme is 'system'
     const handleChange = () => {
       if (theme === 'system') {
-        applyTheme('system');
+        applyTheme();
       }
     };
 
     mediaQuery.addEventListener('change', handleChange);
     return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+  }, [theme]); // This effect now handles everything
 
-  // Apply theme on mount and when theme changes
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
+  const value = useMemo(() => ({ theme, setTheme }), [theme]);
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme, isDark }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   );
@@ -84,4 +65,4 @@ export const useTheme = (): ThemeContextType => {
     throw new Error('useTheme must be used within a ThemeProvider');
   }
   return context;
-}; 
+};

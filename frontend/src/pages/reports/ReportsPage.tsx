@@ -297,11 +297,11 @@ const ReportsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {patients.map(patient => (
+                  {(() => { const safePatients = Array.isArray(patients) ? patients : []; return safePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
                     </option>
-                  ))}
+                  )); })()}
                 </select>
               </div>
 

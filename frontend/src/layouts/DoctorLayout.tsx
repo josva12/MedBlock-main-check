@@ -1,3 +1,12 @@
 import React from 'react';
-const DoctorLayout: React.FC = () => null;
+import { Outlet } from 'react-router-dom';
+import Header from '../components/layout/Header';
+
+const DoctorLayout: React.FC = () => (
+  <>
+    <Header />
+    <Outlet />
+  </>
+);
+
 export default DoctorLayout; 

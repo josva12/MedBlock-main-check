@@ -130,6 +130,8 @@ function AppContent() {
                       <Route path="insurance" element={<PlaceholderPage feature="Insurance" />} />
                       <Route path="claims" element={<ClaimsPage />} />
                       <Route path="profile" element={<ProfilePage />} />
+                      <Route path="reports" element={<ReportsPage />} />
+                      <Route path="settings" element={<SettingsPage />} />
                   </Route>
               </Route>
 
