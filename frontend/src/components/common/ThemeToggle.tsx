@@ -1,22 +1,17 @@
 import React from 'react';
 import { Sun, Moon } from 'lucide-react';
-import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { useAppSelector } from '../../hooks/useAppSelector';
-import { setTheme, updateThemePreference, type Theme } from '../../features/ui/uiSlice';
-import type { RootState } from '../../store';
+import { useTheme } from '../../context/ThemeContext';
 
 const ThemeToggle: React.FC = () => {
-  const dispatch = useAppDispatch();
-  const theme = useAppSelector((state: RootState) => state.ui.theme);
+  const { theme, setTheme } = useTheme();
 
   // Determine if dark mode is currently active, even if theme is 'system'
   const isDarkModeActive = theme === 'dark' || 
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
   const toggleTheme = () => {
-    const newTheme: Theme = isDarkModeActive ? 'light' : 'dark';
-    dispatch(setTheme(newTheme));
-    dispatch(updateThemePreference(newTheme === 'dark'));
+    const newTheme = isDarkModeActive ? 'light' : 'dark';
+    setTheme(newTheme);
   };
 
   return (
