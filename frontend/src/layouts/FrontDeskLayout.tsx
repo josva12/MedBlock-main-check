@@ -1,4 +1,12 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-const FrontDeskLayout: React.FC = () => <Outlet />;
+import Header from '../components/layout/Header';
+
+const FrontDeskLayout: React.FC = () => (
+  <>
+    <Header />
+    <Outlet />
+  </>
+);
+
 export default FrontDeskLayout; 

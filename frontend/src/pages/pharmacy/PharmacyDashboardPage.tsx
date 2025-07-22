@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { fetchMedicalRecords } from '../../features/medicalRecords/medicalRecordsSlice';
 import { fetchFacilities } from '../../features/facilities/facilitiesSlice';
 import { fetchTeleconsultations } from '../../features/teleconsultations/teleconsultationsSlice';
 import { fetchNotifications } from '../../features/notifications/notificationsSlice';
-import { fetchResources } from '../../features/resources/resourcesSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  Users, Calendar, FileText, Heart, LogOut, BriefcaseMedical, PlusCircle, Clock, ClipboardList, MessageSquare, Blocks, Settings, BarChart2, Bell, Menu, Sun, Moon, Pill, Package, ShoppingCart, MessageCircle,
+  ShoppingCart, Package, MessageCircle, ClipboardList, Bell, BarChart2, BriefcaseMedical, PlusCircle, Blocks, Settings, MessageSquare, Pill, LogOut, Menu, Sun, Moon
 } from 'lucide-react';
 
 const PharmacyDashboardPage: React.FC = () => {
@@ -17,56 +16,87 @@ const PharmacyDashboardPage: React.FC = () => {
   const { facilities, isLoading: inventoryLoading } = useAppSelector((state) => state.facilities);
   const { teleconsultations, isLoading: consultationsLoading } = useAppSelector((state) => state.teleconsultations);
   const { notifications, isLoading: notificationsLoading } = useAppSelector((state) => state.notifications);
-  const { resources, isLoading: resourcesLoading } = useAppSelector((state) => state.resources);
+  const { user } = useAppSelector((state) => state.auth);
 
   useEffect(() => {
-    dispatch(fetchMedicalRecords());
-    dispatch(fetchFacilities());
+    dispatch(fetchMedicalRecords(undefined));
+    dispatch(fetchFacilities({}));
     dispatch(fetchTeleconsultations());
     dispatch(fetchNotifications());
-    dispatch(fetchResources());
   }, [dispatch]);
 
-  // Filter for pharmacy-specific data
+  // Pharmacy-specific data
   const pharmacyOrders = Array.isArray(records) ? records.filter(r => r.status === 'pharmacy_dispense' || r.prescription) : [];
   const pharmacyFacilities = Array.isArray(facilities) ? facilities.filter(f => f.type === 'pharmacy') : [];
+  const unreadNotificationsCount = Array.isArray(notifications) ? notifications.filter(n => !n.isRead).length : 0;
 
-  const isLoading = ordersLoading || inventoryLoading || consultationsLoading || notificationsLoading || resourcesLoading;
+  const isLoading = ordersLoading || inventoryLoading || consultationsLoading || notificationsLoading;
+
+  // Navigation handler (replace with real navigation if using react-router)
+  const navigateTo = useCallback((page: string) => {
+    // TODO: Integrate with router navigation
+    // For now, just log
+    console.log('Navigate to:', page);
+  }, []);
+
+  // Greeting
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  };
+
+  // Stats
+  const pendingOrders = Array.isArray(pharmacyOrders) ? pharmacyOrders.filter(o => o.status === 'Pending').length : 0;
+  // Facility does not have stock property; set lowStockCount to 0 or implement inventory logic if available
+  const lowStockCount = 0;
+  const newConsultations = Array.isArray(teleconsultations) ? teleconsultations.length : 0;
+
+  const pharmacyStats = [
+    { name: 'Pending Orders', value: pendingOrders, icon: ShoppingCart, color: 'bg-orange-500', loading: ordersLoading },
+    { name: 'Low Stock Items', value: lowStockCount, icon: Package, color: 'bg-red-500', loading: inventoryLoading },
+    { name: 'New Consultations', value: newConsultations, icon: MessageCircle, color: 'bg-blue-500', loading: consultationsLoading },
+    { name: 'Total Inventory Items', value: pharmacyFacilities.length, icon: Pill, color: 'bg-green-500', loading: inventoryLoading },
+  ];
 
   return (
-    <div className="min-h-screen p-6">
-      <h1 className="text-3xl font-bold mb-6 flex items-center"><Pill className="mr-3 text-green-500" />Pharmacy Dashboard</h1>
-      {isLoading ? (
-        <LoadingSpinner />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {/* Orders */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center mb-2"><ShoppingCart className="h-6 w-6 mr-2 text-blue-500" /><span className="font-semibold">Orders</span></div>
-            <div className="text-2xl font-bold">{pharmacyOrders.length}</div>
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 font-sans">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6">
+        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">{getGreeting()}, {user?.fullName || 'Pharmacy'}!</h1>
+        <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">Pharmacy Dashboard - Manage inventory, orders, and patient interactions.</p>
+        <div className="mt-4 text-md text-gray-500 dark:text-gray-400 font-semibold">Role: Pharmacy</div>
+      </div>
+
+      {/* Pharmacy-Specific Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        {pharmacyStats.map((stat) => (
+          <div key={stat.name} className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 flex items-center transition-transform transform hover:scale-103 hover:shadow-xl border border-gray-100 dark:border-gray-700">
+            <div className={`p-4 rounded-full ${stat.color} text-white flex-shrink-0 shadow-md`}>
+              <stat.icon className="h-7 w-7" />
+            </div>
+            <div className="ml-5">
+              <p className="text-base font-medium text-gray-600 dark:text-gray-400">{stat.name}</p>
+              {stat.loading ? (
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 h-8 w-16 rounded mt-2"></div>
+              ) : (
+                <p className="text-3xl font-bold text-gray-900 dark:text-white mt-1">{stat.value}</p>
+              )}
+            </div>
           </div>
-          {/* Inventory */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center mb-2"><Package className="h-6 w-6 mr-2 text-purple-500" /><span className="font-semibold">Inventory (Pharmacies)</span></div>
-            <div className="text-2xl font-bold">{pharmacyFacilities.length}</div>
-          </div>
-          {/* Consultations */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center mb-2"><MessageCircle className="h-6 w-6 mr-2 text-pink-500" /><span className="font-semibold">Consultations</span></div>
-            <div className="text-2xl font-bold">{Array.isArray(teleconsultations) ? teleconsultations.length : 0}</div>
-          </div>
-          {/* Notifications */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center mb-2"><Bell className="h-6 w-6 mr-2 text-yellow-500" /><span className="font-semibold">Notifications</span></div>
-            <div className="text-2xl font-bold">{Array.isArray(notifications) ? notifications.length : 0}</div>
-          </div>
-          {/* Resources */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-            <div className="flex items-center mb-2"><ClipboardList className="h-6 w-6 mr-2 text-indigo-500" /><span className="font-semibold">Resources</span></div>
-            <div className="text-2xl font-bold">{Array.isArray(resources) ? resources.length : 0}</div>
-          </div>
+        ))}
+      </div>
+
+      {/* Main Content Grid for Pharmacy */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Quick Actions, Orders, Inventory, Notifications, etc. */}
+        {/* ... Implement as per your provided design ... */}
+        {/* Placeholder for now */}
+        <div className="col-span-full text-center text-gray-400 dark:text-gray-500 py-12">
+          <span>Pharmacy dashboard widgets and quick actions go here (see design spec).</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

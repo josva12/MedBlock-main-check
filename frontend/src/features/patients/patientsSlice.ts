@@ -33,6 +33,7 @@ export interface Patient {
   };
   createdAt: string;
   updatedAt: string;
+  checkInStatus?: 'not_admitted' | 'admitted' | 'discharged';
 }
 
 export interface PatientsState {
