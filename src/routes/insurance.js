@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const InsurancePolicy = require('../models/InsurancePolicy');
 const { authenticateToken, requireRole } = require('../middleware/authMiddleware');
+const { BlockchainService } = require('../services/blockchainService');
+const BlockchainLog = require('../models/BlockchainLog');
 
 // POST /api/v1/insurance - Enroll a user
 router.post('/', authenticateToken, async (req, res) => {
@@ -19,6 +21,34 @@ router.post('/', authenticateToken, async (req, res) => {
       updatedAt: new Date()
     });
     await policy.save();
+    // --- Blockchain Integration ---
+    try {
+      const blockchainService = new BlockchainService();
+      const blockchainResult = await blockchainService.recordEvent({
+        eventType: 'InsuranceEnrollment',
+        entityId: policy._id.toString(),
+        dataHash: policy._id.toString() // You may want to hash more data for privacy
+      });
+      policy.transactionHash = blockchainResult.transactionHash;
+      policy.blockNumber = blockchainResult.blockNumber;
+      policy.blockchainTimestamp = new Date();
+      policy.isVerified = false;
+      policy.verificationAttempts = 0;
+      await policy.save();
+      // Log to BlockchainLog
+      await BlockchainLog.create({
+        type: 'insurance_enrollment',
+        entityId: policy._id.toString(),
+        description: `Insurance policy ${policy._id} enrolled and recorded on blockchain`,
+        transactionHash: blockchainResult.transactionHash,
+        status: 'recorded',
+        recordedBy: req.user.fullName || req.user.email,
+        additionalInfo: { policyTier: policy.policyTier, premiumAmount: policy.premiumAmount, coverageLimit: policy.coverageLimit }
+      });
+    } catch (blockchainError) {
+      // Optionally: log or return warning
+    }
+    // --- End Blockchain Integration ---
     res.status(201).json({ success: true, data: policy });
   } catch (error) {
     res.status(500).json({ error: 'Failed to enroll user', details: error.message });
@@ -44,9 +74,67 @@ router.patch('/:policyId/status', authenticateToken, requireRole(['admin']), asy
     const { status } = req.body;
     const policy = await InsurancePolicy.findByIdAndUpdate(policyId, { status, updatedAt: new Date() }, { new: true });
     if (!policy) return res.status(404).json({ error: 'Policy not found' });
+    // --- Blockchain Integration ---
+    try {
+      const blockchainService = new BlockchainService();
+      const blockchainResult = await blockchainService.recordEvent({
+        eventType: 'InsuranceStatusUpdate',
+        entityId: policy._id.toString(),
+        dataHash: policy._id.toString() + ':' + status
+      });
+      policy.transactionHash = blockchainResult.transactionHash;
+      policy.blockNumber = blockchainResult.blockNumber;
+      policy.blockchainTimestamp = new Date();
+      policy.isVerified = false;
+      policy.verificationAttempts = 0;
+      await policy.save();
+      // Log to BlockchainLog
+      await BlockchainLog.create({
+        type: 'insurance_status_update',
+        entityId: policy._id.toString(),
+        description: `Insurance policy ${policy._id} status updated to ${status} and recorded on blockchain`,
+        transactionHash: blockchainResult.transactionHash,
+        status: 'recorded',
+        recordedBy: req.user.fullName || req.user.email,
+        additionalInfo: { status }
+      });
+    } catch (blockchainError) {
+      // Optionally: log or return warning
+    }
+    // --- End Blockchain Integration ---
     res.json({ success: true, data: policy });
   } catch (error) {
     res.status(500).json({ error: 'Failed to update policy status', details: error.message });
+  }
+});
+
+// PATCH /api/v1/insurance/:policyId/verify-blockchain - Verify policy's blockchain status (admin)
+router.patch('/:policyId/verify-blockchain', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { policyId } = req.params;
+    const policy = await InsurancePolicy.findById(policyId);
+    if (!policy) return res.status(404).json({ error: 'Policy not found' });
+    if (!policy.transactionHash) return res.status(400).json({ error: 'No transaction hash found for this policy.' });
+    const blockchainService = new BlockchainService();
+    const verification = await blockchainService.verifyEvent(policy.transactionHash);
+    policy.isVerified = verification.isVerified;
+    policy.verificationAttempts = (policy.verificationAttempts || 0) + 1;
+    policy.blockNumber = verification.blockNumber;
+    policy.blockchainTimestamp = new Date();
+    await policy.save();
+    // Log to BlockchainLog
+    await BlockchainLog.create({
+      type: 'verification',
+      entityId: policy._id.toString(),
+      description: `Verification for insurance policy ${policy._id} on blockchain`,
+      transactionHash: policy.transactionHash,
+      status: verification.isVerified ? 'verified' : 'failed',
+      recordedBy: req.user.fullName || req.user.email,
+      additionalInfo: { policyTier: policy.policyTier, premiumAmount: policy.premiumAmount, coverageLimit: policy.coverageLimit }
+    });
+    res.json({ success: true, data: policy });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to verify policy on blockchain', details: error.message });
   }
 });
 

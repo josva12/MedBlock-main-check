@@ -9,6 +9,8 @@ const logger = require('../utils/logger');
 const upload = require('../config/multerConfig');
 const fs = require('fs');
 const path = require('path');
+const { BlockchainService } = require('../services/blockchainService');
+const BlockchainLog = require('../models/BlockchainLog');
 
 const router = express.Router();
 
@@ -251,6 +253,40 @@ router.post('/', requireRole(['admin', 'doctor', 'nurse']), validateMedicalRecor
     // Create record
     const record = new MedicalRecord(recordData);
     await record.save();
+
+    // --- Blockchain Integration ---
+    try {
+      const blockchainService = new BlockchainService();
+      const blockchainResult = await blockchainService.recordEvent({
+        eventType: 'MedicalRecord',
+        entityId: record.recordId,
+        dataHash: record.dataHash
+      });
+      record.blockchain = {
+        transactionHash: blockchainResult.transactionHash,
+        blockNumber: blockchainResult.blockNumber,
+        timestamp: new Date(),
+        isVerified: false,
+        verificationAttempts: 0
+      };
+      await record.save();
+      // Log to BlockchainLog
+      await BlockchainLog.create({
+        type: 'medical_record',
+        entityId: record._id.toString(),
+        description: `Medical record for patient ${patient._id} recorded on blockchain`,
+        transactionHash: blockchainResult.transactionHash,
+        status: 'recorded',
+        recordedBy: req.user.fullNameWithTitle,
+        patientId: patient._id.toString(),
+        providerId: req.user._id.toString(),
+        dataHash: record.dataHash
+      });
+    } catch (blockchainError) {
+      logger.error('Blockchain recording failed (medical record creation):', blockchainError);
+      // Optionally: return error or continue with warning
+    }
+    // --- End Blockchain Integration ---
 
     logger.audit('medical_record_created', req.user.userId, `record:${record.recordId}`, {
       recordId: record.recordId,
@@ -659,29 +695,38 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
       });
     }
 
-    // Import blockchain service
-    const blockchainService = require('../services/blockchainService');
-
+    const blockchainService = new BlockchainService();
     let result = {};
 
-    // Process different actions
     switch (action) {
       case 'record':
         // Record the medical record on blockchain
         try {
-          const blockchainResult = await blockchainService.recordOnBlockchain({
-            recordId: record.recordId,
-            dataHash: record.dataHash,
-            encryptedData: record.encryptedData
+          const blockchainResult = await blockchainService.recordEvent({
+            eventType: 'MedicalRecord',
+            entityId: record.recordId,
+            dataHash: record.dataHash
           });
-
-          // Update the record with blockchain information
-          await record.updateBlockchainStatus(
-            blockchainResult.transactionHash,
-            blockchainResult.blockNumber,
-            false // Initially not verified
-          );
-
+          record.blockchain = {
+            transactionHash: blockchainResult.transactionHash,
+            blockNumber: blockchainResult.blockNumber,
+            timestamp: new Date(),
+            isVerified: false,
+            verificationAttempts: 0
+          };
+          await record.save();
+          // Log to BlockchainLog
+          await BlockchainLog.create({
+            type: 'medical_record',
+            entityId: record._id.toString(),
+            description: `Medical record for patient ${record.patientId} recorded on blockchain`,
+            transactionHash: blockchainResult.transactionHash,
+            status: 'recorded',
+            recordedBy: req.user.fullNameWithTitle,
+            patientId: record.patientId.toString(),
+            providerId: req.user._id.toString(),
+            dataHash: record.dataHash
+          });
           result = {
             success: true,
             message: 'Medical record recorded on blockchain successfully',
@@ -689,7 +734,7 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
               recordId: record.recordId,
               transactionHash: blockchainResult.transactionHash,
               blockNumber: blockchainResult.blockNumber,
-              timestamp: blockchainResult.timestamp,
+              timestamp: new Date(),
               isVerified: false
             }
           };
@@ -705,7 +750,6 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
           });
         }
         break;
-
       case 'verify':
         // Verify the medical record on blockchain
         try {
@@ -715,16 +759,22 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
               error: 'No transaction hash found. Record must be recorded on blockchain first.'
             });
           }
-
-          const verificationResult = await blockchainService.verifyOnBlockchain(
-            record.blockchain.transactionHash
-          );
-
-          // Update verification status
+          const verificationResult = await blockchainService.verifyEvent(record.blockchain.transactionHash);
           record.blockchain.isVerified = verificationResult.isVerified;
           record.blockchain.verificationAttempts += 1;
           await record.save();
-
+          // Log to BlockchainLog
+          await BlockchainLog.create({
+            type: 'verification',
+            entityId: record._id.toString(),
+            description: `Verification for medical record ${record._id} on blockchain`,
+            transactionHash: record.blockchain.transactionHash,
+            status: verificationResult.isVerified ? 'verified' : 'failed',
+            recordedBy: req.user.fullNameWithTitle,
+            patientId: record.patientId.toString(),
+            providerId: req.user._id.toString(),
+            dataHash: record.dataHash
+          });
           result = {
             success: true,
             message: 'Blockchain verification completed',
@@ -732,7 +782,7 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
               recordId: record.recordId,
               transactionHash: record.blockchain.transactionHash,
               isVerified: verificationResult.isVerified,
-              verifiedAt: verificationResult.verifiedAt,
+              blockNumber: verificationResult.blockNumber,
               verificationAttempts: record.blockchain.verificationAttempts
             }
           };
@@ -749,7 +799,6 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
           });
         }
         break;
-
       case 'update_status':
         // Manual status update (admin override)
         if (isVerified !== undefined) {
@@ -761,11 +810,9 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
         if (blockNumber) {
           record.blockchain.blockNumber = blockNumber;
         }
-        
         record.blockchain.timestamp = new Date();
         record.blockchain.verificationAttempts += 1;
         await record.save();
-
         result = {
           success: true,
           message: 'Blockchain status updated manually',
@@ -779,7 +826,6 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
           }
         };
         break;
-
       default:
         return res.status(400).json({
           success: false,
@@ -787,7 +833,6 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
         });
     }
 
-    // Log the blockchain status update
     logger.audit('blockchain_status_updated', req.user.userId, `record:${record.recordId}`, {
       recordId: record.recordId,
       action,
@@ -797,7 +842,6 @@ router.patch('/:id/blockchain-status', requireRole(['admin', 'service_account'])
     });
 
     res.json(result);
-
   } catch (error) {
     logger.error('Update blockchain status failed:', error);
     res.status(500).json({

@@ -13,6 +13,7 @@ import uiReducer from '../features/ui/uiSlice';
 import notificationsReducer from '../features/notifications/notificationsSlice'; // Import notifications reducer
 import teleconsultationsReducer from '../features/teleconsultations/teleconsultationsSlice';
 import reportsReducer from '../features/reports/reportsSlice';
+import blockchainReducer from '../features/blockchain/blockchainSlice';
 
 export const store = configureStore({
   reducer: {
@@ -30,6 +31,7 @@ export const store = configureStore({
     teleconsultations: teleconsultationsReducer, // Add teleconsultations reducer
     ui: uiReducer,
     reports: reportsReducer,
+    blockchain: blockchainReducer, // Add blockchain reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

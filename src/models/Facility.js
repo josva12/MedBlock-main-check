@@ -65,7 +65,12 @@ const facilitySchema = new mongoose.Schema({
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
-  }
+  },
+  transactionHash: { type: String },
+  blockNumber: { type: Number },
+  isVerified: { type: Boolean, default: false },
+  blockchainTimestamp: { type: Date },
+  verificationAttempts: { type: Number, default: 0 }
 }, {
   timestamps: true
 });

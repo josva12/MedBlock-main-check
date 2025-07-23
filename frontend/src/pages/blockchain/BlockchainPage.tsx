@@ -5,7 +5,8 @@ import { fetchBlockchainLogs } from "../../features/blockchain/blockchainSlice";
 
 const BlockchainPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { logs, loading, error } = useSelector((state: RootState) => state.blockchain);
+  // Defensive destructuring: default logs to [] if undefined
+  const { logs = [], loading, error } = useSelector((state: RootState) => state.blockchain || {});
 
   useEffect(() => {
     dispatch(fetchBlockchainLogs());

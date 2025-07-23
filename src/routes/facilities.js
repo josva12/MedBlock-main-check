@@ -3,6 +3,8 @@ const { body, validationResult } = require('express-validator');
 const Facility = require('../models/Facility');
 const { requireRole, authenticateToken } = require('../middleware/authMiddleware');
 const logger = require('../utils/logger');
+const { BlockchainService } = require('../services/blockchainService');
+const BlockchainLog = require('../models/BlockchainLog');
 
 const router = express.Router();
 
@@ -42,6 +44,34 @@ router.post('/', authenticateToken, requireRole(['admin']), validateFacility, as
       createdBy: req.user._id
     });
     await facility.save();
+    // --- Blockchain Integration ---
+    try {
+      const blockchainService = new BlockchainService();
+      const blockchainResult = await blockchainService.recordEvent({
+        eventType: 'FacilityRegistration',
+        entityId: facility._id.toString(),
+        dataHash: facility._id.toString()
+      });
+      facility.transactionHash = blockchainResult.transactionHash;
+      facility.blockNumber = blockchainResult.blockNumber;
+      facility.blockchainTimestamp = new Date();
+      facility.isVerified = false;
+      facility.verificationAttempts = 0;
+      await facility.save();
+      // Log to BlockchainLog
+      await BlockchainLog.create({
+        type: 'facility_registration',
+        entityId: facility._id.toString(),
+        description: `Facility ${facility.name} registered and recorded on blockchain`,
+        transactionHash: blockchainResult.transactionHash,
+        status: 'recorded',
+        recordedBy: req.user.fullName || req.user.email,
+        additionalInfo: { type: facility.type, registrationNumber: facility.registrationNumber }
+      });
+    } catch (blockchainError) {
+      // Optionally: log or return warning
+    }
+    // --- End Blockchain Integration ---
     logger.audit('facility_registered', req.user._id, 'facility', { facilityId: facility._id, name });
     res.status(201).json({ success: true, message: 'Facility registered', data: { facility } });
   } catch (error) {
@@ -69,12 +99,70 @@ router.patch('/:id/verify', authenticateToken, requireRole(['admin']), async (re
     facility.verifiedBy = req.user._id;
     facility.rejectionReason = status === 'rejected' ? rejectionReason : undefined;
     facility.notes = notes;
+    // --- Blockchain Integration ---
+    try {
+      const blockchainService = new BlockchainService();
+      const blockchainResult = await blockchainService.recordEvent({
+        eventType: 'FacilityVerification',
+        entityId: facility._id.toString(),
+        dataHash: facility._id.toString() + ':' + status
+      });
+      facility.transactionHash = blockchainResult.transactionHash;
+      facility.blockNumber = blockchainResult.blockNumber;
+      facility.blockchainTimestamp = new Date();
+      facility.isVerified = false;
+      facility.verificationAttempts = 0;
+      await facility.save();
+      // Log to BlockchainLog
+      await BlockchainLog.create({
+        type: 'facility_verification',
+        entityId: facility._id.toString(),
+        description: `Facility ${facility.name} verification status updated to ${status} and recorded on blockchain`,
+        transactionHash: blockchainResult.transactionHash,
+        status: 'recorded',
+        recordedBy: req.user.fullName || req.user.email,
+        additionalInfo: { status }
+      });
+    } catch (blockchainError) {
+      // Optionally: log or return warning
+    }
+    // --- End Blockchain Integration ---
     await facility.save();
     logger.audit('facility_verification', req.user._id, 'facility', { facilityId: id, status });
     res.json({ success: true, message: 'Facility verification updated', data: { facility } });
   } catch (error) {
     logger.error('Facility verification failed:', error);
     res.status(500).json({ error: 'Failed to verify facility', details: error.message });
+  }
+});
+
+// PATCH /api/v1/facilities/:id/verify-blockchain - Verify facility's blockchain status (admin)
+router.patch('/:id/verify-blockchain', authenticateToken, requireRole(['admin']), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const facility = await Facility.findById(id);
+    if (!facility) return res.status(404).json({ error: 'Facility not found' });
+    if (!facility.transactionHash) return res.status(400).json({ error: 'No transaction hash found for this facility.' });
+    const blockchainService = new BlockchainService();
+    const verification = await blockchainService.verifyEvent(facility.transactionHash);
+    facility.isVerified = verification.isVerified;
+    facility.verificationAttempts = (facility.verificationAttempts || 0) + 1;
+    facility.blockNumber = verification.blockNumber;
+    facility.blockchainTimestamp = new Date();
+    await facility.save();
+    // Log to BlockchainLog
+    await BlockchainLog.create({
+      type: 'verification',
+      entityId: facility._id.toString(),
+      description: `Verification for facility ${facility._id} on blockchain`,
+      transactionHash: facility.transactionHash,
+      status: verification.isVerified ? 'verified' : 'failed',
+      recordedBy: req.user.fullName || req.user.email,
+      additionalInfo: { type: facility.type, registrationNumber: facility.registrationNumber }
+    });
+    res.json({ success: true, data: facility });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to verify facility on blockchain', details: error.message });
   }
 });
 

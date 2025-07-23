@@ -14,6 +14,11 @@ const InsurancePolicySchema = new mongoose.Schema({
   startDate: { type: Date },
   endDate: { type: Date },
   dependents: [DependentSchema],
+  transactionHash: { type: String },
+  blockNumber: { type: Number },
+  isVerified: { type: Boolean, default: false },
+  blockchainTimestamp: { type: Date },
+  verificationAttempts: { type: Number, default: 0 },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

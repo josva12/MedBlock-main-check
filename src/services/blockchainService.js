@@ -1,222 +1,152 @@
-const { v4: uuidv4 } = require('crypto');
+// --- Ethereum Blockchain Service for MedBlock ---
+const Web3 = require('web3');
 const logger = require('../utils/logger');
+require('dotenv').config();
 
-/**
- * Mock Blockchain Service
- * 
- * This service simulates blockchain interactions for medical record verification
- * and recording. In a production environment, this would be replaced with
- * actual blockchain network integration (e.g., Ethereum, Hyperledger Fabric).
- */
-class BlockchainService {
-  constructor() {
-    this.networkStatus = 'active';
-    this.lastBlockNumber = 1000000; // Simulated current block number
+// --- Configuration ---
+const ETH_NODE_URL = process.env.ETH_NODE_URL; // e.g., Infura/Alchemy endpoint
+const PRIVATE_KEY = process.env.ETH_PRIVATE_KEY; // Private key of the sender (NEVER commit this!)
+const CONTRACT_ADDRESS = process.env.ETH_CONTRACT_ADDRESS; // Deployed contract address
+const CONTRACT_ABI = [
+  // Minimal ABI for event logging (expand as needed)
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "eventType", "type": "string" },
+      { "name": "entityId", "type": "string" },
+      { "name": "dataHash", "type": "string" }
+    ],
+    "name": "logHealthEvent",
+    "outputs": [],
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      { "indexed": true, "name": "eventType", "type": "string" },
+      { "indexed": true, "name": "entityId", "type": "string" },
+      { "indexed": false, "name": "dataHash", "type": "string" },
+      { "indexed": false, "name": "timestamp", "type": "uint256" }
+    ],
+    "name": "HealthEventLogged",
+    "type": "event"
   }
+];
 
+// --- Web3 Setup ---
+const web3 = new Web3(ETH_NODE_URL);
+const account = web3.eth.accounts.privateKeyToAccount(PRIVATE_KEY);
+web3.eth.accounts.wallet.add(account);
+const contract = new web3.eth.Contract(CONTRACT_ABI, CONTRACT_ADDRESS);
+
+// --- Blockchain Service ---
+class BlockchainService {
   /**
-   * Simulate recording data on the blockchain
-   * @param {Object} dataToRecord - Data to be recorded
-   * @param {string} dataToRecord.recordId - Medical record ID
-   * @param {string} dataToRecord.dataHash - Hash of the medical data
-   * @param {string} dataToRecord.encryptedData - Encrypted medical data
-   * @returns {Promise<Object>} Blockchain transaction details
+   * Record a health event on the blockchain
+   * @param {Object} params
+   * @param {string} params.eventType - e.g., 'MedicalRecord', 'Claim', 'InsuranceEnrollment', 'PharmacyDispense'
+   * @param {string} params.entityId - The unique ID of the entity (record, claim, etc.)
+   * @param {string} params.dataHash - Hash of the data being recorded
+   * @returns {Promise<Object>} Transaction details
    */
-  async recordOnBlockchain(dataToRecord) {
+  async recordEvent({ eventType, entityId, dataHash }) {
     try {
-      logger.info('Recording data on blockchain', {
-        recordId: dataToRecord.recordId,
-        dataHash: dataToRecord.dataHash
+      logger.info('Recording event on Ethereum', { eventType, entityId, dataHash });
+      const tx = contract.methods.logHealthEvent(eventType, entityId, dataHash);
+      const gas = await tx.estimateGas({ from: account.address });
+      const txData = tx.encodeABI();
+      const txObj = {
+        from: account.address,
+        to: CONTRACT_ADDRESS,
+        data: txData,
+        gas
+      };
+      const receipt = await web3.eth.sendTransaction(txObj);
+      logger.audit('blockchain_event_recorded', account.address, `${eventType}:${entityId}`, {
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber,
+        eventType,
+        entityId,
+        dataHash
       });
-
-      // Simulate blockchain network delay
-      await this.simulateNetworkDelay();
-
-      // Generate mock transaction details
-      const transactionHash = this.generateTransactionHash();
-      const blockNumber = this.getNextBlockNumber();
-      const timestamp = new Date();
-
-      logger.audit('blockchain_record_created', 'system', `record:${dataToRecord.recordId}`, {
-        recordId: dataToRecord.recordId,
-        transactionHash,
-        blockNumber,
-        timestamp
-      });
-
       return {
-        transactionHash,
-        blockNumber,
-        timestamp,
+        transactionHash: receipt.transactionHash,
+        blockNumber: receipt.blockNumber,
         success: true
       };
     } catch (error) {
-      logger.error('Failed to record on blockchain', {
-        recordId: dataToRecord.recordId,
-        error: error.message
-      });
-      throw new Error('Blockchain recording failed');
+      logger.error('Failed to record event on Ethereum', { error: error.message });
+      throw new Error('Blockchain recording failed: ' + error.message);
     }
   }
 
   /**
-   * Simulate verifying data on the blockchain
-   * @param {string} transactionHash - Transaction hash to verify
+   * Verify a transaction on the blockchain
+   * @param {string} transactionHash
    * @returns {Promise<Object>} Verification result
    */
-  async verifyOnBlockchain(transactionHash) {
+  async verifyEvent(transactionHash) {
     try {
-      logger.info('Verifying data on blockchain', {
-        transactionHash
-      });
-
-      // Simulate blockchain network delay
-      await this.simulateNetworkDelay();
-
-      // Mock verification logic
-      // In a real implementation, this would query the blockchain
-      const isVerified = this.mockVerificationLogic(transactionHash);
-
-      logger.audit('blockchain_verification_attempted', 'system', `tx:${transactionHash}`, {
-        transactionHash,
-        isVerified
-      });
-
+      const receipt = await web3.eth.getTransactionReceipt(transactionHash);
+      const isVerified = receipt && receipt.status;
       return {
         isVerified,
-        verifiedAt: new Date(),
-        success: true
+        blockNumber: receipt ? receipt.blockNumber : null,
+        success: !!isVerified
       };
     } catch (error) {
-      logger.error('Failed to verify on blockchain', {
-        transactionHash,
-        error: error.message
-      });
-      throw new Error('Blockchain verification failed');
+      logger.error('Failed to verify transaction on Ethereum', { error: error.message });
+      throw new Error('Blockchain verification failed: ' + error.message);
     }
   }
 
   /**
-   * Get blockchain network status
-   * @returns {Promise<Object>} Network status information
-   */
-  async getNetworkStatus() {
-    try {
-      // Simulate network status check
-      await this.simulateNetworkDelay(100); // Faster response for status check
-
-      return {
-        status: this.networkStatus,
-        lastBlockNumber: this.lastBlockNumber,
-        networkName: 'MedBlock Healthcare Network',
-        algorithm: 'AES-256-GCM',
-        timestamp: new Date()
-      };
-    } catch (error) {
-      logger.error('Failed to get network status', { error: error.message });
-      throw new Error('Network status check failed');
-    }
-  }
-
-  /**
-   * Generate a mock transaction hash
-   * @returns {string} Mock transaction hash
-   */
-  generateTransactionHash() {
-    // Generate a mock transaction hash (64 characters, hex format)
-    const chars = '0123456789abcdef';
-    let hash = '0x';
-    for (let i = 0; i < 64; i++) {
-      hash += chars[Math.floor(Math.random() * chars.length)];
-    }
-    return hash;
-  }
-
-  /**
-   * Get the next block number
-   * @returns {number} Next block number
-   */
-  getNextBlockNumber() {
-    this.lastBlockNumber += Math.floor(Math.random() * 10) + 1;
-    return this.lastBlockNumber;
-  }
-
-  /**
-   * Mock verification logic
-   * @param {string} transactionHash - Transaction hash to verify
-   * @returns {boolean} Verification result
-   */
-  mockVerificationLogic(transactionHash) {
-    // Simulate verification logic
-    // In a real implementation, this would check the actual blockchain
-    if (!transactionHash || transactionHash.length < 10) {
-      return false;
-    }
-    
-    // Simulate 95% success rate for valid transaction hashes
-    return Math.random() > 0.05;
-  }
-
-  /**
-   * Simulate network delay
-   * @param {number} maxDelay - Maximum delay in milliseconds
-   * @returns {Promise<void>}
-   */
-  async simulateNetworkDelay(maxDelay = 2000) {
-    const delay = Math.random() * maxDelay;
-    return new Promise(resolve => setTimeout(resolve, delay));
-  }
-
-  /**
-   * Validate transaction hash format
-   * @param {string} transactionHash - Transaction hash to validate
-   * @returns {boolean} Whether the hash is valid
-   */
-  validateTransactionHash(transactionHash) {
-    if (!transactionHash || typeof transactionHash !== 'string') {
-      return false;
-    }
-    
-    // Basic validation for mock transaction hash format
-    return transactionHash.startsWith('0x') && transactionHash.length === 66;
-  }
-
-  /**
-   * Get transaction details (mock)
-   * @param {string} transactionHash - Transaction hash
+   * Get transaction details from the blockchain
+   * @param {string} transactionHash
    * @returns {Promise<Object>} Transaction details
    */
   async getTransactionDetails(transactionHash) {
     try {
-      if (!this.validateTransactionHash(transactionHash)) {
-        throw new Error('Invalid transaction hash format');
-      }
-
-      await this.simulateNetworkDelay(1000);
-
+      const tx = await web3.eth.getTransaction(transactionHash);
+      const receipt = await web3.eth.getTransactionReceipt(transactionHash);
       return {
-        transactionHash,
-        blockNumber: Math.floor(Math.random() * this.lastBlockNumber) + 1,
-        timestamp: new Date(Date.now() - Math.random() * 86400000), // Random time within last 24 hours
-        gasUsed: Math.floor(Math.random() * 100000) + 21000,
-        gasPrice: Math.floor(Math.random() * 50) + 1,
-        status: 'success'
+        transaction: tx,
+        receipt
       };
     } catch (error) {
-      logger.error('Failed to get transaction details', {
-        transactionHash,
-        error: error.message
-      });
-      throw error;
+      logger.error('Failed to get transaction details from Ethereum', { error: error.message });
+      throw new Error('Get transaction details failed: ' + error.message);
     }
   }
 }
 
-// Record a claim on the blockchain (mock implementation)
+/**
+ * Record a claim event on the blockchain
+ * @param {Object} params
+ * @param {string} params.policyId
+ * @param {string} params.patientId
+ * @param {string} params.facilityId
+ * @param {number} params.claimAmount
+ * @returns {Promise<string>} Transaction hash
+ */
 async function recordClaim({ policyId, patientId, facilityId, claimAmount }) {
-  // TODO: Integrate with real blockchain (Ethereum, etc.)
-  // For now, return a mock transaction hash
-  return '0x' + Math.random().toString(16).slice(2, 10) + Math.random().toString(16).slice(2, 10);
+  const blockchainService = new BlockchainService();
+  // For claims, hash the claim data for privacy
+  const dataHash = web3.utils.sha3(`${policyId}:${patientId}:${facilityId}:${claimAmount}`);
+  const result = await blockchainService.recordEvent({
+    eventType: 'Claim',
+    entityId: policyId,
+    dataHash
+  });
+  return result.transactionHash;
 }
 
-module.exports = { recordClaim }; 
+module.exports = {
+  BlockchainService,
+  recordClaim
+};
+
+// --- TODOs ---
+// 1. Deploy a simple HealthEventLogger contract to Ethereum and set CONTRACT_ADDRESS/ABI.
+// 2. Store ETH_NODE_URL and ETH_PRIVATE_KEY in your .env file.
+// 3. Expand ABI and service as needed for more event types and data. 
