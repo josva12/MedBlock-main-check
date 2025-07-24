@@ -32,6 +32,19 @@ const ReportsPage: React.FC = () => {
   const { reports, isLoading, error } = useAppSelector((state: RootState) => state.reports);
   const { patients } = useAppSelector((state: RootState) => state.patients);
   const { user } = useAppSelector((state: RootState) => state.auth);
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
+  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
+  // If no such field, show all patients for now
+  const nursePatients = user?.role === 'nurse'
+    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+    : safePatients;
+  // Only show reports for nurse's patients
+  const safeReports = Array.isArray(reports) ? reports : [];
+  const nursePatientIds = new Set(nursePatients.map(p => p._id));
+  const nurseReports = user?.role === 'nurse'
+    ? safeReports.filter(report => nursePatientIds.has(report.patientId))
+    : safeReports;
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormType>(initialForm);
@@ -194,14 +207,14 @@ const ReportsPage: React.FC = () => {
                     <p className="mt-2">Loading reports...</p>
                   </td>
                 </tr>
-              ) : reports.length === 0 ? (
+              ) : nurseReports.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No reports found
                   </td>
                 </tr>
               ) : (
-                reports.map((report) => (
+                nurseReports.map((report) => (
                   <tr key={report._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -297,11 +310,11 @@ const ReportsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {(() => { const safePatients = Array.isArray(patients) ? patients : []; return safePatients.map(patient => (
+                  {nursePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
                     </option>
-                  )); })()}
+                  ))}
                 </select>
               </div>
 

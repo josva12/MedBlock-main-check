@@ -21,6 +21,19 @@ const RecordsPage: React.FC = () => {
   const { records, isLoading, error } = useAppSelector((state: RootState) => state.medicalRecords);
   const { patients } = useAppSelector((state: RootState) => state.patients);
   const { user } = useAppSelector((state: RootState) => state.auth);
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
+  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
+  // If no such field, show all patients for now
+  const nursePatients = user?.role === 'nurse'
+    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+    : safePatients;
+  // Only show records for nurse's patients
+  const safeRecords = Array.isArray(records) ? records : [];
+  const nursePatientIds = new Set(nursePatients.map(p => p._id));
+  const nurseRecords = user?.role === 'nurse'
+    ? safeRecords.filter(record => nursePatientIds.has(record.patientId))
+    : safeRecords;
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormType>(initialForm);
@@ -114,7 +127,7 @@ const RecordsPage: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {(() => { const safeRecords = Array.isArray(records) ? records : []; return (
+            {(() => { return (
             isLoading ? (
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -122,12 +135,12 @@ const RecordsPage: React.FC = () => {
                   <p className="mt-2">Loading records...</p>
                 </td>
               </tr>
-            ) : safeRecords.length === 0 ? (
+            ) : nurseRecords.length === 0 ? (
               <tr>
                 <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">No records found</td>
               </tr>
             ) : (
-              safeRecords.map((record: any) => (
+              nurseRecords.map((record: any) => (
                 <tr key={record._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="px-4 py-2">{getPatientName(record.patientId)}</td>
                   <td className="px-4 py-2">{record.type}</td>
@@ -168,7 +181,7 @@ const RecordsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {patients.map((patient: any) => (
+                  {nursePatients.map((patient: any) => (
                     <option key={patient._id} value={patient._id}>{patient.fullName}</option>
                   ))}
                 </select>
