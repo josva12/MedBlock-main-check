@@ -52,12 +52,10 @@ const PatientsPage: React.FC = () => {
   const { user } = useAppSelector((state: RootState) => state.auth);
   // Defensive check for patients array
   const safePatients = Array.isArray(patients) ? patients : [];
-  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
-  // If no such field, show all patients for now
-  const nursePatients = user?.role === 'nurse'
-    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+  // Filter patients by nurse department
+  const nursePatients = user?.role === 'nurse' && user.department
+    ? safePatients.filter(p => (p as any).assignedDepartment === user.department) // TODO: update Patient type
     : safePatients;
-
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormType>(initialForm);
@@ -167,6 +165,12 @@ const PatientsPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Department warning */}
+      {user?.role === 'nurse' && !user.department && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded">
+          You are not assigned to any department. Please contact your administrator.
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -176,6 +180,8 @@ const PatientsPage: React.FC = () => {
         <button 
           className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2" 
           onClick={() => { setShowModal(true); setForm(initialForm); setEditId(null); }}
+          disabled={user?.role === 'nurse' && !user.isGovernmentVerified}
+          title={user?.role === 'nurse' && !user.isGovernmentVerified ? 'Only government-verified nurses can add patients.' : ''}
         >
           <Plus className="h-5 w-5" />
           Add Patient
@@ -219,11 +225,9 @@ const PatientsPage: React.FC = () => {
                     <p className="mt-2">Loading patients...</p>
                   </td>
                 </tr>
-              ) : nursePatients.length === 0 ? (
+              ) : nursePatients.length === 0 && user?.role === 'nurse' && user.department ? (
                 <tr>
-                  <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No patients found
-                  </td>
+                  <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">No patients found for your department.</td>
                 </tr>
               ) : (
                 nursePatients.map((patient) => (
@@ -553,6 +557,8 @@ const PatientsPage: React.FC = () => {
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  disabled={user?.role === 'nurse' && !user.isGovernmentVerified}
+                  title={user?.role === 'nurse' && !user.isGovernmentVerified ? 'Only government-verified nurses can save patients.' : ''}
                 >
                   <Save className="h-4 w-4" />
                   {editId ? "Update" : "Save"} Patient

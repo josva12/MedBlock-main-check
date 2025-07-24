@@ -48,8 +48,18 @@ const NurseDashboardPage: React.FC = () => {
     { label: 'Settings', icon: Settings, onClick: () => navigate('/nurse/settings'), color: 'text-gray-500' },
   ];
 
+  // My Department widget
+  const myDepartment = user?.department || null;
+  const safePatients = Array.isArray(patients) ? patients : [];
+
   return (
     <div className="min-h-screen p-6">
+      {/* Department warning */}
+      {user?.role === 'nurse' && !myDepartment && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded mb-6">
+          You are not assigned to any department. Please contact your administrator.
+        </div>
+      )}
       <h1 className="text-3xl font-bold mb-6 flex items-center"><Users className="mr-3 text-blue-500" />Nurse Dashboard</h1>
       {isLoading ? (
         <LoadingSpinner />
@@ -79,11 +89,11 @@ const NurseDashboardPage: React.FC = () => {
               </h2>
             </div>
             <div className="p-6">
-              {patients.length === 0 ? (
+              {safePatients.length === 0 ? (
                 <p className="text-gray-500 dark:text-gray-400 text-center py-4">No patients assigned.</p>
               ) : (
                 <div className="space-y-4">
-                  {patients.slice(0, 5).map((patient) => (
+                  {safePatients.slice(0, 5).map((patient) => (
                     <div key={patient._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 transition-transform transform hover:scale-[1.01]">
                       <div>
                         <p className="font-semibold text-gray-900 dark:text-white">{patient.fullName}</p>
@@ -115,6 +125,14 @@ const NurseDashboardPage: React.FC = () => {
               ))}
             </div>
           </div>
+
+          {/* My Department Widget */}
+          {user?.role === 'nurse' && myDepartment && (
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-6 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">My Department</h2>
+              <p className="text-gray-700 dark:text-gray-300">Department: <span className="font-bold">{myDepartment}</span></p>
+            </div>
+          )}
         </div>
       )}
     </div>

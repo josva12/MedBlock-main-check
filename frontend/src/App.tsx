@@ -54,6 +54,7 @@ const ProfilePage = React.lazy(() => import('./pages/ProfilePage'));
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const FrontDeskDashboardPage = React.lazy(() => import('./pages/frontdesk/FrontDeskDashboardPage'));
+const PharmacyDashboardPage = React.lazy(() => import('./pages/pharmacy/PharmacyDashboardPage'));
 
 // Nurse Pages
 const NurseDashboardPage = React.lazy(() => import('./pages/nurse/NurseDashboardPage'));
@@ -65,13 +66,13 @@ const RootRedirector: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   if (!user) return <Navigate to="/login" replace />;
   switch (user.role) {
-    case 'admin': return <Navigate to="/admin" replace />;
-    case 'doctor': return <Navigate to="/doctor" replace />;
-    case 'front-desk': return <Navigate to="/frontdesk" replace />;
-    case 'patient': return <Navigate to="/patient" replace />;
-    case 'pharmacy': return <Navigate to="/pharmacy" replace />;
-    case 'nurse': return <Navigate to="/nurse" replace />;
-    default: return <Navigate to="/dashboard" replace />;
+    case 'admin': return <Navigate to="/admin/dashboard" replace />;
+    case 'doctor': return <Navigate to="/doctor/dashboard" replace />;
+    case 'front-desk': return <Navigate to="/frontdesk/dashboard" replace />;
+    case 'patient': return <Navigate to="/patient/dashboard" replace />;
+    case 'pharmacy': return <Navigate to="/pharmacy/dashboard" replace />;
+    case 'nurse': return <Navigate to="/nurse/dashboard" replace />;
+    default: return <Navigate to="/login" replace />;
   }
 };
 
@@ -172,18 +173,18 @@ function AppContent() {
               </Route>
               
               {/* --- Pharmacy Routes --- */}
-              <Route element={<ProtectedRoute requiredRole="pharmacy" />}>
-                  <Route path="/pharmacy" element={<PharmacyLayout />}>
-                      <Route index element={<Navigate to="dashboard" replace />} />
-                      <Route path="dashboard" element={<DashboardPage />} />
-                      <Route path="inventory" element={<PlaceholderPage feature="Inventory" />} />
-                      <Route path="orders" element={<PlaceholderPage feature="Orders" />} />
-                      <Route path="consultations" element={<PlaceholderPage feature="Consultations" />} />
-                      <Route path="chat" element={<AiChatPage />} />
-                      <Route path="prescriptions" element={<PlaceholderPage feature="Prescriptions" />} />
-                      <Route path="reports" element={<ReportsPage />} />
-                      <Route path="profile" element={<ProfilePage />} />
-                  </Route>
+              <Route element={<ProtectedRoute requiredRole="pharmacy" />}> 
+                <Route path="/pharmacy" element={<PharmacyLayout />}> 
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<PharmacyDashboardPage />} />
+                  <Route path="inventory" element={<PlaceholderPage feature="Inventory" />} />
+                  <Route path="orders" element={<PlaceholderPage feature="Orders" />} />
+                  <Route path="consultations" element={<PlaceholderPage feature="Consultations" />} />
+                  <Route path="chat" element={<AiChatPage />} />
+                  <Route path="prescriptions" element={<PlaceholderPage feature="Prescriptions" />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="profile" element={<ProfilePage />} />
+                </Route>
               </Route>
 
               {/* --- General Authenticated Routes (using MainLayout) --- */}

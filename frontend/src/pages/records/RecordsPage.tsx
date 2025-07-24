@@ -25,8 +25,8 @@ const RecordsPage: React.FC = () => {
   const safePatients = Array.isArray(patients) ? patients : [];
   // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
   // If no such field, show all patients for now
-  const nursePatients = user?.role === 'nurse'
-    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+  const nursePatients = user?.role === 'nurse' && user.department
+    ? safePatients.filter(p => (p as any).assignedDepartment === user.department) // TODO: update Patient type
     : safePatients;
   // Only show records for nurse's patients
   const safeRecords = Array.isArray(records) ? records : [];
@@ -115,6 +115,11 @@ const RecordsPage: React.FC = () => {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">{error}</div>
       )}
+      {user?.role === 'nurse' && !user.department && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded mb-4">
+          You are not assigned to any department. Please contact your administrator.
+        </div>
+      )}
       <div className="overflow-x-auto rounded-lg shadow">
         <table className="min-w-full bg-white dark:bg-gray-800">
           <thead>
@@ -155,6 +160,11 @@ const RecordsPage: React.FC = () => {
               ))
             )
           ); })()}
+          {nursePatients.length === 0 && user?.role === 'nurse' && user.department && (
+            <tr>
+              <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">No patients found for your department.</td>
+            </tr>
+          )}
           </tbody>
         </table>
       </div>
@@ -235,9 +245,14 @@ const RecordsPage: React.FC = () => {
               </div>
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
                 <button type="button" onClick={() => { setShowModal(false); setEditId(null); }} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  disabled={user?.role === 'nurse' && !user.isGovernmentVerified}
+                  title={user?.role === 'nurse' && !user.isGovernmentVerified ? 'Only government-verified nurses can save records.' : ''}
+                >
                   <Save className="h-4 w-4" />
-                  {editId ? 'Update' : 'Save'} Record
+                  {editId ? "Update" : "Save"} Record
                 </button>
               </div>
             </form>

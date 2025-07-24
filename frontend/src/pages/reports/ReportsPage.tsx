@@ -36,8 +36,8 @@ const ReportsPage: React.FC = () => {
   const safePatients = Array.isArray(patients) ? patients : [];
   // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
   // If no such field, show all patients for now
-  const nursePatients = user?.role === 'nurse'
-    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+  const nursePatients = user?.role === 'nurse' && user.department
+    ? safePatients.filter(p => (p as any).assignedDepartment === user.department) // TODO: update Patient type
     : safePatients;
   // Only show reports for nurse's patients
   const safeReports = Array.isArray(reports) ? reports : [];
@@ -170,6 +170,13 @@ const ReportsPage: React.FC = () => {
       {error && (
         <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
           {error}
+        </div>
+      )}
+
+      {/* Add department warning */}
+      {user?.role === 'nurse' && !user.department && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded mb-4">
+          You are not assigned to any department. Please contact your administrator.
         </div>
       )}
 
@@ -310,6 +317,9 @@ const ReportsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
+                  {nursePatients.length === 0 && user?.role === 'nurse' && user.department && (
+                    <option value="" disabled>No patients found for your department.</option>
+                  )}
                   {nursePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
@@ -441,6 +451,8 @@ const ReportsPage: React.FC = () => {
                 <button
                   type="submit"
                   className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  disabled={user?.role === 'nurse' && !user.isGovernmentVerified}
+                  title={user?.role === 'nurse' && !user.isGovernmentVerified ? 'Only government-verified nurses can save reports.' : ''}
                 >
                   <Save className="h-4 w-4" />
                   {editId ? "Update" : "Save"} Report
