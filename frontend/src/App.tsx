@@ -12,6 +12,7 @@ import PatientLayout from './layouts/PatientLayout';
 import PharmacyLayout from './layouts/PharmacyLayout';
 import AuthenticatedLayout from './layouts/AuthenticatedLayout';
 import MainLayout from './layouts/MainLayout';
+import NurseLayout from './layouts/NurseLayout';
 
 // Common Components
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -54,6 +55,9 @@ const SettingsPage = React.lazy(() => import('./pages/SettingsPage'));
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 const FrontDeskDashboardPage = React.lazy(() => import('./pages/frontdesk/FrontDeskDashboardPage'));
 
+// Nurse Pages
+const NurseDashboardPage = React.lazy(() => import('./pages/nurse/NurseDashboardPage'));
+
 // --- Helper Components ---
 
 const RootRedirector: React.FC = () => {
@@ -65,6 +69,7 @@ const RootRedirector: React.FC = () => {
     case 'front-desk': return <Navigate to="/frontdesk" replace />;
     case 'patient': return <Navigate to="/patient" replace />;
     case 'pharmacy': return <Navigate to="/pharmacy" replace />;
+    case 'nurse': return <Navigate to="/nurse" replace />;
     default: return <Navigate to="/dashboard" replace />;
   }
 };
@@ -191,6 +196,23 @@ function AppContent() {
                   <Route path="/vitals" element={<VitalsPage />} />
                   <Route path="/blockchain" element={<BlockchainPage />} />
                   <Route path="/ai-chat" element={<AiChatPage />} />
+              </Route>
+
+              {/* --- Nurse Routes --- */}
+              <Route element={<ProtectedRoute requiredRole="nurse" />}> 
+                <Route path="/nurse" element={<NurseLayout />}> 
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<NurseDashboardPage />} />
+                  <Route path="patients" element={<PatientsPage />} />
+                  <Route path="appointments" element={<AppointmentsPage />} />
+                  <Route path="vitals" element={<VitalsPage />} />
+                  <Route path="medical-records" element={<RecordsPage />} />
+                  <Route path="reports" element={<ReportsPage />} />
+                  <Route path="ai-chat" element={<AiChatPage />} />
+                  <Route path="blockchain" element={<BlockchainPage />} />
+                  <Route path="settings" element={<SettingsPage />} />
+                  <Route path="notifications" element={<NotFoundPage />} /> {/* Replace with real notifications page if exists */}
+                </Route>
               </Route>
 
               {/* --- Catch-all 404 Route --- */}

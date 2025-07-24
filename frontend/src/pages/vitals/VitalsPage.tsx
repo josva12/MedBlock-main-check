@@ -185,15 +185,19 @@ const VitalsPage: React.FC = () => {
     }
   };
 
-  // Defensive check for vitals array
+  // Defensive check for patients array
+  const safePatients = Array.isArray(patients) ? patients : [];
+  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
+  // If no such field, show all patients for now
+  const nursePatients = user?.role === 'nurse'
+    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+    : safePatients;
+  // Only show vitals for nurse's patients
   const safeVitals = Array.isArray(vitals) ? vitals : [];
-
-  const filteredVitals = safeVitals.filter(vital => {
-    const patientId = vital.patient?._id || vital.patientId;
-    const matchesPatient = !selectedPatient || patientId === selectedPatient;
-    const matchesStatus = statusFilter === "all" || vital.status === statusFilter;
-    return matchesPatient && matchesStatus;
-  });
+  const nursePatientIds = new Set(nursePatients.map(p => p._id));
+  const filteredVitals = user?.role === 'nurse'
+    ? safeVitals.filter(vital => nursePatientIds.has((vital.patient?._id || vital.patientId || '')))
+    : safeVitals;
 
   const getPatientName = (vital: VitalSign) => {
     if (vital.patient?.fullName) {
@@ -219,7 +223,7 @@ const VitalsPage: React.FC = () => {
   };
 
   // Defensive check for patients array
-  const safePatients = Array.isArray(patients) ? patients : [];
+  const safePatientsForDropdown = Array.isArray(patients) ? patients : [];
 
   return (
     <div className="space-y-6">
@@ -251,7 +255,7 @@ const VitalsPage: React.FC = () => {
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Patients</option>
-              {safePatients.map(patient => (
+              {nursePatients.map(patient => (
                 <option key={patient._id} value={patient._id}>
                   {patient.fullName}
                 </option>
@@ -326,7 +330,7 @@ const VitalsPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                filteredVitals.map((vital) => (
+                filteredVitals.map((vital: any) => (
                   <tr key={vital._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -439,7 +443,7 @@ const VitalsPage: React.FC = () => {
                   required
                 >
                   <option value="">Select Patient</option>
-                  {safePatients.map(patient => (
+                  {nursePatients.map(patient => (
                     <option key={patient._id} value={patient._id}>
                       {patient.fullName}
                     </option>

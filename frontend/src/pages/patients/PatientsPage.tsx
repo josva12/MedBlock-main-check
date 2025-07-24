@@ -49,12 +49,20 @@ type FormType = typeof initialForm;
 const PatientsPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { patients, isLoading, error } = useAppSelector((state: RootState) => state.patients);
+  const { user } = useAppSelector((state: RootState) => state.auth);
   // Defensive check for patients array
   const safePatients = Array.isArray(patients) ? patients : [];
+  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
+  // If no such field, show all patients for now
+  const nursePatients = user?.role === 'nurse'
+    ? safePatients.filter(p => (p as any).assignedNurseId === user._id) // Replace with real field if exists
+    : safePatients;
+
   const [showModal, setShowModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormType>(initialForm);
   const [formError, setFormError] = useState("");
+  const [viewPatient, setViewPatient] = useState<Patient | null>(null);
 
   useEffect(() => {
     dispatch(fetchPatients());
@@ -211,14 +219,14 @@ const PatientsPage: React.FC = () => {
                     <p className="mt-2">Loading patients...</p>
                   </td>
                 </tr>
-              ) : safePatients.length === 0 ? (
+              ) : nursePatients.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center py-8 text-gray-500 dark:text-gray-400">
                     No patients found
                   </td>
                 </tr>
               ) : (
-                safePatients.map((patient) => (
+                nursePatients.map((patient) => (
                   <tr key={patient._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
@@ -262,6 +270,12 @@ const PatientsPage: React.FC = () => {
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
+                      <button
+                        className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
+                        onClick={() => setViewPatient(patient)}
+                      >
+                        View Profile
+                      </button>
                     </td>
                   </tr>
                 ))
@@ -271,7 +285,7 @@ const PatientsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Modal for Add/Edit Patient */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -545,6 +559,51 @@ const PatientsPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Patient Detail Modal */}
+      {viewPatient && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Patient Details</h3>
+              <button className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onClick={() => setViewPatient(null)}>&times;</button>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="flex flex-col md:flex-row md:space-x-8">
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Basic Info</h4>
+                  <p><span className="font-medium">Name:</span> {viewPatient.fullName}</p>
+                  <p><span className="font-medium">Email:</span> {viewPatient.email}</p>
+                  <p><span className="font-medium">Phone:</span> {viewPatient.phone}</p>
+                  <p><span className="font-medium">Date of Birth:</span> {new Date(viewPatient.dateOfBirth).toLocaleDateString()}</p>
+                  <p><span className="font-medium">Gender:</span> {viewPatient.gender}</p>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Address</h4>
+                  <p><span className="font-medium">Street:</span> {viewPatient.address.street}</p>
+                  <p><span className="font-medium">City:</span> {viewPatient.address.city}</p>
+                  <p><span className="font-medium">County:</span> {viewPatient.address.county}</p>
+                  <p><span className="font-medium">Sub County:</span> {viewPatient.address.subCounty}</p>
+                  <p><span className="font-medium">Country:</span> {viewPatient.address.country}</p>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Emergency Contact</h4>
+                <p><span className="font-medium">Name:</span> {viewPatient.emergencyContact.name}</p>
+                <p><span className="font-medium">Phone:</span> {viewPatient.emergencyContact.phone}</p>
+                <p><span className="font-medium">Relationship:</span> {viewPatient.emergencyContact.relationship}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">Medical Info</h4>
+                <p><span className="font-medium">Blood Type:</span> {viewPatient.bloodType || 'N/A'}</p>
+                <p><span className="font-medium">Allergies:</span> {Array.isArray(viewPatient.allergies) ? viewPatient.allergies.join(', ') : viewPatient.allergies || 'N/A'}</p>
+                <p><span className="font-medium">Medical History:</span> {viewPatient.medicalHistory || 'N/A'}</p>
+                <p><span className="font-medium">Insurance:</span> {viewPatient.insurance?.provider ? `${viewPatient.insurance.provider} (${viewPatient.insurance.policyNumber})` : 'N/A'}</p>
+              </div>
+            </div>
           </div>
         </div>
       )}
