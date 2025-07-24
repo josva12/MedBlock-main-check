@@ -57,6 +57,7 @@ const FrontDeskDashboardPage = React.lazy(() => import('./pages/frontdesk/FrontD
 
 // Nurse Pages
 const NurseDashboardPage = React.lazy(() => import('./pages/nurse/NurseDashboardPage'));
+const NurseNotificationsPage = React.lazy(() => import('./pages/nurse/NurseNotificationsPage'));
 
 // --- Helper Components ---
 
@@ -211,7 +212,7 @@ function AppContent() {
                   <Route path="ai-chat" element={<AiChatPage />} />
                   <Route path="blockchain" element={<BlockchainPage />} />
                   <Route path="settings" element={<SettingsPage />} />
-                  <Route path="notifications" element={<NotFoundPage />} /> {/* Replace with real notifications page if exists */}
+                  <Route path="notifications" element={<NurseNotificationsPage />} />
                 </Route>
               </Route>
 
