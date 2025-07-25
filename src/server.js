@@ -9,6 +9,8 @@ const rateLimit = require('express-rate-limit');
 const morgan = require('morgan');
 const path = require('path');
 const mongoose = require('mongoose'); // ADDED: Import mongoose here
+const http = require('http');
+const socketio = require('socket.io');
 
 // Import custom modules
 const db = require('./config/database');
@@ -51,6 +53,28 @@ const routes = require('./routes');
 // Create Express app
 const app = express();
 const PORT = process.env.PORT || 5000; // Note: Your .env uses 3000, but this code defaults to 5000. Ensure consistency.
+
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+const io = socketio(server, {
+  cors: {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+    credentials: true
+  }
+});
+
+// Socket.IO authentication and event setup
+io.use((socket, next) => {
+  // Optionally add JWT authentication here
+  next();
+});
+io.on('connection', (socket) => {
+  logger.info(`Socket connected: ${socket.id}`);
+  // Listen for chat events here (to be implemented)
+  socket.on('disconnect', () => {
+    logger.info(`Socket disconnected: ${socket.id}`);
+  });
+});
 
 console.log('✅ server.js is running...');
 
@@ -212,7 +236,7 @@ const startServer = async () => {
     }
     // --- END IMPORTANT ---
 
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       if (logger && typeof logger.info === 'function') {
         logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
         logger.info(`Health check available at http://localhost:${PORT}/health`);
@@ -235,4 +259,4 @@ startServer().catch(err => {
   process.exit(1);
 });
 
-module.exports = app;
+module.exports = { app, io };
