@@ -82,6 +82,15 @@ const userSchema = new mongoose.Schema({
     notes: {
       type: String,
       trim: true
+    },
+    // --- New fields for rejection attempts and blocking ---
+    rejectionAttempts: {
+      type: Number,
+      default: 0
+    },
+    blocked: {
+      type: Boolean,
+      default: false
     }
   },
   // --- END NEW PROFESSIONAL VERIFICATION FIELDS ---
