@@ -23,6 +23,7 @@ import {
 import type { RootState } from '../store';
 import InsuranceCard from '../components/dashboard/InsuranceCard';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useNavigate } from 'react-router-dom';
 
 const HealthInsuranceMarketplace: React.FC = () => {
   const insuranceCompanies = [
@@ -97,6 +98,34 @@ const DashboardPage: React.FC = () => {
   const { appointments, isLoading: appointmentsLoading } = useAppSelector((state: RootState) => state.appointments);
   const { records, isLoading: recordsLoading } = useAppSelector((state: RootState) => state.medicalRecords);
   const { vitals, isLoading: vitalsLoading } = useAppSelector((state: RootState) => state.vitals);
+  const navigate = useNavigate();
+
+  // Redirect to role-specific dashboard if not already there
+  React.useEffect(() => {
+    if (!user) return;
+    switch (user.role) {
+      case 'admin':
+        if (!window.location.pathname.startsWith('/admin')) navigate('/admin/dashboard', { replace: true });
+        break;
+      case 'doctor':
+        if (!window.location.pathname.startsWith('/doctor')) navigate('/doctor/dashboard', { replace: true });
+        break;
+      case 'nurse':
+        if (!window.location.pathname.startsWith('/nurse')) navigate('/nurse/dashboard', { replace: true });
+        break;
+      case 'front-desk':
+        if (!window.location.pathname.startsWith('/frontdesk')) navigate('/frontdesk/dashboard', { replace: true });
+        break;
+      case 'patient':
+        if (!window.location.pathname.startsWith('/patient')) navigate('/patient/dashboard', { replace: true });
+        break;
+      case 'pharmacy':
+        if (!window.location.pathname.startsWith('/pharmacy')) navigate('/pharmacy/dashboard', { replace: true });
+        break;
+      default:
+        navigate('/login', { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     if (!user) return;
