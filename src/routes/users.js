@@ -7,6 +7,7 @@ const { authenticate, authorize } = require('../middleware/authMiddleware');
 const Patient = require('../models/Patient');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
+const { searchUsers } = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -600,36 +601,36 @@ router.patch('/me/preferences', authenticateToken, async (req, res) => {
 });
 
 // Robust searchUsers controller
-async function searchUsers(req, res) {
-  try {
-    console.log('🔍 Received search query:', req.query);
-    const query = req.query.query?.trim();
-    if (!query) {
-      logger.error('USER_SEARCH_FAILED: Query parameter is required', { user: req.user?._id, query: req.query });
-      return res.json({ success: true, data: [] });
-    }
-    const searchFilter = {
-      $or: [
-        { fullName: { $regex: query, $options: 'i' } },
-        { email: { $regex: query, $options: 'i' } },
-        { userId: { $regex: query, $options: 'i' } },
-      ]
-    };
-    // Only add _id exclusion if valid ObjectId
-    if (mongoose.Types.ObjectId.isValid(req.user._id)) {
-      searchFilter._id = { $ne: new mongoose.Types.ObjectId(req.user._id) };
-    }
-    const users = await User.find(searchFilter).select('-password');
-    if (!users || users.length === 0) {
-      return res.json({ success: true, data: [] });
-    }
-    return res.json({ success: true, data: users });
-  } catch (error) {
-    console.error('❌ Error in searchUsers:', error);
-    logger.error('USER_SEARCH_FAILED', { userId: req.user?._id, error: error.message, stack: error.stack, query: req.query });
-    return res.status(500).json({ error: 'Internal server error' });
-  }
-}
+// async function searchUsers(req, res) {
+//   try {
+//     console.log('🔍 Received search query:', req.query);
+//     const query = req.query.query?.trim();
+//     if (!query) {
+//       logger.error('USER_SEARCH_FAILED: Query parameter is required', { user: req.user?._id, query: req.query });
+//       return res.json({ success: true, data: [] });
+//     }
+//     const searchFilter = {
+//       $or: [
+//         { fullName: { $regex: query, $options: 'i' } },
+//         { email: { $regex: query, $options: 'i' } },
+//         { userId: { $regex: query, $options: 'i' } },
+//       ]
+//     };
+//     // Only add _id exclusion if valid ObjectId
+//     if (mongoose.Types.ObjectId.isValid(req.user._id)) {
+//       searchFilter._id = { $ne: new mongoose.Types.ObjectId(req.user._id) };
+//     }
+//     const users = await User.find(searchFilter).select('-password');
+//     if (!users || users.length === 0) {
+//       return res.json({ success: true, data: [] });
+//     }
+//     return res.json({ success: true, data: users });
+//   } catch (error) {
+//     console.error('❌ Error in searchUsers:', error);
+//     logger.error('USER_SEARCH_FAILED', { userId: req.user?._id, error: error.message, stack: error.stack, query: req.query });
+//     return res.status(500).json({ error: 'Internal server error' });
+//   }
+// }
 
 // Replace the old /search route with the robust controller
 router.get('/search', authenticateToken, searchUsers);

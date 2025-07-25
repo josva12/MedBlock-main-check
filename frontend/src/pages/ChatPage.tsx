@@ -3,9 +3,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import apiClient from '../services/api';
 import io, { Socket } from 'socket.io-client';
-// @ts-ignore
-import { Picker } from 'emoji-mart';
-import 'emoji-mart/css/emoji-mart.css';
+// Replace the old emoji-mart imports with the new @emoji-mart/react imports
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import Modal from '../components/Modal';
 import { Search } from 'lucide-react';
 import { User, Chat, Message } from '../types/chat';
@@ -523,7 +523,11 @@ const ChatPage: React.FC = () => {
                 </div>
                 {showEmojiPicker && (
                   <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-2 bg-white p-4 rounded-lg shadow-xl border border-gray-200 z-50" style={{ width: '300px' }}>
-                    <Picker onSelect={handleEmojiSelect} showPreview={false} showSkinTones={false} />
+                    <Picker
+                      data={data}
+                      onEmojiSelect={handleEmojiSelect}
+                      previewPosition="none"
+                    />
                   </div>
                 )}
               </form>
