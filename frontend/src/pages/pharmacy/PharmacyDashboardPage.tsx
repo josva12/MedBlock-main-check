@@ -7,7 +7,7 @@ import { fetchTeleconsultations } from '../../features/teleconsultations/telecon
 import { fetchNotifications } from '../../features/notifications/notificationsSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  ShoppingCart, Package, MessageCircle, ClipboardList, Bell, BarChart2, BriefcaseMedical, PlusCircle, Blocks, Settings, MessageSquare, Pill
+  ShoppingCart, Package, MessageCircle, ClipboardList, Bell, BarChart2, BriefcaseMedical, PlusCircle, Blocks, Settings, MessageSquare, Pill, LogOut
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -100,10 +100,30 @@ const PharmacyDashboardPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 p-6 font-sans">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6">
-        <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">{getGreeting()}, {user?.fullName || 'Pharmacy'}!</h1>
-        <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">Pharmacy Dashboard - Manage inventory, orders, and patient interactions.</p>
-        <div className="mt-4 text-md text-gray-500 dark:text-gray-400 font-semibold">Role: Pharmacy</div>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-2">{getGreeting()}, {user?.fullName || 'Pharmacy'}!</h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 mt-2">Pharmacy Dashboard - Manage inventory, orders, and patient interactions.</p>
+          <div className="mt-4 text-md text-gray-500 dark:text-gray-400 font-semibold">Role: Pharmacy</div>
+        </div>
+        <div className="flex items-center space-x-4">
+          <button onClick={() => navigateTo('notifications')} className="flex items-center p-3 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900 dark:hover:bg-blue-800 rounded-lg text-blue-700 dark:text-blue-300 font-medium transition-colors">
+            <Bell className="h-6 w-6 mr-2" />
+            <span className="text-sm">{unreadNotificationsCount} New</span>
+          </button>
+          <button onClick={() => navigateTo('chat')} className="flex items-center p-3 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 rounded-lg text-purple-700 dark:text-purple-300 font-medium transition-colors">
+            <MessageCircle className="h-6 w-6 mr-2" />
+            <span className="text-sm">Chat</span>
+          </button>
+          <button onClick={() => navigateTo('settings')} className="flex items-center p-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg text-gray-700 dark:text-gray-300 font-medium transition-colors">
+            <Settings className="h-6 w-6 mr-2" />
+            <span className="text-sm">Settings</span>
+          </button>
+          <button onClick={() => navigateTo('logout')} className="flex items-center p-3 bg-red-50 hover:bg-red-100 dark:bg-red-900 dark:hover:bg-red-800 rounded-lg text-red-700 dark:text-red-300 font-medium transition-colors">
+            <LogOut className="h-6 w-6 mr-2" />
+            <span className="text-sm">Logout</span>
+          </button>
+        </div>
       </div>
 
       {/* Pharmacy-Specific Stats Grid */}
@@ -265,7 +285,7 @@ const PharmacyDashboardPage: React.FC = () => {
             </h2>
           </div>
           <div className="p-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button onClick={() => navigateTo('ai-chat')} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
+            <button onClick={() => navigateTo('chat')} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
               <MessageSquare className="h-5 w-5 mr-2 text-teal-500" /> AI Chat
             </button>
             <button onClick={() => navigateTo('blockchain')} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">

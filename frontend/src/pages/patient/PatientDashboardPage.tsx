@@ -9,7 +9,7 @@ import { fetchNotifications } from '../../features/notifications/notificationsSl
 import { fetchResources } from '../../features/resources/resourcesSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  Calendar, FileText, Heart, Clock
+  Calendar, FileText, Heart, Clock, MessageSquare
 } from 'lucide-react';
 
 const InsuranceCard: React.FC = () => (
@@ -218,6 +218,17 @@ const PatientDashboardPage: React.FC = () => {
               ))
             )}
           </div>
+        </div>
+
+        {/* Chat Button */}
+        <div className="lg:col-span-1 xl:col-span-1">
+          <button
+            className="w-full bg-blue-600 text-white p-6 rounded-xl shadow-lg flex flex-col items-center justify-center transition-transform transform hover:scale-105 hover:shadow-xl border border-gray-100 dark:border-gray-700"
+            onClick={() => navigate('/patient/chat')}
+          >
+            <MessageSquare className="h-10 w-10 text-white" />
+            <p className="mt-2 text-lg font-semibold text-white">Chat with Doctor</p>
+          </button>
         </div>
       </div>
     </div>

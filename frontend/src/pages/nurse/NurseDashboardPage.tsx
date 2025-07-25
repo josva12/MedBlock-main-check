@@ -46,6 +46,7 @@ const NurseDashboardPage: React.FC = () => {
     { label: 'Blockchain', icon: Blocks, onClick: () => navigate('/nurse/blockchain'), color: 'text-indigo-500' },
     { label: 'Reports', icon: BarChart2, onClick: () => navigate('/nurse/reports'), color: 'text-green-500' },
     { label: 'Settings', icon: Settings, onClick: () => navigate('/nurse/settings'), color: 'text-gray-500' },
+    { label: 'Chat', icon: MessageSquare, onClick: () => navigate('/nurse/chat'), color: 'text-teal-500' },
   ];
 
   // My Department widget
