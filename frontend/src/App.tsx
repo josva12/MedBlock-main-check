@@ -20,6 +20,7 @@ import LoadingSpinner from './components/common/LoadingSpinner';
 import AIChatWidget from './components/ai/AIChatWidget';
 import { ThemeProvider } from './context/ThemeContext';
 import BlockedAccessPage from './pages/BlockedAccessPage';
+import ChatPage from './pages/ChatPage';
 
 // --- Page Components (Lazy Loaded) ---
 
@@ -66,7 +67,6 @@ import OrdersPage from './pages/pharmacy/OrdersPage';
 import InventoryPage from './pages/pharmacy/InventoryPage';
 import PrescriptionsPage from './pages/pharmacy/PrescriptionsPage';
 import ConsultationsPage from './pages/pharmacy/ConsultationsPage';
-import ChatPage from './pages/pharmacy/ChatPage';
 import PharmacyReportsPage from './pages/pharmacy/ReportsPage';
 import PharmacyBlockchainPage from './pages/pharmacy/BlockchainPage';
 import PharmacySettingsPage from './pages/pharmacy/SettingsPage';
@@ -152,6 +152,7 @@ function AppContent() {
                       <Route path="profile" element={<ProfilePage />} />
                       <Route path="reports" element={<ReportsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="chat" element={<ChatPage />} />
                   </Route>
               </Route>
 
@@ -179,7 +180,7 @@ function AppContent() {
                       <Route path="insurance" element={<InsuranceEnrollmentPage />} />
                       <Route path="claims" element={<ClaimsPage />} />
                       <Route path="medical-records" element={<RecordsPage />} />
-                      <Route path="chat" element={<AiChatPage />} />
+                      <Route path="chat" element={<ChatPage />} />
                       <Route path="pharmacy" element={<PlaceholderPage feature="Pharmacy" />} />
                       <Route path="profile" element={<ProfilePage />} />
                   </Route>
@@ -230,6 +231,7 @@ function AppContent() {
                   <Route path="blockchain" element={<BlockchainPage />} />
                   <Route path="settings" element={<SettingsPage />} />
                   <Route path="notifications" element={<NurseNotificationsPage />} />
+                  <Route path="chat" element={<ChatPage />} />
                 </Route>
               </Route>
 
