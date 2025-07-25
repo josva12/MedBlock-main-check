@@ -42,8 +42,9 @@ const ProfessionalVerificationTab: React.FC = () => {
   if (loading) return <LoadingSpinner />;
   if (error) return <div className="text-red-600 p-4">{error}</div>;
 
+  // Expand to include pharmacy (pharmacist) in professionals
   const professionals = users.filter(user => 
-    ['doctor', 'nurse'].includes(user.role)
+    ['doctor', 'nurse', 'pharmacy'].includes(user.role)
   );
 
   const filteredProfessionals = professionals.filter(user => {
@@ -80,7 +81,10 @@ const ProfessionalVerificationTab: React.FC = () => {
   };
 
   const getRoleDisplayName = (role: string) => {
-    return role === 'doctor' ? 'Doctor' : 'Nurse';
+    if (role === 'doctor') return 'Doctor';
+    if (role === 'nurse') return 'Nurse';
+    if (role === 'pharmacy') return 'Pharmacist';
+    return role;
   };
 
   const getLicensingBodyDisplay = (body?: string) => {

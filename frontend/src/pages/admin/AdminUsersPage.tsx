@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAppSelector } from '../../hooks/useAppSelector';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
-import { fetchUsers, updateUser, deleteUser } from '../../features/admin/adminSlice';
+import { fetchUsers, updateUser, deleteUser, verifyProfessional } from '../../features/admin/adminSlice';
 import { UserIcon } from '@heroicons/react/24/solid';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import type { RootState } from '../../store';
+import { Shield } from 'lucide-react';
 
 const AdminUsersPage: React.FC = () => {
   const dispatch = useAppDispatch();
@@ -14,6 +15,13 @@ const AdminUsersPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showVerificationModal, setShowVerificationModal] = useState(false);
+  const [verificationForm, setVerificationForm] = useState({
+    status: 'pending',
+    rejectionReason: '',
+    notes: '',
+  });
+  const [verifyingUserId, setVerifyingUserId] = useState<string | null>(null);
 
   const { users, loading } = useAppSelector((state: RootState) => state.admin);
 
@@ -42,6 +50,23 @@ const AdminUsersPage: React.FC = () => {
   const handleDelete = async (userId: string) => {
     await dispatch(deleteUser(userId));
     setShowDeleteModal(null);
+  };
+
+  const handleReview = (user: any) => {
+    setVerifyingUserId(user._id);
+    setVerificationForm({
+      status: user.professionalVerification.status || 'pending',
+      rejectionReason: user.professionalVerification.rejectionReason || '',
+      notes: user.professionalVerification.notes || '',
+    });
+    setShowVerificationModal(true);
+  };
+  const handleVerification = async () => {
+    if (verifyingUserId) {
+      await dispatch(verifyProfessional({ id: verifyingUserId, data: verificationForm }));
+      setShowVerificationModal(false);
+      setVerifyingUserId(null);
+    }
   };
 
   const getRoleDisplayName = (role: string) => {
@@ -123,7 +148,7 @@ const AdminUsersPage: React.FC = () => {
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option value="all">All Roles</option>
             <option value="admin">Administrator</option>
@@ -137,7 +162,7 @@ const AdminUsersPage: React.FC = () => {
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-md focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
           >
             <option value="all">All Status</option>
             <option value="active">Active</option>
@@ -219,7 +244,7 @@ const AdminUsersPage: React.FC = () => {
                       <select
                         value={selectedUser.role || ''}
                         onChange={(e) => setSelectedUser({ ...selectedUser, role: e.target.value as any })}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        className="border border-gray-300 dark:border-gray-700 rounded px-2 py-1 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
                       >
                         <option value="admin">Administrator</option>
                         <option value="doctor">Doctor</option>
@@ -277,6 +302,15 @@ const AdminUsersPage: React.FC = () => {
                         >
                           Delete
                         </button>
+                        {/* Add Review button for professionals */}
+                        {['doctor', 'nurse', 'pharmacy'].includes(user.role) && (
+                          <button
+                            onClick={() => handleReview(user)}
+                            className="text-indigo-600 hover:text-indigo-900 flex items-center"
+                          >
+                            <Shield className="h-4 w-4 mr-1" /> Review
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>
@@ -313,6 +347,70 @@ const AdminUsersPage: React.FC = () => {
                   className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
                 >
                   Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Verification Modal */}
+      {showVerificationModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
+          <div className="relative p-5 border w-full max-w-md shadow-lg rounded-md bg-white dark:bg-gray-900">
+            <div className="mt-3">
+              <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-800">
+                <Shield className="h-6 w-6 text-blue-600 dark:text-blue-300" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mt-4 text-center">Professional Verification</h3>
+              <div className="mt-4 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Verification Status</label>
+                  <select
+                    value={verificationForm.status}
+                    onChange={(e) => setVerificationForm({ ...verificationForm, status: e.target.value })}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                  >
+                    <option value="pending">Pending Review</option>
+                    <option value="verified">Verified</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+                {verificationForm.status === 'rejected' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Rejection Reason</label>
+                    <textarea
+                      value={verificationForm.rejectionReason}
+                      onChange={(e) => setVerificationForm({ ...verificationForm, rejectionReason: e.target.value })}
+                      rows={3}
+                      className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                      placeholder="Provide reason for rejection..."
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">Notes</label>
+                  <textarea
+                    value={verificationForm.notes}
+                    onChange={(e) => setVerificationForm({ ...verificationForm, notes: e.target.value })}
+                    rows={3}
+                    className="mt-1 block w-full border border-gray-300 dark:border-gray-700 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                    placeholder="Additional notes..."
+                  />
+                </div>
+              </div>
+              <div className="flex justify-center space-x-4 mt-6">
+                <button
+                  onClick={() => setShowVerificationModal(false)}
+                  className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerification}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
+                  Update Verification
                 </button>
               </div>
             </div>
