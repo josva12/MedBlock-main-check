@@ -6,6 +6,7 @@ const logger = require('../utils/logger');
 const { authenticate, authorize } = require('../middleware/authMiddleware');
 const Patient = require('../models/Patient');
 const Notification = require('../models/Notification');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
@@ -595,6 +596,33 @@ router.patch('/me/preferences', authenticateToken, async (req, res) => {
   } catch (error) {
     logger.error('Failed to update user preferences:', error);
     res.status(500).json({ error: 'Failed to update preferences', details: error.message });
+  }
+});
+
+// PUBLIC USER SEARCH ENDPOINT (for chat)
+// GET /api/v1/users/search?query=...  (returns users matching name or email, excludes self)
+router.get('/search', authenticateToken, async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query || query.length < 2) {
+      return res.status(400).json({ error: 'Query must be at least 2 characters.' });
+    }
+    const regex = new RegExp(query, 'i');
+    // Ensure _id is compared as ObjectId
+    const selfId = mongoose.Types.ObjectId.isValid(req.user._id) ? new mongoose.Types.ObjectId(req.user._id) : req.user._id;
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: selfId } },
+        { $or: [
+          { fullName: regex },
+          { email: regex }
+        ] }
+      ]
+    }).select('-password');
+    res.json({ success: true, data: users });
+  } catch (err) {
+    logger.error('USER_SEARCH_FAILED', { userId: req.user._id, error: err.message, stack: err.stack, query: req.query });
+    res.status(500).json({ error: 'Server error while searching users', details: err.message });
   }
 });
 
