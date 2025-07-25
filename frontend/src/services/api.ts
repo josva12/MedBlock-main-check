@@ -29,14 +29,23 @@ apiClient.interceptors.response.use(
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
       // Clear tokens
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
-      
       // Redirect to login if not already there
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
+      }
+    }
+
+    // Handle 403 Blocked User errors
+    if (error.response?.status === 403 && error.response?.data?.code === 'USER_BLOCKED') {
+      // Clear tokens
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      // Redirect to blocked page
+      if (window.location.pathname !== '/blocked') {
+        window.location.href = '/blocked';
       }
     }
 

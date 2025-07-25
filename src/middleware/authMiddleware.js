@@ -31,7 +31,15 @@ exports.authenticate = async (req, res, next) => {
         role: req.user.role,
         isGovernmentVerified: req.user.isGovernmentVerified 
       });
-      
+      // --- Blocked user check ---
+      if (req.user.professionalVerification && req.user.professionalVerification.blocked === true) {
+        logger.warn('SECURITY_EVENT: Blocked user attempted access.', { userId: req.user._id });
+        return res.status(403).json({ error: 'Your account has been blocked due to repeated failed verification attempts.', code: 'USER_BLOCKED' });
+      }
+      if (req.user.isActive === false) {
+        logger.warn('SECURITY_EVENT: Inactive user attempted access.', { userId: req.user._id });
+        return res.status(403).json({ error: 'Your account is inactive.', code: 'USER_BLOCKED' });
+      }
       return next(); // Explicitly return next() to stop execution here
     } catch (error) {
       logger.error('SECURITY_EVENT: Token verification failed.', { 

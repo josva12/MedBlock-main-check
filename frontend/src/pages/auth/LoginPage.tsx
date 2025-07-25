@@ -15,7 +15,7 @@ const LoginPage: React.FC = () => {
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const { loading, error } = useAppSelector((state: RootState) => state.auth);
+  const { isLoading, error } = useAppSelector((state: RootState) => state.auth);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -60,27 +60,8 @@ const LoginPage: React.FC = () => {
     try {
       const result = await dispatch(login(formData) as any);
       if (login.fulfilled.match(result)) {
-        // Redirect based on user role
-        const user = result.payload.user;
-        switch (user.role) {
-          case 'admin':
-            navigate('/admin/dashboard');
-            break;
-          case 'doctor':
-            navigate('/doctor/dashboard');
-            break;
-          case 'front-desk':
-            navigate('/frontdesk/dashboard');
-            break;
-          case 'patient':
-            navigate('/patient/dashboard');
-            break;
-          case 'pharmacy':
-            navigate('/pharmacy/dashboard');
-            break;
-          default:
-            navigate('/dashboard');
-        }
+        // Redirect to root so RootRedirector handles role-based dashboard
+        navigate('/');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -171,10 +152,10 @@ const LoginPage: React.FC = () => {
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? <LoadingSpinner size="small" color="white" /> : 'Sign in'}
+                {isLoading ? <LoadingSpinner size="small" color="white" /> : 'Sign in'}
               </button>
             </div>
 

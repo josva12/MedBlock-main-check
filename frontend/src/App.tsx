@@ -19,6 +19,7 @@ import ProtectedRoute from './components/common/ProtectedRoute';
 import LoadingSpinner from './components/common/LoadingSpinner';
 import AIChatWidget from './components/ai/AIChatWidget';
 import { ThemeProvider } from './context/ThemeContext';
+import BlockedAccessPage from './pages/BlockedAccessPage';
 
 // --- Page Components (Lazy Loaded) ---
 
@@ -218,6 +219,7 @@ function AppContent() {
               </Route>
 
               {/* --- Catch-all 404 Route --- */}
+              <Route path="/blocked" element={<BlockedAccessPage />} />
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             {/* Floating AI Chat Widget (global, except on AI chat page) */}
