@@ -2,16 +2,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAppSelector } from '../hooks/useAppSelector';
 import apiClient from '../services/api';
-import io from 'socket.io-client';
+import io, { Socket } from 'socket.io-client';
+// @ts-ignore
 import { Picker } from 'emoji-mart';
 import 'emoji-mart/css/emoji-mart.css';
 import Modal from '../components/Modal';
 import { Search } from 'lucide-react';
+import { User, Chat, Message } from '../types/chat';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
 // Helper to format time
-const formatTimestamp = (dateString) => {
+const formatTimestamp = (dateString: string) => {
   if (!dateString) return '';
   const date = new Date(dateString);
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -23,40 +25,41 @@ const emojiReactions = ['👍', '❤️', '😂', '😢', '👏', '🔥'];
 // --- Main ChatPage Component ---
 const ChatPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [chats, setChats] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [messageText, setMessageText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalContent, setModalContent] = useState({});
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedMessagesForDeletion, setSelectedMessagesForDeletion] = useState([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [socket, setSocket] = useState(null);
-  const messagesEndRef = useRef(null);
-  const emojiPickerRef = useRef(null);
-  const [showUserSearch, setShowUserSearch] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [userSearchResults, setUserSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchError, setSearchError] = useState(null);
-
-  // --- Block/Unblock, Mute, Archive/Unarchive Chat Features ---
-  const [archivedChats, setArchivedChats] = useState([]);
-  const [showArchive, setShowArchive] = useState(false);
-  const [mutedChats, setMutedChats] = useState([]);
-  const [blockedUsers, setBlockedUsers] = useState([]);
+  const [chats, setChats] = useState<Chat[]>([]);
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [messageText, setMessageText] = useState<string>('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState<boolean>(false);
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [modalContent, setModalContent] = useState<any>({});
+  const [isSelectionMode, setIsSelectionMode] = useState<boolean>(false);
+  const [selectedMessagesForDeletion, setSelectedMessagesForDeletion] = useState<string[]>([]);
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+  const [showUserSearch, setShowUserSearch] = useState<boolean>(false);
+  const [userSearchQuery, setUserSearchQuery] = useState<string>('');
+  const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
+  const [searchLoading, setSearchLoading] = useState<boolean>(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [archivedChats, setArchivedChats] = useState<string[]>([]);
+  const [showArchive, setShowArchive] = useState<boolean>(false);
+  const [mutedChats, setMutedChats] = useState<string[]>([]);
+  const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
 
   // --- Socket.IO Setup ---
   useEffect(() => {
     if (!user) return;
     const s = io(SOCKET_URL, {
       auth: { token: localStorage.getItem('accessToken') },
-      transports: ['websocket'],
+      // transports: ['websocket'], // Allow fallback transports in dev
     });
+    s.on('connect', () => console.log('Socket.IO connected:', s.id));
+    s.on('disconnect', (reason) => console.log('Socket.IO disconnected:', reason));
+    s.on('connect_error', (err) => console.error('Socket.IO connect_error:', err));
     setSocket(s);
     return () => s.disconnect();
   }, [user]);
@@ -81,7 +84,7 @@ const ChatPage: React.FC = () => {
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
   // --- Fetch Messages ---
-  const fetchMessages = useCallback(async (chatId) => {
+  const fetchMessages = useCallback(async (chatId: string) => {
     if (!chatId) return;
     setLoading(true);
     try {
@@ -121,7 +124,7 @@ const ChatPage: React.FC = () => {
   }, [messages]);
 
   // --- Send Message ---
-  const handleSendMessage = async (e) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!messageText.trim() || !selectedChatId) return;
     try {
@@ -137,7 +140,7 @@ const ChatPage: React.FC = () => {
   };
 
   // --- Emoji Picker ---
-  const handleEmojiSelect = (emoji) => {
+  const handleEmojiSelect = (emoji: { native: string }) => {
     setMessageText((prev) => prev + emoji.native);
   };
 
@@ -182,7 +185,7 @@ const ChatPage: React.FC = () => {
   };
 
   // --- Message Reaction ---
-  const handleReactToMessage = async (messageId, emoji) => {
+  const handleReactToMessage = async (messageId: string, emoji: string) => {
     try {
       await apiClient.patch(`/chat/${selectedChatId}/messages/${messageId}/reactions`, { emoji });
       fetchMessages(selectedChatId);
@@ -192,7 +195,7 @@ const ChatPage: React.FC = () => {
   };
 
   // --- Delivery Status ---
-  const getMessageStatus = async (messageId) => {
+  const getMessageStatus = async (messageId: string) => {
     try {
       const res = await apiClient.get(`/chat/${selectedChatId}/messages/${messageId}/status`);
       return res.data.status;
@@ -202,7 +205,7 @@ const ChatPage: React.FC = () => {
   };
 
   // --- UI Handlers ---
-  const handleSelectMessage = (messageId) => {
+  const handleSelectMessage = (messageId: string) => {
     setSelectedMessagesForDeletion((prev) =>
       prev.includes(messageId) ? prev.filter((id) => id !== messageId) : [...prev, messageId]
     );
@@ -214,7 +217,7 @@ const ChatPage: React.FC = () => {
   };
 
   // User search handler
-  const handleUserSearch = async (query) => {
+  const handleUserSearch = async (query: string) => {
     setUserSearchQuery(query);
     if (!query.trim()) {
       setUserSearchResults([]);
@@ -226,7 +229,7 @@ const ChatPage: React.FC = () => {
       const res = await apiClient.get(`/users/search?query=${encodeURIComponent(query)}`);
       // Exclude self and users already in a chat
       const existingIds = chats.flatMap(c => c.participants.map(p => p._id));
-      setUserSearchResults((res.data.data || []).filter(u => u._id !== user._id && !existingIds.includes(u._id)));
+      setUserSearchResults((res.data.data || []).filter(u => u._id !== user?._id && !existingIds.includes(u._id)));
       setSearchLoading(false);
     } catch (e) {
       setSearchError('Failed to search users.');
@@ -235,7 +238,7 @@ const ChatPage: React.FC = () => {
   };
 
   // Start new chat with selected user
-  const handleStartChatWithUser = async (userId) => {
+  const handleStartChatWithUser = async (userId: string) => {
     try {
       const res = await apiClient.post('/chat/conversation', { participantId: userId });
       setShowUserSearch(false);
@@ -254,7 +257,7 @@ const ChatPage: React.FC = () => {
 
   // --- Block/Unblock, Mute, Archive/Unarchive Chat Features ---
   // Archive chat
-  const handleUnarchiveChat = async (chatId) => {
+  const handleUnarchiveChat = async (chatId: string) => {
     try {
       await apiClient.patch(`/chat/${chatId}/archive`, { unarchive: true });
       setArchivedChats(archivedChats.filter(id => id !== chatId));
@@ -264,20 +267,20 @@ const ChatPage: React.FC = () => {
     }
   };
   // Mute chat
-  const handleMuteChat = (chatId) => {
+  const handleMuteChat = (chatId: string) => {
     setMutedChats([...mutedChats, chatId]);
   };
   // Unmute chat
-  const handleUnmuteChat = (chatId) => {
+  const handleUnmuteChat = (chatId: string) => {
     setMutedChats(mutedChats.filter(id => id !== chatId));
   };
   // Block user
-  const handleBlockUser = (userId) => {
+  const handleBlockUser = (userId: string) => {
     setBlockedUsers([...blockedUsers, userId]);
     setSelectedChatId(null);
   };
   // Unblock user
-  const handleUnblockUser = (userId) => {
+  const handleUnblockUser = (userId: string) => {
     setBlockedUsers(blockedUsers.filter(id => id !== userId));
   };
 
@@ -360,7 +363,7 @@ const ChatPage: React.FC = () => {
             <p className="p-4 text-gray-500">No chats found. Start a new one!</p>
           ) : (
             visibleChats.map((chat) => {
-              const otherParticipant = chat.participants.find((p) => p._id !== user._id);
+              const otherParticipant = chat.participants.find((p) => p._id !== user?._id);
               const chatName = chat.isGroupChat
                 ? chat.groupName || `Group Chat (${chat.participants.length})`
                 : otherParticipant?.fullName || 'Unknown Chat';
@@ -401,7 +404,7 @@ const ChatPage: React.FC = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-archive"><path d="M21 8v13H3V8"/><path d="M18 13H6"/><path d="M18 8H6"/><path d="M18 3H6"/><path d="M18 18H6"/></svg>
               </button>
               <div>
-                <h2 className="text-xl font-semibold text-gray-800">{selectedChatId ? chats.find((c) => c._id === selectedChatId)?.groupName || chats.find((c) => c._id === selectedChatId)?.participants?.filter((p) => p._id !== user._id).map((p) => p.fullName).join(', ') : 'Select a chat'}</h2>
+                <h2 className="text-xl font-semibold text-gray-800">{selectedChatId ? chats.find((c) => c._id === selectedChatId)?.groupName || chats.find((c) => c._id === selectedChatId)?.participants?.filter((p) => p._id !== user?._id).map((p) => p.fullName).join(', ') : 'Select a chat'}</h2>
               </div>
             </div>
             <div className="flex space-x-2">
@@ -444,7 +447,7 @@ const ChatPage: React.FC = () => {
                 </button>
               )}
               {(() => {
-                const otherParticipant = chats.find(c => c._id === selectedChatId)?.participants.find((p) => p._id !== user._id);
+                const otherParticipant = chats.find(c => c._id === selectedChatId)?.participants.find((p) => p._id !== user?._id);
                 if (!otherParticipant) return null;
                 return blockedUsers.includes(otherParticipant._id) ? (
                   <button onClick={() => handleUnblockUser(otherParticipant._id)} className="text-gray-600 hover:text-gray-800 p-2 rounded-full transition-colors" title="Unblock User">
@@ -464,16 +467,16 @@ const ChatPage: React.FC = () => {
               <p className="text-center text-gray-500 mt-10">No messages yet. Say hello!</p>
             ) : (
               messages.map((msg) => (
-                <div key={msg._id} className={`flex mb-4 ${msg.senderId === user._id ? 'justify-end' : 'justify-start'}`}>
+                <div key={msg._id} className={`flex mb-4 ${msg.senderId === user?._id ? 'justify-end' : 'justify-start'}`}>
                   <div
-                    className={`relative max-w-[70%] p-3 rounded-xl shadow-md cursor-pointer ${msg.senderId === user._id ? 'bg-blue-500 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'} ${isSelectionMode && selectedMessagesForDeletion.includes(msg._id) ? 'ring-2 ring-purple-500' : ''}`}
+                    className={`relative max-w-[70%] p-3 rounded-xl shadow-md cursor-pointer ${msg.senderId === user?._id ? 'bg-blue-500 text-white rounded-br-none' : 'bg-gray-200 text-gray-800 rounded-bl-none'} ${isSelectionMode && selectedMessagesForDeletion.includes(msg._id) ? 'ring-2 ring-purple-500' : ''}`}
                     onClick={() => isSelectionMode ? handleSelectMessage(msg._id) : null}
                   >
                     <p className="text-sm break-words">{msg.content}</p>
-                    <div className={`text-xs mt-1 flex items-center ${msg.senderId === user._id ? 'text-blue-200 justify-end' : 'text-gray-500 justify-start'}`}>
+                    <div className={`text-xs mt-1 flex items-center ${msg.senderId === user?._id ? 'text-blue-200 justify-end' : 'text-gray-500 justify-start'}`}>
                       <span>{formatTimestamp(msg.createdAt)}</span>
                       {/* Delivery ticks (async) */}
-                      {msg.senderId === user._id && (
+                      {msg.senderId === user?._id && (
                         <span className="ml-2 flex items-center">
                           {/* TODO: Use getMessageStatus(msg._id) to show ticks */}
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check text-gray-400"><path d="M20 6 9 17l-5-5"/></svg>
@@ -503,7 +506,7 @@ const ChatPage: React.FC = () => {
           </div>
           {/* Message input */}
           {(() => {
-            const otherParticipant = chats.find(c => c._id === selectedChatId)?.participants.find((p) => p._id !== user._id);
+            const otherParticipant = chats.find(c => c._id === selectedChatId)?.participants.find((p) => p._id !== user?._id);
             if (otherParticipant && blockedUsers.includes(otherParticipant._id)) {
               return <div className="p-4 text-center text-red-500">You have blocked this user. Unblock to continue chatting.</div>;
             }
@@ -558,7 +561,7 @@ const ChatPage: React.FC = () => {
             {archivedChats.map(chatId => {
               const chat = chats.find(c => c._id === chatId);
               if (!chat) return null;
-              const otherParticipant = chat.participants.find((p) => p._id !== user._id);
+              const otherParticipant = chat.participants.find((p) => p._id !== user?._id);
               return (
                 <li key={chatId} className="flex items-center justify-between p-2 border-b">
                   <span>{otherParticipant?.fullName || 'Unknown User'}</span>
