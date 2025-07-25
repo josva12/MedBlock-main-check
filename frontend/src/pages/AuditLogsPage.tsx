@@ -30,19 +30,19 @@ const AuditLogsPage: React.FC = () => {
       <form onSubmit={handleFilter} className="flex flex-wrap gap-4 items-end">
         <div>
           <label className="block text-sm font-medium mb-1">User ID</label>
-          <input name="userId" value={filters.userId} onChange={handleChange} className="rounded border px-3 py-2" />
+          <input name="userId" value={filters.userId} onChange={handleChange} className="rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Action</label>
-          <input name="action" value={filters.action} onChange={handleChange} className="rounded border px-3 py-2" />
+          <input name="action" value={filters.action} onChange={handleChange} className="rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">Start Date</label>
-          <input type="date" name="startDate" value={filters.startDate} onChange={handleChange} className="rounded border px-3 py-2" />
+          <input type="date" name="startDate" value={filters.startDate} onChange={handleChange} className="rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1">End Date</label>
-          <input type="date" name="endDate" value={filters.endDate} onChange={handleChange} className="rounded border px-3 py-2" />
+          <input type="date" name="endDate" value={filters.endDate} onChange={handleChange} className="rounded border px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white" />
         </div>
         <button type="submit" className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700">Filter</button>
       </form>

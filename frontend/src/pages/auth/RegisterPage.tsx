@@ -4,7 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import type { RootState } from '../../store';
 import { register, clearError } from '../../features/auth/authSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { User, Mail, Lock, Phone, BriefcaseMedical, Stethoscope, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, BriefcaseMedical, Stethoscope, Eye, EyeOff, Sun, Moon } from 'lucide-react';
 
 const TITLES = ["Dr.", "Prof.", "Mr.", "Mrs.", "Ms.", "Nurse", "Pharm.", "Tech."];
 const ROLES = ['doctor', 'nurse', 'admin', 'front-desk', 'pharmacy'];
@@ -44,6 +44,13 @@ const RegisterPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark') {
+      return savedTheme;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  });
 
   useEffect(() => { dispatch(clearError()); }, [dispatch]);
   // Remove the useEffect that redirects on isAuthenticated
@@ -51,6 +58,16 @@ const RegisterPage: React.FC = () => {
   useEffect(() => {
     if (registrationSuccess) navigate('/dashboard');
   }, [registrationSuccess, navigate]);
+
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [theme]);
+  const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -108,33 +125,38 @@ const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="absolute top-4 right-4">
+        <button onClick={toggleTheme} className="p-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          {theme === 'light' ? <Moon className="h-6 w-6" /> : <Sun className="h-6 w-6" />}
+        </button>
+      </div>
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">Create your account</h2>
+          <h2 className="text-3xl font-extrabold text-gray-900 dark:text-white">Create your account</h2>
           <p className="mt-2 text-sm text-gray-600">Join MedBlock today</p>
         </div>
       </div>
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow rounded-lg sm:px-10">
+        <div className="bg-white dark:bg-gray-800 py-8 px-6 shadow rounded-lg sm:px-10">
           <form onSubmit={handleSubmit} className="space-y-6" noValidate>
             {/* Personal Information */}
             <fieldset>
-              <legend className="text-lg font-semibold text-gray-700 mb-4">Personal Information</legend>
+              <legend className="text-lg font-semibold text-gray-700 dark:text-white mb-4">Personal Information</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Full Name</label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type="text" id="fullName" name="fullName" value={form.fullName} onChange={handleChange} required placeholder="John Doe" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                    <input type="text" id="fullName" name="fullName" value={form.fullName} onChange={handleChange} required placeholder="John Doe" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.fullName ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   </div>
                   {errors.fullName && <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>}
                 </div>
                 <div>
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Email Address</label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required placeholder="you@example.com" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                    <input type="email" id="email" name="email" value={form.email} onChange={handleChange} required placeholder="you@example.com" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.email ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   </div>
                   {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
                 </div>
@@ -142,40 +164,40 @@ const RegisterPage: React.FC = () => {
             </fieldset>
             {/* Professional Details */}
             <fieldset>
-              <legend className="text-lg font-semibold text-gray-700 mb-4">Professional Details</legend>
+              <legend className="text-lg font-semibold text-gray-700 dark:text-white mb-4">Professional Details</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-                  <select id="title" name="title" value={form.title} onChange={handleChange} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.title ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} required>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Title</label>
+                  <select id="title" name="title" value={form.title} onChange={handleChange} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.title ? 'border-red-500 focus:ring-red-500' : ''}`} required>
                     {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                   {errors.title && <p className="mt-1 text-xs text-red-600">{errors.title}</p>}
                 </div>
                 <div>
-                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                  <select id="role" name="role" value={form.role} onChange={handleChange} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.role ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} required>
+                  <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Role</label>
+                  <select id="role" name="role" value={form.role} onChange={handleChange} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.role ? 'border-red-500 focus:ring-red-500' : ''}`} required>
                     {ROLES.map(r => <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>)}
                   </select>
                   {errors.role && <p className="mt-1 text-xs text-red-600">{errors.role}</p>}
                 </div>
                 <div>
-                  <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
-                  <input type="text" id="specialization" name="specialization" value={form.specialization} onChange={handleChange} placeholder="e.g. Pediatrics" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white border-gray-300 focus:ring-blue-500" />
+                  <label htmlFor="specialization" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Specialization</label>
+                  <input type="text" id="specialization" name="specialization" value={form.specialization} onChange={handleChange} placeholder="e.g. Pediatrics" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500" />
                 </div>
             <div>
-                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
-                  <input type="text" id="department" name="department" value={form.department} onChange={handleChange} placeholder="e.g. Cardiology" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white border-gray-300 focus:ring-blue-500" />
+                  <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Department</label>
+                  <input type="text" id="department" name="department" value={form.department} onChange={handleChange} placeholder="e.g. Cardiology" className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500" />
               </div>
                 {(form.role === 'doctor' || form.role === 'nurse') && (
                   <>
                     <div>
-                      <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
-                      <input type="text" id="submittedLicenseNumber" name="submittedLicenseNumber" value={form.submittedLicenseNumber} onChange={handleChange} required={form.role === 'doctor' || form.role === 'nurse'} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.submittedLicenseNumber ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                      <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">License Number</label>
+                      <input type="text" id="submittedLicenseNumber" name="submittedLicenseNumber" value={form.submittedLicenseNumber} onChange={handleChange} required={form.role === 'doctor' || form.role === 'nurse'} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.submittedLicenseNumber ? 'border-red-500 focus:ring-red-500' : ''}`} />
                       {errors.submittedLicenseNumber && <p className="mt-1 text-xs text-red-600">{errors.submittedLicenseNumber}</p>}
             </div>
             <div>
-                      <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 mb-1">Licensing Body</label>
-                      <select id="licensingBody" name="licensingBody" value={form.licensingBody} onChange={handleChange} required={form.role === 'doctor' || form.role === 'nurse'} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.licensingBody ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}>
+                      <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Licensing Body</label>
+                      <select id="licensingBody" name="licensingBody" value={form.licensingBody} onChange={handleChange} required={form.role === 'doctor' || form.role === 'nurse'} className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.licensingBody ? 'border-red-500 focus:ring-red-500' : ''}`}>
                         <option value="">Select</option>
                         {LICENSING_BODIES.map(lb => <option key={lb} value={lb}>{lb}</option>)}
                       </select>
@@ -187,13 +209,13 @@ const RegisterPage: React.FC = () => {
             </fieldset>
             {/* Contact Information */}
             <fieldset>
-              <legend className="text-lg font-semibold text-gray-700 mb-4">Contact Information</legend>
+              <legend className="text-lg font-semibold text-gray-700 dark:text-white mb-4">Contact Information</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Phone Number</label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type="tel" id="phone" name="phone" value={form.phone} onChange={handleChange} required placeholder="e.g. +254712345678" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                    <input type="tel" id="phone" name="phone" value={form.phone} onChange={handleChange} required placeholder="e.g. +254712345678" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   </div>
                   {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
             </div>
@@ -201,49 +223,49 @@ const RegisterPage: React.FC = () => {
             </fieldset>
             {/* Address */}
             <fieldset>
-              <legend className="text-lg font-semibold text-gray-700 mb-4">Address</legend>
+              <legend className="text-lg font-semibold text-gray-700 dark:text-white mb-4">Address</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="address.street" className="block text-sm font-medium text-gray-700 mb-1">Street</label>
-                  <input type="text" id="address.street" name="address.street" value={form.address.street} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors['address.street'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                  <label htmlFor="address.street" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Street</label>
+                  <input type="text" id="address.street" name="address.street" value={form.address.street} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors['address.street'] ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   {errors['address.street'] && <p className="mt-1 text-xs text-red-600">{errors['address.street']}</p>}
                 </div>
                 <div>
-                  <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
-                  <input type="text" id="address.city" name="address.city" value={form.address.city} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors['address.city'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                  <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">City</label>
+                  <input type="text" id="address.city" name="address.city" value={form.address.city} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors['address.city'] ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   {errors['address.city'] && <p className="mt-1 text-xs text-red-600">{errors['address.city']}</p>}
             </div>
             <div>
-                  <label htmlFor="address.county" className="block text-sm font-medium text-gray-700 mb-1">County</label>
-                  <select id="address.county" name="address.county" value={form.address.county} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors['address.county'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`}>
+                  <label htmlFor="address.county" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">County</label>
+                  <select id="address.county" name="address.county" value={form.address.county} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors['address.county'] ? 'border-red-500 focus:ring-red-500' : ''}`}>
                     {COUNTIES.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
                   {errors['address.county'] && <p className="mt-1 text-xs text-red-600">{errors['address.county']}</p>}
                 </div>
                 <div>
-                  <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 mb-1">Sub-County</label>
-                  <input type="text" id="address.subCounty" name="address.subCounty" value={form.address.subCounty} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors['address.subCounty'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                  <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Sub-County</label>
+                  <input type="text" id="address.subCounty" name="address.subCounty" value={form.address.subCounty} onChange={handleChange} required className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors['address.subCounty'] ? 'border-red-500 focus:ring-red-500' : ''}`} />
                   {errors['address.subCounty'] && <p className="mt-1 text-xs text-red-600">{errors['address.subCounty']}</p>}
               </div>
                 <div>
-                  <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
-                  <input type="text" id="address.postalCode" name="address.postalCode" value={form.address.postalCode} onChange={handleChange} className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white border-gray-300 focus:ring-blue-500" />
+                  <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Postal Code</label>
+                  <input type="text" id="address.postalCode" name="address.postalCode" value={form.address.postalCode} onChange={handleChange} className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500" />
             </div>
             <div>
-                  <label htmlFor="address.country" className="block text-sm font-medium text-gray-700 mb-1">Country</label>
-                  <input type="text" id="address.country" name="address.country" value={form.address.country} onChange={handleChange} required className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white border-gray-300 focus:ring-blue-500" />
+                  <label htmlFor="address.country" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Country</label>
+                  <input type="text" id="address.country" name="address.country" value={form.address.country} onChange={handleChange} required className="block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500" />
                 </div>
               </div>
             </fieldset>
             {/* Password */}
             <fieldset>
-              <legend className="text-lg font-semibold text-gray-700 mb-4">Set Password</legend>
+              <legend className="text-lg font-semibold text-gray-700 dark:text-white mb-4">Set Password</legend>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={form.password} onChange={handleChange} required placeholder="Password" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                    <input type={showPassword ? 'text' : 'password'} id="password" name="password" value={form.password} onChange={handleChange} required placeholder="Password" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.password ? 'border-red-500 focus:ring-red-500' : ''}`} />
                     <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                       {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>
@@ -251,10 +273,10 @@ const RegisterPage: React.FC = () => {
                   {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
             </div>
             <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-white mb-1">Confirm Password</label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required placeholder="Confirm Password" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} />
+                    <input type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} required placeholder="Confirm Password" className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-800 border-gray-300 focus:ring-blue-500 ${errors.confirmPassword ? 'border-red-500 focus:ring-red-500' : ''}`} />
                     <button type="button" onClick={() => setShowConfirmPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                       {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                     </button>

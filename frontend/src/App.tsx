@@ -61,6 +61,18 @@ const PharmacyDashboardPage = React.lazy(() => import('./pages/pharmacy/Pharmacy
 const NurseDashboardPage = React.lazy(() => import('./pages/nurse/NurseDashboardPage'));
 const NurseNotificationsPage = React.lazy(() => import('./pages/nurse/NurseNotificationsPage'));
 
+// Pharmacy Pages
+import OrdersPage from './pages/pharmacy/OrdersPage';
+import InventoryPage from './pages/pharmacy/InventoryPage';
+import PrescriptionsPage from './pages/pharmacy/PrescriptionsPage';
+import ConsultationsPage from './pages/pharmacy/ConsultationsPage';
+import ChatPage from './pages/pharmacy/ChatPage';
+import PharmacyReportsPage from './pages/pharmacy/ReportsPage';
+import PharmacyBlockchainPage from './pages/pharmacy/BlockchainPage';
+import PharmacySettingsPage from './pages/pharmacy/SettingsPage';
+import NotificationsPage from './pages/pharmacy/NotificationsPage';
+import PharmacyProfilePage from './pages/pharmacy/ProfilePage';
+
 // --- Helper Components ---
 
 const RootRedirector: React.FC = () => {
@@ -178,13 +190,16 @@ function AppContent() {
                 <Route path="/pharmacy" element={<PharmacyLayout />}> 
                   <Route index element={<Navigate to="dashboard" replace />} />
                   <Route path="dashboard" element={<PharmacyDashboardPage />} />
-                  <Route path="inventory" element={<PlaceholderPage feature="Inventory" />} />
-                  <Route path="orders" element={<PlaceholderPage feature="Orders" />} />
-                  <Route path="consultations" element={<PlaceholderPage feature="Consultations" />} />
-                  <Route path="chat" element={<AiChatPage />} />
-                  <Route path="prescriptions" element={<PlaceholderPage feature="Prescriptions" />} />
-                  <Route path="reports" element={<ReportsPage />} />
-                  <Route path="profile" element={<ProfilePage />} />
+                  <Route path="orders" element={<OrdersPage />} />
+                  <Route path="inventory" element={<InventoryPage />} />
+                  <Route path="prescriptions" element={<PrescriptionsPage />} />
+                  <Route path="consultations" element={<ConsultationsPage />} />
+                  <Route path="chat" element={<ChatPage />} />
+                  <Route path="reports" element={<PharmacyReportsPage />} />
+                  <Route path="blockchain" element={<PharmacyBlockchainPage />} />
+                  <Route path="settings" element={<PharmacySettingsPage />} />
+                  <Route path="notifications" element={<NotificationsPage />} />
+                  <Route path="profile" element={<PharmacyProfilePage />} />
                 </Route>
               </Route>
 
