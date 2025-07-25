@@ -102,6 +102,39 @@ const ChatPage: React.FC = () => {
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
+  // Update user online status when component mounts
+  useEffect(() => {
+    if (user) {
+      updateUserStatus();
+    }
+  }, [user]);
+
+  // Fetch user status for chat participants
+  useEffect(() => {
+    if (selectedChatId && user) {
+      const chat = chats.find(c => c._id === selectedChatId);
+      if (chat && !chat.isGroupChat) {
+        const otherUser = getOtherParticipant(chat);
+        if (otherUser) {
+          fetchUserStatus(otherUser._id);
+        }
+      }
+    }
+  }, [selectedChatId, chats, user]);
+
+  // Mark messages as read when chat is selected
+  useEffect(() => {
+    if (selectedChatId && messages.length > 0) {
+      const unreadMessages = messages.filter(
+        msg => msg.senderId !== user?._id && !(msg as any).readBy?.some((read: any) => read.userId === user?._id)
+      );
+      if (unreadMessages.length > 0) {
+        const messageIds = unreadMessages.map(msg => msg._id);
+        markMessagesAsRead(selectedChatId, messageIds);
+      }
+    }
+  }, [selectedChatId, messages, user]);
+
   // --- Fetch Messages ---
   const fetchMessages = useCallback(async (chatId: string) => {
     if (!chatId) return;
@@ -394,7 +427,7 @@ const ChatPage: React.FC = () => {
               <div>
                 <span className="text-lg font-medium">{user.fullName}</span>
                 <div className="text-xs opacity-80">
-                  {user.isOnline ? 'Online' : 'Offline'}
+                  {(user as any).isOnline ? 'Online' : 'Offline'}
                 </div>
               </div>
             </div>
@@ -556,7 +589,19 @@ const ChatPage: React.FC = () => {
                       })()}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {isTyping ? 'Typing...' : 'Online'}
+                      {isTyping ? 'Typing...' : (() => {
+                        const chat = chats.find(c => c._id === selectedChatId);
+                        if (!chat || chat.isGroupChat) return 'Online';
+                        const otherUser = getOtherParticipant(chat);
+                        if (!otherUser) return 'Online';
+                        
+                        const status = userStatus[otherUser._id];
+                        if (status?.isOnline) return 'Online';
+                        if (status?.lastSeen && (otherUser as any).preferences?.showLastSeen) {
+                          return `Last seen ${formatLastSeen(status.lastSeen)}`;
+                        }
+                        return 'Offline';
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -598,37 +643,49 @@ const ChatPage: React.FC = () => {
                 ) : messages.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">No messages yet</div>
                 ) : (
-                  messages.map((message) => (
-                    <div
-                      key={message._id}
-                      className={`flex ${message.senderId === user?._id ? 'justify-end' : 'justify-start'}`}
-                    >
+                  messages.map((message) => {
+                    const isOwnMessage = message.senderId === user?._id;
+                    return (
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          message.senderId === user?._id
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-gray-200 text-gray-800'
-                        }`}
+                        key={message._id}
+                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className="text-sm font-medium mb-1">
-                          {message.senderName}
-                        </div>
-                        <div className="text-sm">{message.content}</div>
-                        <div className="text-xs opacity-75 mt-1">
-                          {formatTimestamp(message.timestamp)}
-                        </div>
-                        {message.reactions && message.reactions.length > 0 && (
-                          <div className="flex space-x-1 mt-2">
-                            {message.reactions.map((reaction, index) => (
-                              <span key={index} className="text-xs bg-white bg-opacity-20 px-1 rounded">
-                                {reaction.emoji}
-                              </span>
-                            ))}
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                            isOwnMessage
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-gray-200 text-gray-800'
+                          }`}
+                        >
+                          {!isOwnMessage && (
+                            <div className="text-sm font-medium mb-1">
+                              {message.senderName}
+                            </div>
+                          )}
+                          <div className="text-sm">{message.content}</div>
+                          <div className="flex items-center justify-between mt-1">
+                            <div className="text-xs opacity-75">
+                              {formatTimestamp(message.timestamp)}
+                            </div>
+                            {isOwnMessage && (
+                              <div className="ml-2">
+                                {getMessageStatusIcon(message, isOwnMessage)}
+                              </div>
+                            )}
                           </div>
-                        )}
+                          {message.reactions && message.reactions.length > 0 && (
+                            <div className="flex space-x-1 mt-2">
+                              {message.reactions.map((reaction, index) => (
+                                <span key={index} className="text-xs bg-white bg-opacity-20 px-1 rounded">
+                                  {reaction.emoji}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
                 <div ref={messagesEndRef} />
               </div>
@@ -689,6 +746,17 @@ const ChatPage: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* User Settings Modal */}
+      <UserSettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+        user={user}
+        onUpdate={() => {
+          // Refresh user data
+          window.location.reload();
+        }}
+      />
 
       {/* Error Display */}
       {error && (
