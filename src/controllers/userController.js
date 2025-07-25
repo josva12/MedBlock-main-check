@@ -28,24 +28,28 @@ exports.searchUsers = async (req, res) => {
         { userId: searchRegex }
       ]
     };
-    // Exclude the user who is performing the search from the results
-    if (req.user && req.user._id) {
-      filter._id = { $ne: req.user._id };
+
+    // This is the most reliable way to check for the user's ID
+    // from your auth middleware and exclude them from the search.
+    if (req.user && req.user.userId) {
+      filter._id = { $ne: req.user.userId };
     }
 
     const users = await User.find(filter)
       .limit(10)
-      .select('_id userId fullName email role profilePicture avatar');
+      .select('_id userId fullName email role profilePicture avatar'); // Only send necessary fields
 
     res.status(200).json({
       success: true,
       data: users
     });
+
   } catch (error) {
-    logger.error(`Failed to search users with query "${query}": ${error.message}`);
+    // This will catch any other unforeseen errors and prevent a server crash
+    logger.error(`User search failed with query "${query}":`, error);
     res.status(500).json({
       success: false,
-      error: 'An unexpected error occurred while searching for users.'
+      error: 'An unexpected error occurred during the user search.'
     });
   }
 }; 
