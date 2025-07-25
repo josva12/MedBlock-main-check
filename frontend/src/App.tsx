@@ -134,6 +134,7 @@ function AppContent() {
                       <Route path="reports" element={<ReportsPage />} />
                       <Route path="audit-logs" element={<AuditLogsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="chat" element={<ChatPage />} />
                   </Route>
               </Route>
 
@@ -168,6 +169,7 @@ function AppContent() {
                       <Route path="profile" element={<ProfilePage />} />
                       <Route path="reports" element={<ReportsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
+                      <Route path="chat" element={<ChatPage />} />
                   </Route>
               </Route>
               
