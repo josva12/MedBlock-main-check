@@ -33,6 +33,16 @@ const MessageSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  deliveredTo: [{
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    deliveredAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   createdAt: {
     type: Date,
     default: Date.now

@@ -5,6 +5,10 @@ const User = require('../models/User');
 const upload = require('../config/multerConfig');
 const logger = require('../utils/logger');
 const router = express.Router();
+const EncryptionService = require('../utils/encryption');
+const encryptionService = new EncryptionService();
+const fs = require('fs');
+const path = require('path');
 
 // Get all chats for a user
 router.get('/', authenticateToken, async (req, res) => {
@@ -77,9 +81,33 @@ router.get('/:chatId/messages', authenticateToken, async (req, res) => {
       .slice(skip, skip + parseInt(limit))
       .reverse();
 
+    // Mark as delivered for all messages not sent by this user and not already delivered
+    let updated = false;
+    messages.forEach(msg => {
+      if (msg.senderId.toString() !== req.user.userId &&
+          !msg.deliveredTo.some(d => d.userId.toString() === req.user.userId)) {
+        msg.deliveredTo.push({ userId: req.user.userId, deliveredAt: new Date() });
+        updated = true;
+      }
+    });
+    if (updated) await chat.save();
+
+    // Decrypt text messages before sending to client
+    const decryptedMessages = messages.map(msg => {
+      const msgObj = msg.toObject ? msg.toObject() : msg;
+      if (msgObj.type === 'text' && msgObj.isEncrypted && msgObj.content) {
+        try {
+          msgObj.content = encryptionService.decrypt(msgObj.content);
+        } catch (e) {
+          msgObj.content = '[decryption error]';
+        }
+      }
+      return msgObj;
+    });
+
     res.json({ 
       success: true, 
-      data: messages,
+      data: decryptedMessages,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -109,11 +137,18 @@ router.post('/:chatId/messages', authenticateToken, upload.single('file'), async
       return res.status(403).json({ error: 'Access denied' });
     }
 
+    let encryptedContent = content;
+    let isEncrypted = true;
+    if (type === 'text' && content) {
+      encryptedContent = encryptionService.encrypt(content);
+      isEncrypted = true;
+    }
+
     const messageData = {
       senderId: req.user.userId,
-      content: content || '',
+      content: encryptedContent || '',
       type,
-      isEncrypted: true,
+      isEncrypted,
       createdAt: new Date()
     };
 
@@ -121,14 +156,26 @@ router.post('/:chatId/messages', authenticateToken, upload.single('file'), async
     if (req.file) {
       // Check file size (10MB limit)
       if (req.file.size > 10 * 1024 * 1024) {
+        fs.unlinkSync(req.file.path); // Remove the uploaded file
         return res.status(400).json({ error: 'File size must be less than 10MB' });
       }
 
-      messageData.fileUrl = req.file.path;
+      // Encrypt the file
+      const fileBuffer = fs.readFileSync(req.file.path);
+      const encryptedBuffer = encryptionService.encryptFile(fileBuffer);
+      // Save encrypted file to secure directory
+      const secureDir = path.join(__dirname, '..', 'uploads', 'secure');
+      if (!fs.existsSync(secureDir)) fs.mkdirSync(secureDir, { recursive: true });
+      const encryptedFileName = `${Date.now()}-${req.file.originalname}.enc`;
+      const encryptedFilePath = path.join(secureDir, encryptedFileName);
+      fs.writeFileSync(encryptedFilePath, encryptedBuffer);
+      // Remove the original unencrypted file
+      fs.unlinkSync(req.file.path);
+
+      messageData.fileUrl = encryptedFilePath;
       messageData.fileName = req.file.originalname;
       messageData.fileSize = req.file.size;
       messageData.mimeType = req.file.mimetype;
-      
       // Determine type based on mime type
       if (req.file.mimetype.startsWith('image/')) {
         messageData.type = 'image';
@@ -139,6 +186,7 @@ router.post('/:chatId/messages', authenticateToken, upload.single('file'), async
       } else {
         messageData.type = 'file';
       }
+      messageData.isEncrypted = true; // Media is now encrypted
     }
 
     chat.messages.push(messageData);
@@ -149,7 +197,13 @@ router.post('/:chatId/messages', authenticateToken, upload.single('file'), async
     const populatedMessage = chat.messages[chat.messages.length - 1];
     await populatedMessage.populate('senderId', 'fullName');
 
-    res.json({ success: true, data: populatedMessage });
+    // Decrypt content before sending to client (for sender's confirmation)
+    let responseMessage = populatedMessage.toObject();
+    if (responseMessage.type === 'text' && responseMessage.isEncrypted && responseMessage.content) {
+      responseMessage.content = encryptionService.decrypt(responseMessage.content);
+    }
+
+    res.json({ success: true, data: responseMessage });
   } catch (error) {
     logger.error('Error sending message:', error);
     res.status(500).json({ error: 'Failed to send message', details: error.message });
@@ -187,6 +241,31 @@ router.patch('/:chatId/read', authenticateToken, async (req, res) => {
   } catch (error) {
     logger.error('Error marking messages as read:', error);
     res.status(500).json({ error: 'Failed to mark messages as read', details: error.message });
+  }
+});
+
+// Mark a message as delivered for a user
+router.patch('/:chatId/messages/:messageId/delivered', authenticateToken, async (req, res) => {
+  try {
+    const { chatId, messageId } = req.params;
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+      return res.status(404).json({ error: 'Chat not found' });
+    }
+    const message = chat.messages.id(messageId);
+    if (!message) {
+      return res.status(404).json({ error: 'Message not found' });
+    }
+    // Only mark as delivered if not sender and not already delivered
+    if (message.senderId.toString() !== req.user.userId &&
+        !message.deliveredTo.some(d => d.userId.toString() === req.user.userId)) {
+      message.deliveredTo.push({ userId: req.user.userId, deliveredAt: new Date() });
+      await chat.save();
+    }
+    res.json({ success: true, message: 'Message marked as delivered' });
+  } catch (error) {
+    logger.error('Error marking message as delivered:', error);
+    res.status(500).json({ error: 'Failed to mark as delivered', details: error.message });
   }
 });
 

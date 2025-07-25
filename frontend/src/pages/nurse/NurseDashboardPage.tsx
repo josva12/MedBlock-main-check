@@ -123,7 +123,7 @@ const NurseDashboardPage: React.FC = () => {
                   <feature.icon className={`h-5 w-5 mr-2 ${feature.color}`} /> {feature.label}
                 </button>
               ))}
-            </div>
+          </div>
           </div>
 
           {/* My Department Widget */}
@@ -131,7 +131,7 @@ const NurseDashboardPage: React.FC = () => {
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 mb-6 p-6">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">My Department</h2>
               <p className="text-gray-700 dark:text-gray-300">Department: <span className="font-bold">{myDepartment}</span></p>
-            </div>
+          </div>
           )}
         </div>
       )}
