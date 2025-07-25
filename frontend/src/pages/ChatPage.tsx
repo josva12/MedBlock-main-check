@@ -7,8 +7,9 @@ import io, { Socket } from 'socket.io-client';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import Modal from '../components/Modal';
-import { Search } from 'lucide-react';
+import { Search, Settings, Check, CheckCheck } from 'lucide-react';
 import { User, Chat, Message } from '../types/chat';
+import UserSettingsModal from '../components/chat/UserSettingsModal';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 
@@ -49,6 +50,22 @@ const ChatPage: React.FC = () => {
   const [showArchive, setShowArchive] = useState<boolean>(false);
   const [mutedChats, setMutedChats] = useState<string[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
+  const [showSettings, setShowSettings] = useState<boolean>(false);
+  const [userStatus, setUserStatus] = useState<any>({});
+  const [typingUsers, setTypingUsers] = useState<{[key: string]: string[]}>({});
+
+  // Helper function to get the other participant in a chat (not the current user)
+  const getOtherParticipant = (chat: any): User | null => {
+    if (!chat || !chat.participants || chat.participants.length === 0) return null;
+    if (chat.isGroupChat) return null; // For group chats, we'll handle differently
+    
+    // Find the participant that is not the current user
+    const otherParticipant = chat.participants.find((participant: User) => 
+      participant._id !== user?._id
+    );
+    
+    return otherParticipant || chat.participants[0]; // Fallback to first participant if not found
+  };
 
   // --- Socket.IO Setup ---
   useEffect(() => {
@@ -261,6 +278,46 @@ const ChatPage: React.FC = () => {
     }
   };
 
+  // Mark messages as delivered
+  const markMessagesAsDelivered = async (chatId: string, messageIds: string[]) => {
+    try {
+      await apiClient.put(`/chat/${chatId}/messages/delivered`, { messageIds });
+    } catch (error: any) {
+      console.error('Failed to mark messages as delivered:', error);
+    }
+  };
+
+  // Mark messages as read
+  const markMessagesAsRead = async (chatId: string, messageIds: string[]) => {
+    try {
+      await apiClient.put(`/chat/${chatId}/messages/read`, { messageIds });
+    } catch (error: any) {
+      console.error('Failed to mark messages as read:', error);
+    }
+  };
+
+  // Get user status
+  const fetchUserStatus = async (userId: string) => {
+    try {
+      const res = await apiClient.get(`/users/${userId}/status`);
+      setUserStatus((prev: any) => ({
+        ...prev,
+        [userId]: res.data.data
+      }));
+    } catch (error: any) {
+      console.error('Failed to fetch user status:', error);
+    }
+  };
+
+  // Update user status
+  const updateUserStatus = async () => {
+    try {
+      await apiClient.put('/users/online-status', { isOnline: true });
+    } catch (error: any) {
+      console.error('Failed to update user status:', error);
+    }
+  };
+
   // --- Block/Unblock, Mute, Archive/Unarchive Chat Features ---
   // Archive chat
   const handleUnarchiveChat = async (chatId: string) => {
@@ -293,6 +350,34 @@ const ChatPage: React.FC = () => {
   // Only show unarchived chats in main list
   const visibleChats = chats.filter(c => !archivedChats.includes(c._id));
 
+  // Get message status icon
+  const getMessageStatusIcon = (message: Message, isOwnMessage: boolean) => {
+    if (!isOwnMessage) return null;
+    
+    switch (message.status) {
+      case 'sent':
+        return <Check className="w-4 h-4 text-gray-400" />;
+      case 'delivered':
+        return <CheckCheck className="w-4 h-4 text-gray-400" />;
+      case 'read':
+        return <CheckCheck className="w-4 h-4 text-blue-500" />;
+      default:
+        return <Check className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  // Format last seen time
+  const formatLastSeen = (lastSeen: string) => {
+    const now = new Date();
+    const lastSeenDate = new Date(lastSeen);
+    const diffInMinutes = Math.floor((now.getTime() - lastSeenDate.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+  };
+
   // --- Render ---
   return (
     <div className="min-h-screen bg-gray-100 font-inter flex flex-col">
@@ -302,16 +387,25 @@ const ChatPage: React.FC = () => {
           {user && (
             <div className="flex items-center space-x-2">
               <img
-                src={user.profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                src={(user as any).profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
                 alt={user.fullName}
                 className="w-10 h-10 rounded-full border-2 border-white shadow-md"
               />
-              <span className="text-lg font-medium">{user.fullName}</span>
+              <div>
+                <span className="text-lg font-medium">{user.fullName}</span>
+                <div className="text-xs opacity-80">
+                  {user.isOnline ? 'Online' : 'Offline'}
+                </div>
+              </div>
             </div>
           )}
-          <span className="text-sm bg-blue-700 px-3 py-1 rounded-full opacity-80">
-            User ID: {user?._id || 'N/A'}
-          </span>
+          <button
+            onClick={() => setShowSettings(true)}
+            className="bg-blue-700 hover:bg-blue-800 text-white p-2 rounded-lg shadow-md transition-colors duration-200"
+            title="Chat Settings"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
           <button
             onClick={() => setShowUserSearch(true)}
             className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg shadow-md transition-colors duration-200 flex items-center"
@@ -340,11 +434,11 @@ const ChatPage: React.FC = () => {
                   onClick={() => handleStartChatWithUser(user._id)}
                   className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg border-b"
                 >
-                  <img
-                    src={user.profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
-                    alt={user.fullName}
-                    className="w-10 h-10 rounded-full mr-3"
-                  />
+                                  <img
+                  src={(user as any).profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                  alt={user.fullName}
+                  className="w-10 h-10 rounded-full mr-3"
+                />
                   <div>
                     <div className="font-medium">{user.fullName}</div>
                     <div className="text-sm text-gray-600">{user.email}</div>
@@ -401,14 +495,14 @@ const ChatPage: React.FC = () => {
                         </div>
                       ) : (
                         <img
-                          src={chat.participants[0]?.profilePicture || 'https://placehold.co/48x48/CCCCCC/FFFFFF?text=U'}
-                          alt={chat.participants[0]?.fullName}
+                          src={getOtherParticipant(chat)?.profilePicture || 'https://placehold.co/48x48/CCCCCC/FFFFFF?text=U'}
+                          alt={getOtherParticipant(chat)?.fullName}
                           className="w-12 h-12 rounded-full"
                         />
                       )}
                       <div className="flex-1">
                         <div className="font-medium">
-                          {chat.isGroupChat ? chat.groupName : chat.participants[0]?.fullName}
+                          {chat.isGroupChat ? chat.groupName : getOtherParticipant(chat)?.fullName}
                         </div>
                         <div className="text-sm text-gray-600 truncate">
                           {chat.lastMessage?.content || 'No messages yet'}
@@ -448,8 +542,8 @@ const ChatPage: React.FC = () => {
                       </div>
                     ) : (
                       <img
-                        src={chat.participants[0]?.profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
-                        alt={chat.participants[0]?.fullName}
+                        src={getOtherParticipant(chat)?.profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                        alt={getOtherParticipant(chat)?.fullName}
                         className="w-10 h-10 rounded-full"
                       />
                     );
@@ -458,7 +552,7 @@ const ChatPage: React.FC = () => {
                     <div className="font-medium">
                       {(() => {
                         const chat = chats.find(c => c._id === selectedChatId);
-                        return chat?.isGroupChat ? chat.groupName : chat?.participants[0]?.fullName;
+                        return chat?.isGroupChat ? chat.groupName : getOtherParticipant(chat)?.fullName;
                       })()}
                     </div>
                     <div className="text-sm text-gray-500">

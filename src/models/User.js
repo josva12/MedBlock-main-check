@@ -281,7 +281,30 @@ const userSchema = new mongoose.Schema({
     darkMode: {
       type: Boolean,
       default: false
+    },
+    // Chat privacy settings
+    showLastSeen: {
+      type: Boolean,
+      default: true
+    },
+    showOnlineStatus: {
+      type: Boolean,
+      default: true
     }
+  },
+  
+  // Online status and last seen
+  isOnline: {
+    type: Boolean,
+    default: false
+  },
+  lastSeen: {
+    type: Date,
+    default: Date.now
+  },
+  lastActive: {
+    type: Date,
+    default: Date.now
   }
 }, {
   timestamps: true,

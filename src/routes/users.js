@@ -7,7 +7,15 @@ const { authenticate, authorize } = require('../middleware/authMiddleware');
 const Patient = require('../models/Patient');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
-const { searchUsers } = require('../controllers/userController');
+const upload = require('../config/multerConfig');
+const { 
+  searchUsers, 
+  updateProfilePicture, 
+  updatePrivacySettings, 
+  updateOnlineStatus, 
+  getPrivacyStatus, 
+  getUserStatus 
+} = require('../controllers/userController');
 
 const router = express.Router();
 
@@ -79,6 +87,13 @@ router.get('/me', authenticate, (req, res) => {
 // --- CORRECTED ROUTE ORDER ---
 // Place the specific '/search' route *before* the dynamic '/:id' route
 router.get('/search', authenticateToken, searchUsers);
+
+// User profile and privacy settings routes
+router.get('/privacy-status', authenticateToken, getPrivacyStatus);
+router.get('/:userId/status', authenticateToken, getUserStatus);
+router.put('/profile-picture', authenticateToken, upload.single('profilePicture'), updateProfilePicture);
+router.put('/privacy-settings', authenticateToken, updatePrivacySettings);
+router.put('/online-status', authenticateToken, updateOnlineStatus);
 
 // @route   GET /api/v1/users/:id
 // @desc    Get user by ID

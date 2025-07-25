@@ -1,24 +1,31 @@
 // File Location: src/routes/chat.js
 
 const express = require('express');
-const { authenticate } = require('../middleware/authMiddleware'); // <--- IMPORTANT: Use the correct middleware
-const { createOrGetConversation } = require('../controllers/chatController');
+const { authenticate } = require('../middleware/authMiddleware');
+const { 
+  getChats, 
+  getMessages,
+  createOrGetConversation,
+  sendMessage,
+  markMessagesAsDelivered,
+  markMessagesAsRead,
+  archiveChat,
+  deleteChat
+} = require('../controllers/chatController');
 
 const router = express.Router();
 
-// Define the route for creating or getting a one-on-one chat.
-// We are now using 'authenticate', which correctly attaches the full user object to req.user.
-router.post(
-  '/conversation',
-  authenticate, // <--- THIS IS THE KEY FIX
-  createOrGetConversation
-);
+// Apply the authenticate middleware to ALL chat routes
+router.use(authenticate);
 
-
-// Your other chat routes (like getting messages, sending them, etc.) will also be refactored
-// to use their own controller functions, but for now, we have fixed the immediate problem.
-
-// Example: router.get('/', authenticate, getChats);
-// Example: router.get('/:chatId/messages', authenticate, getMessages);
+// Define all chat-related routes
+router.get('/', getChats); // Handles GET /api/v1/chat
+router.post('/conversation', createOrGetConversation); // Handles POST /api/v1/chat/conversation
+router.get('/:chatId/messages', getMessages); // Handles GET /api/v1/chat/:chatId/messages
+router.post('/:chatId/messages', sendMessage); // Handles POST /api/v1/chat/:chatId/messages
+router.put('/:chatId/messages/delivered', markMessagesAsDelivered); // Handles PUT /api/v1/chat/:chatId/messages/delivered
+router.put('/:chatId/messages/read', markMessagesAsRead); // Handles PUT /api/v1/chat/:chatId/messages/read
+router.patch('/:chatId/archive', archiveChat); // Handles PATCH /api/v1/chat/:chatId/archive
+router.delete('/:chatId', deleteChat); // Handles DELETE /api/v1/chat/:chatId
 
 module.exports = router; 

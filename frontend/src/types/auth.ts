@@ -14,4 +14,7 @@ export interface User {
   lastLogin: string;
   specialization?: string;
   department?: string;
+  profilePicture?: string;
+  avatar?: string;
+  userId?: string;
 } 

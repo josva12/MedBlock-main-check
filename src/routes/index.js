@@ -27,6 +27,7 @@ const teleconsultationRoutes = require("./teleconsultations");
 const predictionRoutes = require("./predictions");
 const resourceRoutes = require("./resources");
 const aiChatRoutes = require("./aiChat");
+const chatRoutes = require("./chat"); // Add chat routes import
 
 // --- TEMPORARY DIAGNOSTIC ROUTE - ADD THIS BLOCK ---
 // This route MUST be defined and used BEFORE any general authentication middleware

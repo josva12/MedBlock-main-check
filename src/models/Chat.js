@@ -23,6 +23,12 @@ const MessageSchema = new mongoose.Schema({
   fileName: String,
   fileSize: Number,
   mimeType: String,
+  // Message status tracking
+  status: {
+    type: String,
+    enum: ['sent', 'delivered', 'read'],
+    default: 'sent'
+  },
   readBy: [{
     userId: {
       type: mongoose.Schema.Types.ObjectId,
