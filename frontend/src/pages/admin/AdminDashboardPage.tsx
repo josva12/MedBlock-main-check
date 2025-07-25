@@ -18,6 +18,7 @@ import {
   DollarSign, // For Insurance packages
   ShieldCheck, // For Verified Businesses
   UserPlus, // Add User
+  MessageCircle, // For Chat
 } from 'lucide-react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -460,8 +461,8 @@ const AdminDashboardPage: React.FC = () => {
             <button onClick={handleUserVerification} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
               <ShieldCheck className="h-5 w-5 mr-2 text-purple-500" /> User Verification
             </button>
-            <button onClick={handleAIChat} className="flex items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 rounded-lg shadow-sm text-purple-700 dark:text-purple-300 font-medium transition-colors transform hover:scale-[1.02]">
-              <MessageSquare className="h-5 w-5 mr-2 text-teal-500" /> Chat
+            <button onClick={() => navigate('/admin/chat')} className="flex items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 rounded-lg shadow-sm text-purple-700 dark:text-purple-300 font-medium transition-colors transform hover:scale-[1.02]">
+              <MessageCircle className="h-5 w-5 mr-2 text-teal-500" /> Chat
             </button>
           </div>
         </div>

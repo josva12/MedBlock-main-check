@@ -22,6 +22,7 @@ import {
   BarChart2,
   Bell,
   Pill,
+  MessageCircle,
 } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -278,7 +279,7 @@ const DoctorDashboardPage: React.FC = () => {
               <Settings className="h-5 w-5 mr-2 text-gray-500" /> Settings
             </button>
             <button onClick={() => navigate('/doctor/chat')} className="flex items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 rounded-lg shadow-sm text-purple-700 dark:text-purple-300 font-medium transition-colors transform hover:scale-[1.02]">
-              <MessageSquare className="h-5 w-5 mr-2 text-teal-500" /> Chat
+              <MessageCircle className="h-5 w-5 mr-2 text-teal-500" /> Chat
             </button>
           </div>
         </div>

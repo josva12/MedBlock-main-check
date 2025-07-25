@@ -9,7 +9,7 @@ import { fetchVitals } from '../../features/vitals/vitalsSlice';
 import { fetchNotifications } from '../../features/notifications/notificationsSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  Users, Calendar, FileText, Heart, LogOut, BriefcaseMedical, PlusCircle, Clock, ClipboardList, MessageSquare, Blocks, Settings, BarChart2, Bell, Syringe,
+  Users, Calendar, FileText, Heart, LogOut, BriefcaseMedical, PlusCircle, Clock, ClipboardList, MessageSquare, Blocks, Settings, BarChart2, Bell, Syringe, MessageCircle,
 } from 'lucide-react';
 
 const NurseDashboardPage: React.FC = () => {
@@ -46,7 +46,7 @@ const NurseDashboardPage: React.FC = () => {
     { label: 'Blockchain', icon: Blocks, onClick: () => navigate('/nurse/blockchain'), color: 'text-indigo-500' },
     { label: 'Reports', icon: BarChart2, onClick: () => navigate('/nurse/reports'), color: 'text-green-500' },
     { label: 'Settings', icon: Settings, onClick: () => navigate('/nurse/settings'), color: 'text-gray-500' },
-    { label: 'Chat', icon: MessageSquare, onClick: () => navigate('/nurse/chat'), color: 'text-teal-500' },
+    { label: 'Chat', icon: MessageCircle, onClick: () => navigate('/nurse/chat'), color: 'text-teal-500' },
   ];
 
   // My Department widget
