@@ -2,19 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { useAppDispatch } from '../hooks/useAppDispatch';
 import { useAppSelector } from '../hooks/useAppSelector';
 import { fetchResources, createResource } from '../features/resources/resourcesSlice';
+import ResourceCard from '../components/resources/ResourceCard';
+import MessageBox from '../components/resources/MessageBox';
 
 const ResourcesPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const { resources = [], isLoading, error } = useAppSelector((state) => state.resources || { resources: [], isLoading: false, error: null });
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ title: '', content: '', category: '' });
+  const [form, setForm] = useState({ title: '', content: '', category: 'health' });
   const [formError, setFormError] = useState('');
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   useEffect(() => {
     dispatch(fetchResources());
   }, [dispatch]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
@@ -29,79 +32,166 @@ const ResourcesPage: React.FC = () => {
     try {
       await dispatch(createResource(form)).unwrap();
       setShowModal(false);
-      setForm({ title: '', content: '', category: '' });
+      setForm({ title: '', content: '', category: 'health' });
+      setMessage({ text: 'Resource created successfully!', type: 'success' });
     } catch (err: any) {
       setFormError(err.message || 'Failed to create resource');
+      setMessage({ text: 'Failed to create resource', type: 'error' });
     }
   };
 
+  const showMessage = (text: string, type: 'success' | 'error' | 'info') => {
+    setMessage({ text, type });
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Resources</h1>
+    <div className="container mx-auto px-4 py-8 resources-page">
+      <h1 className="text-4xl font-extrabold text-center text-gray-900 mb-12">Health Resources & Blogs</h1>
+
+      {/* Header with Create Button */}
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-2xl font-bold text-gray-800">Resources</h2>
+          <span className="text-gray-600">({resources.length} resources)</span>
+        </div>
         <button
-          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow hover:bg-green-700 transition"
+          className="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-colors duration-200 font-semibold"
           onClick={() => setShowModal(true)}
         >
+          <i className="fas fa-plus mr-2"></i>
           New Resource
         </button>
       </div>
-      {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded">{error}</div>}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-700">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Title</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Category</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">Created</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-            {isLoading ? (
-              <tr>
-                <td colSpan={3} className="text-center py-8 text-gray-500 dark:text-gray-400">Loading...</td>
-              </tr>
-            ) : resources.length === 0 ? (
-              <tr>
-                <td colSpan={3} className="text-center py-8 text-gray-500 dark:text-gray-400">No resources found</td>
-              </tr>
-            ) : (
-              resources.map((r: any) => (
-                <tr key={r._id}>
-                  <td className="px-6 py-4 whitespace-nowrap">{r.title}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{r.category || '-'}</td>
-                  <td className="px-6 py-4 whitespace-nowrap">{new Date(r.createdAt).toLocaleDateString()}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+
+      {/* Error Display */}
+      {error && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+
+      {/* Resources Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {isLoading ? (
+          // Loading skeleton cards
+          Array.from({ length: 6 }).map((_, index) => (
+            <div key={index} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
+              <div className="p-6">
+                <div className="h-4 bg-gray-200 rounded mb-4"></div>
+                <div className="h-6 bg-gray-200 rounded mb-2"></div>
+                <div className="h-4 bg-gray-200 rounded mb-1"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+              </div>
+            </div>
+          ))
+        ) : resources.length === 0 ? (
+          <div className="col-span-full text-center py-12">
+            <div className="text-gray-500 text-lg mb-4">
+              <i className="fas fa-book-open text-4xl mb-4"></i>
+              <p>No resources found</p>
+              <p className="text-sm mt-2">Create your first resource to get started!</p>
+            </div>
+          </div>
+        ) : (
+          resources.map((resource) => (
+            <ResourceCard key={resource._id} resource={resource} />
+          ))
+        )}
       </div>
+
+      {/* Create Resource Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-900 rounded-lg shadow-lg p-8 w-full max-w-md">
-            <h2 className="text-xl font-bold mb-4">New Resource</h2>
-            {formError && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-2">{formError}</div>}
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Title</label>
-                <input name="title" value={form.title} onChange={handleChange} className="w-full rounded border px-3 py-2" />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Create New Resource</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <i className="fas fa-times text-xl"></i>
+              </button>
+            </div>
+
+            {formError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+                {formError}
               </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="block text-sm font-medium mb-1">Category</label>
-                <input name="category" value={form.category} onChange={handleChange} className="w-full rounded border px-3 py-2" />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Title *
+                </label>
+                <input
+                  name="title"
+                  value={form.title}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter resource title..."
+                  required
+                />
               </div>
+
               <div>
-                <label className="block text-sm font-medium mb-1">Content</label>
-                <textarea name="content" value={form.content} onChange={handleChange} className="w-full rounded border px-3 py-2" rows={4} />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Category
+                </label>
+                <select
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                >
+                  <option value="health">Health</option>
+                  <option value="finance">Finance</option>
+                  <option value="educational">Educational</option>
+                </select>
               </div>
-              <div className="flex justify-end gap-2">
-                <button type="button" className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded bg-green-600 text-white hover:bg-green-700">Create</button>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Content *
+                </label>
+                <textarea
+                  name="content"
+                  value={form.content}
+                  onChange={handleChange}
+                  rows={6}
+                  className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder="Enter resource content..."
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-4 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-6 py-3 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-lg bg-green-600 text-white hover:bg-green-700 transition-colors font-semibold"
+                >
+                  Create Resource
+                </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Message Box */}
+      {message && (
+        <MessageBox
+          message={message.text}
+          type={message.type}
+          onClose={() => setMessage(null)}
+        />
       )}
     </div>
   );

@@ -8,6 +8,17 @@ export interface Resource {
   title: string;
   content: string;
   category?: string;
+  reactions: {
+    happy: number;
+    sad: number;
+    helpful: number;
+    unhelpful: number;
+    neutral: number;
+  };
+  averageRating?: number;
+  totalRatings?: number;
+  userReaction?: string | null;
+  userRating?: number | null;
   createdAt: string;
 }
 
@@ -27,9 +38,9 @@ const initialState: ResourcesState = {
 
 export const fetchResources = createAsyncThunk(
   'resources/fetchAll',
-  async (params: { category?: string } = {}, { rejectWithValue }) => {
+  async (params?: { category?: string }, { rejectWithValue } = {} as any) => {
     try {
-      const response = await api.get('/resources', { params });
+      const response = await api.get('/resources', { params: params || {} });
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch resources');
@@ -39,7 +50,7 @@ export const fetchResources = createAsyncThunk(
 
 export const createResource = createAsyncThunk(
   'resources/create',
-  async (data: Omit<Resource, '_id' | 'createdAt'>, { rejectWithValue }) => {
+  async (data: Omit<Resource, '_id' | 'createdAt' | 'reactions' | 'averageRating' | 'totalRatings'>, { rejectWithValue }) => {
     try {
       const response = await api.post('/resources', data);
       return response.data.data;
@@ -57,6 +68,30 @@ export const fetchResourceById = createAsyncThunk(
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || 'Failed to fetch resource');
+    }
+  }
+);
+
+export const reactToResource = createAsyncThunk(
+  'resources/react',
+  async ({ resourceId, reaction }: { resourceId: string; reaction: string }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/resources/${resourceId}/react`, { reaction });
+      return { resourceId, ...response.data.data };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to react to resource');
+    }
+  }
+);
+
+export const rateResource = createAsyncThunk(
+  'resources/rate',
+  async ({ resourceId, rating }: { resourceId: string; rating: number }, { rejectWithValue }) => {
+    try {
+      const response = await api.post(`/resources/${resourceId}/rate`, { rating });
+      return { resourceId, ...response.data.data };
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || 'Failed to rate resource');
     }
   }
 );
@@ -113,6 +148,32 @@ const resourcesSlice = createSlice({
       .addCase(fetchResourceById.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(reactToResource.fulfilled, (state, action) => {
+        const { resourceId, reactions, userReaction } = action.payload;
+        const resource = state.resources.find(r => r._id === resourceId);
+        if (resource) {
+          resource.reactions = reactions;
+          resource.userReaction = userReaction;
+        }
+        if (state.currentResource && state.currentResource._id === resourceId) {
+          state.currentResource.reactions = reactions;
+          state.currentResource.userReaction = userReaction;
+        }
+      })
+      .addCase(rateResource.fulfilled, (state, action) => {
+        const { resourceId, averageRating, totalRatings, userRating } = action.payload;
+        const resource = state.resources.find(r => r._id === resourceId);
+        if (resource) {
+          resource.averageRating = averageRating;
+          resource.totalRatings = totalRatings;
+          resource.userRating = userRating;
+        }
+        if (state.currentResource && state.currentResource._id === resourceId) {
+          state.currentResource.averageRating = averageRating;
+          state.currentResource.totalRatings = totalRatings;
+          state.currentResource.userRating = userRating;
+        }
       });
   },
 });

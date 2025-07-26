@@ -60,12 +60,89 @@ router.post('/:id/react', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Resource not found' });
     }
 
-    resource.reactions[reaction]++;
+    const userId = req.user.id;
+
+    // Check if user already reacted
+    const existingReactionIndex = resource.userReactions.findIndex(
+      ur => ur.userId.toString() === userId
+    );
+
+    if (existingReactionIndex !== -1) {
+      // User already reacted, update their reaction
+      const oldReaction = resource.userReactions[existingReactionIndex].reaction;
+      if (oldReaction === reaction) {
+        // Same reaction, remove it (toggle off)
+        resource.reactions[oldReaction]--;
+        resource.userReactions.splice(existingReactionIndex, 1);
+      } else {
+        // Different reaction, update it
+        resource.reactions[oldReaction]--;
+        resource.reactions[reaction]++;
+        resource.userReactions[existingReactionIndex].reaction = reaction;
+      }
+    } else {
+      // New reaction
+      resource.reactions[reaction]++;
+      resource.userReactions.push({ userId, reaction });
+    }
+
     await resource.save();
 
-    res.json({ success: true, data: resource.reactions });
+    res.json({ 
+      success: true, 
+      data: {
+        reactions: resource.reactions,
+        userReaction: resource.userReactions.find(ur => ur.userId.toString() === userId)?.reaction || null
+      }
+    });
   } catch (error) {
     res.status(500).json({ error: 'Failed to react to resource', details: error.message });
+  }
+});
+
+// @route   POST /api/v1/resources/:id/rate
+// @desc    Rate a resource
+// @access  Private
+router.post('/:id/rate', authenticateToken, async (req, res) => {
+  try {
+    const { rating } = req.body;
+    
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
+    }
+
+    const resource = await Resource.findById(req.params.id);
+    if (!resource) {
+      return res.status(404).json({ error: 'Resource not found' });
+    }
+
+    const userId = req.user.id;
+
+    // Check if user already rated
+    const existingRatingIndex = resource.userRatings.findIndex(
+      ur => ur.userId.toString() === userId
+    );
+
+    if (existingRatingIndex !== -1) {
+      // Update existing rating
+      resource.userRatings[existingRatingIndex].rating = rating;
+    } else {
+      // Add new rating
+      resource.userRatings.push({ userId, rating });
+    }
+
+    await resource.save();
+
+    res.json({ 
+      success: true, 
+      data: {
+        averageRating: resource.averageRating,
+        totalRatings: resource.totalRatings,
+        userRating: resource.userRatings.find(ur => ur.userId.toString() === userId)?.rating || null
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to rate resource', details: error.message });
   }
 });
 
