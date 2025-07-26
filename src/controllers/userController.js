@@ -76,6 +76,33 @@ exports.updateProfilePicture = async (req, res) => {
 };
 
 /**
+ * @desc    Remove user's profile picture
+ * @route   DELETE /api/v1/users/profile-picture
+ * @access  Private
+ */
+exports.removeProfilePicture = async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    // Remove profile picture
+    user.profilePicture = undefined;
+    await user.save();
+
+    logger.audit('PROFILE_PICTURE_REMOVED', req.user._id, 'profile_picture_removed');
+    res.status(200).json({
+      success: true,
+      message: 'Profile picture removed successfully'
+    });
+  } catch (error) {
+    logger.error('PROFILE_PICTURE_REMOVE_FAILED:', error);
+    res.status(500).json({ success: false, error: 'Failed to remove profile picture' });
+  }
+};
+
+/**
  * @desc    Update user privacy settings
  * @route   PUT /api/v1/users/privacy-settings
  * @access  Private

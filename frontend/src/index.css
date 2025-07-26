@@ -152,3 +152,56 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-400 dark:bg-gray-500;
 }
+
+/* Custom Scrollbar Styling for Chat */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark mode adjustments for scrollbar */
+.dark .custom-scrollbar::-webkit-scrollbar-track {
+  background: #333;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #555;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #777;
+}
+
+/* Roboto Mono for system messages */
+.font-mono {
+  font-family: 'Roboto Mono', monospace;
+}
+
+/* Media content styling */
+.chat-media-content {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  object-fit: contain; /* Ensure media fits within bounds */
+}
+
+/* Media preview container */
+.media-preview-container {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+}

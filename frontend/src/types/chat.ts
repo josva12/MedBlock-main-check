@@ -28,6 +28,11 @@ export interface Message {
     content: string;
     senderName: string;
   };
+  // Media properties
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  mimeType?: string;
   attachments?: Array<{
     filename: string;
     url: string;

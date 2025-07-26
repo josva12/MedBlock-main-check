@@ -1,6 +1,6 @@
 // frontend/src/components/chat/MessageItem.tsx
-import React from 'react';
-import { Check, CheckCheck } from 'lucide-react';
+import React, { useState } from 'react';
+import { Check, CheckCheck, Paperclip, Download, Play, FileText } from 'lucide-react';
 import { Message } from '../../types/chat';
 import { User } from '../../features/auth/authSlice';
 
@@ -29,15 +29,86 @@ interface MessageItemProps {
     message: Message;
     currentUser: User | null;
     onReact: (messageId: string, emoji: string) => void;
+    onRemoveReaction?: (messageId: string, emoji: string) => void;
 }
 
 const QuickReactions = ['👍', '❤️', '😂', '😯', '😢', '🙏'];
 
-export const MessageItem: React.FC<MessageItemProps> = ({ message, currentUser, onReact }) => {
-    // >>> ADD THIS CONSOLE.LOG FOR DEBUGGING <<<
-    console.log(`Comparing senderId: ${message.senderId} (type: ${typeof message.senderId}) WITH currentUserId: ${currentUser?._id} (type: ${typeof currentUser?._id})`);
-    
-    const isSentByUser = message.senderId === currentUser?._id;
+export const MessageItem: React.FC<MessageItemProps> = ({ message, currentUser, onReact, onRemoveReaction }) => {
+    const isSentByUser = (message.senderId as any)?._id === currentUser?._id;
+    const [showReactionPicker, setShowReactionPicker] = useState(false);
+
+    // Helper function to render media content
+    const renderMediaContent = () => {
+        if (!message.fileUrl) return null;
+
+        const isImage = message.messageType === 'image';
+        const isVideo = message.messageType === 'video';
+        const isAudio = message.messageType === 'audio';
+        const isFile = message.messageType === 'file';
+
+        if (isImage) {
+            return (
+                <div className="mt-2">
+                    <img 
+                        src={`http://localhost:5000${message.fileUrl}`} 
+                        alt="Media" 
+                        className="max-w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => window.open(`http://localhost:5000${message.fileUrl}`, '_blank')}
+                    />
+                </div>
+            );
+        }
+
+        if (isVideo) {
+            return (
+                <div className="mt-2">
+                    <video 
+                        controls 
+                        className="max-w-full rounded-lg"
+                        preload="metadata"
+                    >
+                        <source src={`http://localhost:5000${message.fileUrl}`} type={message.mimeType} />
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+            );
+        }
+
+        if (isAudio) {
+            return (
+                <div className="mt-2">
+                    <audio controls className="w-full">
+                        <source src={`http://localhost:5000${message.fileUrl}`} type={message.mimeType} />
+                        Your browser does not support the audio tag.
+                    </audio>
+                </div>
+            );
+        }
+
+        if (isFile) {
+            return (
+                <div className="mt-2 p-3 bg-gray-100 rounded-lg flex items-center gap-3">
+                    <FileText className="w-8 h-8 text-gray-500" />
+                    <div className="flex-1">
+                        <p className="font-medium text-sm">{message.fileName}</p>
+                        <p className="text-xs text-gray-500">
+                            {message.fileSize ? `${(message.fileSize / 1024 / 1024).toFixed(2)} MB` : 'Unknown size'}
+                        </p>
+                    </div>
+                    <a 
+                        href={`http://localhost:5000${message.fileUrl}`} 
+                        download={message.fileName}
+                        className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                    >
+                        <Download className="w-4 h-4" />
+                    </a>
+                </div>
+            );
+        }
+
+        return null;
+    };
 
     return (
         <div
@@ -46,10 +117,10 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, currentUser, 
             className={`flex items-end gap-2 w-full group ${isSentByUser ? 'justify-end' : 'justify-start'}`}
         >
             {/* The actual message bubble and its contents */}
-            <div className={`flex flex-col max-w-lg p-2 rounded-xl shadow-md relative ${
+            <div className={`relative max-w-xs lg:max-w-md p-3 rounded-lg shadow-md ${
                     isSentByUser
-                        ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' // Sent Message
-                        : 'bg-white text-gray-800' // Received Message
+                        ? 'bg-blue-500 text-white rounded-br-none' // Sent Message
+                        : 'bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none' // Received Message
                 }`}
             >
                 {/* >>> FIX #2: THE REACTION UI - shows on hover <<< */}
@@ -64,31 +135,50 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message, currentUser, 
                     ))}
                 </div>
 
-                {/* Sender name for received group chat messages */}
-                {!isSentByUser && message.senderName && (
-                    <p className="text-xs font-bold text-indigo-500 mb-1">{message.senderName}</p>
-                )}
-                
-                {/* Message Content */}
-                <p className="text-sm break-words">{message.content}</p>
-
-                {/* Displaying existing reactions */}
-                {message.reactions && message.reactions.length > 0 && (
-                    <div className="flex items-center gap-1 mt-1 flex-wrap">
-                        {message.reactions.map((reaction, index) => (
-                            <span key={index} className="text-xs bg-white/20 px-1.5 py-0.5 rounded-full cursor-pointer">
-                                {reaction.emoji}
-                            </span>
-                        ))}
+                {/* Sender name for received messages */}
+                {!isSentByUser && (
+                    <div className="font-semibold text-sm mb-1">
+                        {message.senderName}
                     </div>
                 )}
-                
-                {/* Timestamp and Status */}
-                <div className="flex items-center justify-end gap-1 mt-1 text-xs self-end">
-                    <span className="opacity-70">{formatTimestamp(message.timestamp)}</span>
-                    {/* >>> FIX #3: THE STATUS ICON - now properly displayed for sent messages <<< */}
-                    {isSentByUser && <MessageStatusIcon status={message.status} />}
+
+                {/* Conditional rendering for text or media */}
+                {message.fileUrl ? (
+                    message.mimeType?.startsWith('image/') ? (
+                        <img src={`http://localhost:5000${message.fileUrl}`} alt="Chat Media" className="chat-media-content" />
+                    ) : message.mimeType?.startsWith('video/') ? (
+                        <video src={`http://localhost:5000${message.fileUrl}`} controls className="chat-media-content" />
+                    ) : (
+                        <p className="break-words text-red-500">Unsupported media type.</p>
+                    )
+                ) : (
+                    <p className="break-words">{message.content}</p>
+                )}
+
+                {/* Message footer (Time and Reaction Button) */}
+                <div className={`text-xs mt-1 ${
+                    isSentByUser ? 'text-blue-200' : 'text-gray-500 dark:text-gray-400'
+                } flex justify-between items-center`}>
+                    <span>{formatTimestamp(message.timestamp)}</span>
+                    <div className="flex items-center gap-1">
+                        {isSentByUser && <MessageStatusIcon status={message.status} />}
+                    </div>
                 </div>
+
+                {/* Reaction Display on Edges */}
+                {message.reactions && message.reactions.length > 0 && (
+                    <div className="absolute -bottom-2 -right-2 bg-gray-200 dark:bg-gray-800 rounded-full p-1 text-xs shadow-md flex items-center justify-center min-w-[24px] min-h-[24px]">
+                        {/* Display unique reactions, or just the first few if many */}
+                        {Array.from(new Set(message.reactions.map(r => r.emoji))).map((emoji, index) => (
+                            <span key={index}>{emoji}</span>
+                        ))}
+                        {message.reactions.length > 1 && (
+                            <span className="ml-1 text-gray-600 dark:text-gray-400">
+                                {message.reactions.length}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

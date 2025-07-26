@@ -4,6 +4,12 @@ const Chat = require('../models/Chat');
 const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 
+// Get Socket.IO instance
+let io;
+const setIO = (socketIO) => {
+  io = socketIO;
+};
+
 /**
  * @desc    Get all chats for the logged-in user
  * @route   GET /api/v1/chat
@@ -140,9 +146,96 @@ exports.sendMessage = async (req, res) => {
             message: 'Message sent successfully'
         });
 
+        // Emit real-time update to all participants
+        if (io) {
+            chat.participants.forEach(participantId => {
+                if (participantId.toString() !== req.user._id.toString()) {
+                    io.to(`user:${participantId}`).emit('newMessage', {
+                        chatId: chat._id,
+                        message: sentMessage
+                    });
+                }
+            });
+        }
+
     } catch (error) {
         logger.error(`Failed to send message to chat ${req.params.chatId}:`, error);
         res.status(500).json({ success: false, error: 'Failed to send message' });
+    }
+};
+
+/**
+ * @desc    Send a media message to a chat
+ * @route   POST /api/v1/chat/:chatId/media
+ * @access  Private
+ */
+exports.sendMediaMessage = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const { content = '' } = req.body;
+
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'Media file is required.' });
+        }
+
+        const chat = await Chat.findOne({ _id: chatId, participants: req.user._id });
+        if (!chat) {
+            return res.status(404).json({ success: false, error: 'Chat not found or you are not a participant.' });
+        }
+
+        // Determine message type based on file mimetype
+        let messageType = 'file';
+        if (req.file.mimetype.startsWith('image/')) {
+            messageType = 'image';
+        } else if (req.file.mimetype.startsWith('video/')) {
+            messageType = 'video';
+        } else if (req.file.mimetype.startsWith('audio/')) {
+            messageType = 'audio';
+        }
+
+        const newMessage = {
+            senderId: req.user._id,
+            content: content.trim(),
+            messageType: messageType,
+            status: 'sent',
+            timestamp: new Date(),
+            fileUrl: `/uploads/chat-media/${req.file.filename}`,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype
+        };
+
+        chat.messages.push(newMessage);
+        chat.lastMessage = new Date();
+        await chat.save();
+
+        // Populate the sender information for the response
+        const populatedChat = await Chat.findById(chatId)
+            .populate('messages.senderId', 'fullName profilePicture');
+
+        const sentMessage = populatedChat.messages[populatedChat.messages.length - 1];
+
+        res.status(201).json({ 
+            success: true, 
+            data: sentMessage,
+            message: 'Media message sent successfully'
+        });
+
+        // Emit real-time update to all participants
+        if (io) {
+            chat.participants.forEach(participantId => {
+                if (participantId.toString() !== req.user._id.toString()) {
+                    io.to(`user:${participantId}`).emit('newMessage', {
+                        chatId: chat._id,
+                        message: sentMessage
+                    });
+                }
+            });
+        }
+
+    } catch (error) {
+        logger.error(`Failed to send media message to chat ${req.params.chatId}:`, error);
+        res.status(500).json({ success: false, error: 'Failed to send media message' });
     }
 };
 
@@ -186,6 +279,135 @@ exports.markMessagesAsDelivered = async (req, res) => {
     } catch (error) {
         logger.error(`Failed to mark messages as delivered in chat ${req.params.chatId}:`, error);
         res.status(500).json({ success: false, error: 'Failed to mark messages as delivered' });
+    }
+};
+
+/**
+ * @desc    Add reaction to a message
+ * @route   POST /api/v1/chat/messages/:messageId/react
+ * @access  Private
+ */
+exports.addReaction = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { emoji } = req.body;
+
+        if (!emoji) {
+            return res.status(400).json({ success: false, error: 'Emoji is required.' });
+        }
+
+        // Find the chat that contains this message
+        const chat = await Chat.findOne({
+            'messages._id': messageId,
+            participants: req.user._id
+        });
+
+        if (!chat) {
+            return res.status(404).json({ success: false, error: 'Message not found or you are not a participant.' });
+        }
+
+        // Find the specific message
+        const message = chat.messages.id(messageId);
+        if (!message) {
+            return res.status(404).json({ success: false, error: 'Message not found.' });
+        }
+
+        // Check if user already reacted with this emoji
+        const existingReaction = message.reactions.find(
+            reaction => reaction.userId.toString() === req.user._id.toString() && reaction.emoji === emoji
+        );
+
+        if (existingReaction) {
+            return res.status(400).json({ success: false, error: 'You have already reacted with this emoji.' });
+        }
+
+        // Add the reaction
+        message.reactions.push({
+            userId: req.user._id,
+            userName: req.user.fullName,
+            emoji: emoji,
+            reactedAt: new Date()
+        });
+
+        await chat.save();
+
+        // Populate the message for response
+        const populatedChat = await Chat.findById(chat._id)
+            .populate('messages.senderId', 'fullName profilePicture')
+            .populate('messages.reactions.userId', 'fullName');
+
+        const updatedMessage = populatedChat.messages.id(messageId);
+
+        res.status(200).json({ 
+            success: true, 
+            data: updatedMessage,
+            message: 'Reaction added successfully'
+        });
+
+        // Emit real-time reaction update to all participants
+        if (io) {
+            chat.participants.forEach(participantId => {
+                if (participantId.toString() !== req.user._id.toString()) {
+                    io.to(`user:${participantId}`).emit('reactionUpdate', {
+                        chatId: chat._id,
+                        messageId: messageId,
+                        message: updatedMessage
+                    });
+                }
+            });
+        }
+
+    } catch (error) {
+        logger.error(`Failed to add reaction to message ${req.params.messageId}:`, error);
+        res.status(500).json({ success: false, error: 'Failed to add reaction' });
+    }
+};
+
+/**
+ * @desc    Remove reaction from a message
+ * @route   DELETE /api/v1/chat/messages/:messageId/react
+ * @access  Private
+ */
+exports.removeReaction = async (req, res) => {
+    try {
+        const { messageId } = req.params;
+        const { emoji } = req.body;
+
+        if (!emoji) {
+            return res.status(400).json({ success: false, error: 'Emoji is required.' });
+        }
+
+        // Find the chat that contains this message
+        const chat = await Chat.findOne({
+            'messages._id': messageId,
+            participants: req.user._id
+        });
+
+        if (!chat) {
+            return res.status(404).json({ success: false, error: 'Message not found or you are not a participant.' });
+        }
+
+        // Find the specific message
+        const message = chat.messages.id(messageId);
+        if (!message) {
+            return res.status(404).json({ success: false, error: 'Message not found.' });
+        }
+
+        // Remove the reaction
+        message.reactions = message.reactions.filter(
+            reaction => !(reaction.userId.toString() === req.user._id.toString() && reaction.emoji === emoji)
+        );
+
+        await chat.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: 'Reaction removed successfully'
+        });
+
+    } catch (error) {
+        logger.error(`Failed to remove reaction from message ${req.params.messageId}:`, error);
+        res.status(500).json({ success: false, error: 'Failed to remove reaction' });
     }
 };
 
@@ -318,4 +540,7 @@ exports.deleteChat = async (req, res) => {
         logger.error(`Failed to delete chat ${req.params.chatId}:`, error);
         res.status(500).json({ success: false, error: 'Failed to delete chat' });
     }
-}; 
+};
+
+// Export setIO function
+exports.setIO = setIO; 

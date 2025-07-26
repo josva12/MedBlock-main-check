@@ -11,6 +11,7 @@ const path = require('path');
 const mongoose = require('mongoose'); // ADDED: Import mongoose here
 const http = require('http');
 const socketio = require('socket.io');
+const jwt = require('jsonwebtoken');
 
 // Import custom modules
 const db = require('./config/database');
@@ -65,14 +66,49 @@ const io = socketio(server, {
 
 // Socket.IO authentication and event setup
 io.use((socket, next) => {
-  // Optionally add JWT authentication here
-  next();
+  // JWT authentication for Socket.IO
+  const token = socket.handshake.auth.token;
+  if (!token) {
+    return next(new Error('Authentication error: No token provided'));
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    socket.userId = decoded.userId;
+    socket.user = decoded;
+    next();
+  } catch (error) {
+    return next(new Error('Authentication error: Invalid token'));
+  }
 });
+
 io.on('connection', (socket) => {
-  logger.info(`Socket connected: ${socket.id}`);
-  // Listen for chat events here (to be implemented)
+  logger.info(`Socket connected: ${socket.id} for user: ${socket.userId}`);
+  
+  // Join user to their personal room
+  socket.join(`user:${socket.userId}`);
+  
+  // Handle chat events
+  socket.on('join-chat', (chatId) => {
+    socket.join(`chat:${chatId}`);
+    logger.info(`User ${socket.userId} joined chat: ${chatId}`);
+  });
+  
+  socket.on('leave-chat', (chatId) => {
+    socket.leave(`chat:${chatId}`);
+    logger.info(`User ${socket.userId} left chat: ${chatId}`);
+  });
+  
+  socket.on('typing', ({ chatId, isTyping }) => {
+    socket.to(`chat:${chatId}`).emit('user-typing', {
+      userId: socket.userId,
+      userName: socket.user.fullName,
+      isTyping
+    });
+  });
+  
   socket.on('disconnect', () => {
-    logger.info(`Socket disconnected: ${socket.id}`);
+    logger.info(`Socket disconnected: ${socket.id} for user: ${socket.userId}`);
   });
 });
 
@@ -151,10 +187,37 @@ app.use((req, res, next) => {
 app.use('/uploads', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', 'http://localhost:5173');
   res.header('Access-Control-Allow-Credentials', 'true');
-  res.header('Access-Control-Allow-Methods', 'GET');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Cross-Origin-Resource-Policy', 'cross-origin');
+  res.header('Cross-Origin-Embedder-Policy', 'unsafe-none');
+  
+  // Handle preflight requests
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+    return;
+  }
+  
   next();
 }, express.static(path.join(__dirname, 'uploads')));
+
+// Create uploads directories if they don't exist
+const fs = require('fs');
+const uploadDirs = [
+  path.join(__dirname, 'uploads'),
+  path.join(__dirname, 'uploads', 'profile-pictures'),
+  path.join(__dirname, 'uploads', 'chat-media')
+];
+
+uploadDirs.forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
+
+// Set Socket.IO instance in chat controller for real-time updates
+const { setIO } = require('./controllers/chatController');
+setIO(io);
 
 // API routes
 app.use('/api/v1', routes);

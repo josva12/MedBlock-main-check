@@ -65,6 +65,20 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
     }
   };
 
+  const handleRemoveProfilePicture = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      await apiClient.delete('/users/profile-picture');
+      onUpdate();
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'Failed to remove profile picture');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePrivacySettingsUpdate = async () => {
     setLoading(true);
     setError(null);
@@ -176,7 +190,15 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
                   disabled={loading}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
                 >
-                  {loading ? 'Uploading...' : 'Upload Picture'}
+                  {loading ? 'Uploading...' : 'Save Profile Picture'}
+                </button>
+              )}
+              {user?.profilePicture && (
+                <button
+                  onClick={handleRemoveProfilePicture}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mt-2"
+                >
+                  Remove Profile Picture
                 </button>
               )}
             </div>

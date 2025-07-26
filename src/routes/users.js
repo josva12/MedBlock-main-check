@@ -12,6 +12,7 @@ const profilePictureUpload = require('../config/profilePictureConfig');
 const { 
   searchUsers, 
   updateProfilePicture, 
+  removeProfilePicture,
   updatePrivacySettings, 
   updateOnlineStatus, 
   getPrivacyStatus, 
@@ -93,6 +94,7 @@ router.get('/search', authenticateToken, searchUsers);
 router.get('/privacy-status', authenticateToken, getPrivacyStatus);
 router.get('/:userId/status', authenticateToken, getUserStatus);
 router.put('/profile-picture', authenticateToken, profilePictureUpload.single('profilePicture'), updateProfilePicture);
+router.delete('/profile-picture', authenticateToken, removeProfilePicture);
 router.put('/privacy-settings', authenticateToken, updatePrivacySettings);
 router.put('/online-status', authenticateToken, updateOnlineStatus);
 
