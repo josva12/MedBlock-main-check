@@ -8,6 +8,7 @@ const Patient = require('../models/Patient');
 const Notification = require('../models/Notification');
 const mongoose = require('mongoose');
 const upload = require('../config/multerConfig');
+const profilePictureUpload = require('../config/profilePictureConfig');
 const { 
   searchUsers, 
   updateProfilePicture, 
@@ -91,7 +92,7 @@ router.get('/search', authenticateToken, searchUsers);
 // User profile and privacy settings routes
 router.get('/privacy-status', authenticateToken, getPrivacyStatus);
 router.get('/:userId/status', authenticateToken, getUserStatus);
-router.put('/profile-picture', authenticateToken, upload.single('profilePicture'), updateProfilePicture);
+router.put('/profile-picture', authenticateToken, profilePictureUpload.single('profilePicture'), updateProfilePicture);
 router.put('/privacy-settings', authenticateToken, updatePrivacySettings);
 router.put('/online-status', authenticateToken, updateOnlineStatus);
 

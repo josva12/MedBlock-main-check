@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Camera, Eye, EyeOff, Clock, Wifi, WifiOff } from 'lucide-react';
-import { apiClient } from '../../services/api';
+import apiClient from '../../services/api';
 
 interface UserSettingsModalProps {
   isOpen: boolean;
@@ -25,8 +25,8 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
       setShowLastSeen(user.preferences?.showLastSeen ?? true);
       setShowOnlineStatus(user.preferences?.showOnlineStatus ?? true);
       setIsOnline(user.isOnline ?? false);
-      if (user.profilePicture?.path) {
-        setPreviewUrl(`http://localhost:5000/uploads/${user.profilePicture.filename}`);
+      if (user.profilePicture?.filename) {
+        setPreviewUrl(`http://localhost:5000/uploads/profile-pictures/${user.profilePicture.filename}`);
       }
     }
   }, [user]);
@@ -107,7 +107,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-xl font-semibold">Chat Settings</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Chat Settings</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -190,7 +190,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
                   ) : (
                     <WifiOff className="w-5 h-5 text-gray-400" />
                   )}
-                  <span className="font-medium">Online Status</span>
+                  <span className="font-medium text-gray-900">Online Status</span>
                 </div>
                 <button
                   onClick={() => handleOnlineStatusUpdate(!isOnline)}
@@ -215,7 +215,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
               <div className="flex items-center space-x-3">
                 <Clock className="w-5 h-5 text-gray-500" />
                 <div>
-                  <div className="font-medium">Last Seen</div>
+                  <div className="font-medium text-gray-900">Last Seen</div>
                   <div className="text-sm text-gray-500">Show when you were last online</div>
                 </div>
               </div>
@@ -238,7 +238,7 @@ const UserSettingsModal: React.FC<UserSettingsModalProps> = ({ isOpen, onClose, 
               <div className="flex items-center space-x-3">
                 <Wifi className="w-5 h-5 text-gray-500" />
                 <div>
-                  <div className="font-medium">Online Status</div>
+                  <div className="font-medium text-gray-900">Online Status</div>
                   <div className="text-sm text-gray-500">Show when you're online</div>
                 </div>
               </div>

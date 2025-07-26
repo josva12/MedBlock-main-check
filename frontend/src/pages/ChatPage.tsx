@@ -420,12 +420,14 @@ const ChatPage: React.FC = () => {
           {user && (
             <div className="flex items-center space-x-2">
               <img
-                src={(user as any).profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                src={(user as any).profilePicture?.filename 
+                  ? `http://localhost:5000/uploads/profile-pictures/${(user as any).profilePicture.filename}`
+                  : 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
                 alt={user.fullName}
-                className="w-10 h-10 rounded-full border-2 border-white shadow-md"
+                className="w-10 h-10 rounded-full border-2 border-white shadow-md object-cover"
               />
               <div>
-                <span className="text-lg font-medium">{user.fullName}</span>
+              <span className="text-lg font-medium">{user.fullName}</span>
                 <div className="text-xs opacity-80">
                   {(user as any).isOnline ? 'Online' : 'Offline'}
                 </div>
@@ -451,13 +453,13 @@ const ChatPage: React.FC = () => {
       {showUserSearch && (
         <Modal isOpen={showUserSearch} onClose={() => setShowUserSearch(false)} title="Start New Chat">
           <div className="p-4">
-            <input
-              type="text"
-              placeholder="Search users by name, email, or userId..."
-              value={userSearchQuery}
-              onChange={(e) => handleUserSearch(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg mb-4"
-            />
+                                <input
+                      type="text"
+                      placeholder="Search users by name, email, or userId..."
+                      value={userSearchQuery}
+                      onChange={(e) => handleUserSearch(e.target.value)}
+                      className="w-full p-3 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white/90 placeholder-gray-500 chat-search-input shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
             {searchLoading && <div className="text-center py-4">Searching...</div>}
             {searchError && <div className="text-red-500 text-center py-2">{searchError}</div>}
             <div className="max-h-60 overflow-y-auto">
@@ -467,28 +469,30 @@ const ChatPage: React.FC = () => {
                   onClick={() => handleStartChatWithUser(user._id)}
                   className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg border-b"
                 >
-                                  <img
-                  src={(user as any).profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
-                  alt={user.fullName}
-                  className="w-10 h-10 rounded-full mr-3"
-                />
+                                                    <img
+                    src={(user as any).profilePicture?.filename 
+                      ? `http://localhost:5000/uploads/profile-pictures/${(user as any).profilePicture.filename}`
+                      : 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                    alt={user.fullName}
+                    className="w-10 h-10 rounded-full mr-3 object-cover"
+                  />
                   <div>
-                    <div className="font-medium">{user.fullName}</div>
+                    <div className="font-medium text-gray-900">{user.fullName}</div>
                     <div className="text-sm text-gray-600">{user.email}</div>
                     <div className="text-xs text-gray-500">ID: {user.userId}</div>
                   </div>
                 </div>
               ))}
-            </div>
+          </div>
           </div>
         </Modal>
       )}
 
       {/* Main Chat Interface */}
-      <div className="flex-1 flex">
+      <div className="flex-1 flex chat-container bg-gradient-to-br from-blue-50 to-indigo-100">
         {/* Chat List */}
-        <div className="w-1/3 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
+        <div className="w-1/3 bg-white/80 backdrop-blur-sm border-r border-gray-200 flex flex-col shadow-lg">
+          <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
             <h2 className="text-xl font-semibold mb-2">Conversations</h2>
             <div className="flex space-x-2">
               <button
@@ -528,13 +532,15 @@ const ChatPage: React.FC = () => {
                         </div>
                       ) : (
                         <img
-                          src={getOtherParticipant(chat)?.profilePicture || 'https://placehold.co/48x48/CCCCCC/FFFFFF?text=U'}
+                          src={(getOtherParticipant(chat) as any)?.profilePicture?.filename 
+                            ? `http://localhost:5000/uploads/profile-pictures/${(getOtherParticipant(chat) as any)?.profilePicture.filename}`
+                            : 'https://placehold.co/48x48/CCCCCC/FFFFFF?text=U'}
                           alt={getOtherParticipant(chat)?.fullName}
-                          className="w-12 h-12 rounded-full"
+                          className="w-12 h-12 rounded-full object-cover"
                         />
                       )}
                       <div className="flex-1">
-                        <div className="font-medium">
+                        <div className="font-medium text-gray-900 chat-user-name">
                           {chat.isGroupChat ? chat.groupName : getOtherParticipant(chat)?.fullName}
                         </div>
                         <div className="text-sm text-gray-600 truncate">
@@ -549,8 +555,8 @@ const ChatPage: React.FC = () => {
                       {chat.unreadCount > 0 && (
                         <div className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center mt-1">
                           {chat.unreadCount}
-                        </div>
-                      )}
+                      </div>
+                    )}
                     </div>
                   </div>
                 </div>
@@ -560,11 +566,11 @@ const ChatPage: React.FC = () => {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col bg-gray-100">
           {selectedChatId ? (
             <>
               {/* Chat Header */}
-              <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+              <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
                 <div className="flex items-center space-x-3">
                   {(() => {
                     const chat = chats.find(c => c._id === selectedChatId);
@@ -575,14 +581,16 @@ const ChatPage: React.FC = () => {
                       </div>
                     ) : (
                       <img
-                        src={getOtherParticipant(chat)?.profilePicture || 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
+                        src={(getOtherParticipant(chat) as any)?.profilePicture?.filename 
+                          ? `http://localhost:5000/uploads/profile-pictures/${(getOtherParticipant(chat) as any)?.profilePicture.filename}`
+                          : 'https://placehold.co/40x40/CCCCCC/FFFFFF?text=U'}
                         alt={getOtherParticipant(chat)?.fullName}
-                        className="w-10 h-10 rounded-full"
+                        className="w-10 h-10 rounded-full object-cover"
                       />
                     );
                   })()}
                   <div>
-                    <div className="font-medium">
+                    <div className="font-medium text-gray-900 chat-user-name">
                       {(() => {
                         const chat = chats.find(c => c._id === selectedChatId);
                         return chat?.isGroupChat ? chat.groupName : getOtherParticipant(chat)?.fullName;
@@ -637,7 +645,7 @@ const ChatPage: React.FC = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100">
                 {loading ? (
                   <div className="text-center py-8">Loading messages...</div>
                 ) : messages.length === 0 ? (
@@ -650,19 +658,19 @@ const ChatPage: React.FC = () => {
                         key={message._id}
                         className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                            isOwnMessage
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-200 text-gray-800'
-                          }`}
-                        >
+                                                  <div
+                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${
+                              isOwnMessage
+                                ? 'bg-blue-500 text-white ml-auto'
+                                : 'bg-white text-gray-900 border border-gray-200'
+                            }`}
+                          >
                           {!isOwnMessage && (
                             <div className="text-sm font-medium mb-1">
                               {message.senderName}
                             </div>
                           )}
-                          <div className="text-sm">{message.content}</div>
+                          <div className="text-sm chat-message-text">{message.content}</div>
                           <div className="flex items-center justify-between mt-1">
                             <div className="text-xs opacity-75">
                               {formatTimestamp(message.timestamp)}
@@ -699,18 +707,18 @@ const ChatPage: React.FC = () => {
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       placeholder="Type a message..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500 chat-input"
                     />
-                    {showEmojiPicker && (
+                {showEmojiPicker && (
                       <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-2">
-                        <Picker
-                          data={data}
-                          onEmojiSelect={handleEmojiSelect}
+                    <Picker
+                      data={data}
+                      onEmojiSelect={handleEmojiSelect}
                           theme="light"
                           set="native"
-                        />
-                      </div>
-                    )}
+                    />
+                  </div>
+                )}
                   </div>
                   <button
                     type="button"
@@ -726,8 +734,8 @@ const ChatPage: React.FC = () => {
                   >
                     Send
                   </button>
-                </form>
-              </div>
+              </form>
+        </div>
             </>
           ) : (
             <div className="flex-1 flex items-center justify-center">
@@ -735,13 +743,13 @@ const ChatPage: React.FC = () => {
                 <div className="text-6xl mb-4">💬</div>
                 <h2 className="text-2xl font-semibold mb-2">Welcome to Secure Messaging</h2>
                 <p className="text-gray-600 mb-4">Select a conversation or start a new chat to begin messaging</p>
-                <button
+            <button
                   onClick={() => setShowUserSearch(true)}
                   className="bg-blue-500 text-white px-6 py-3 rounded-lg hover:bg-blue-600"
-                >
+            >
                   Start New Chat
-                </button>
-              </div>
+            </button>
+          </div>
             </div>
           )}
         </div>
@@ -768,7 +776,7 @@ const ChatPage: React.FC = () => {
           >
             ×
           </button>
-        </div>
+          </div>
       )}
     </div>
   );

@@ -6,6 +6,80 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Ensure proper text contrast in chat interface */
+.chat-input,
+.chat-input::placeholder,
+.chat-search-input,
+.chat-search-input::placeholder {
+  color: #111827 !important; /* text-gray-900 */
+  background-color: #ffffff !important; /* bg-white */
+}
+
+.chat-input::placeholder,
+.chat-search-input::placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+/* Ensure message text is visible */
+.chat-message-text {
+  color: inherit !important;
+}
+
+/* Ensure user names and text are visible */
+.chat-user-name,
+.chat-text {
+  color: #111827 !important; /* text-gray-900 */
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .chat-input,
+  .chat-search-input {
+    color: #f9fafb !important; /* text-gray-100 */
+    background-color: #374151 !important; /* bg-gray-700 */
+  }
+  
+  .chat-input::placeholder,
+  .chat-search-input::placeholder {
+    color: #9ca3af !important; /* text-gray-400 */
+  }
+  
+  .chat-user-name,
+  .chat-text {
+    color: #f9fafb !important; /* text-gray-100 */
+  }
+}
+
+/* Force text visibility in all themes */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea {
+  color: #111827 !important; /* text-gray-900 */
+  background-color: #ffffff !important; /* bg-white */
+}
+
+input[type="text"]::placeholder,
+input[type="email"]::placeholder,
+input[type="password"]::placeholder,
+textarea::placeholder {
+  color: #6b7280 !important; /* text-gray-500 */
+}
+
+/* Ensure all text in chat is visible */
+.chat-container * {
+  color: inherit;
+}
+
+/* Specific fixes for chat elements */
+.chat-message-content {
+  color: inherit !important;
+}
+
+.chat-user-info {
+  color: #111827 !important; /* text-gray-900 */
+}
+
 /* 
   Step 2: Define the foundational layout for the entire application.
   This ensures that our main container fills the screen, which is

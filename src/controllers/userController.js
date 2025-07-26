@@ -57,7 +57,8 @@ exports.updateProfilePicture = async (req, res) => {
       filename: req.file.filename,
       path: req.file.path,
       mimeType: req.file.mimetype,
-      size: req.file.size
+      size: req.file.size,
+      url: `/uploads/profile-pictures/${req.file.filename}` // Add URL for easy access
     };
 
     const user = await User.findByIdAndUpdate(

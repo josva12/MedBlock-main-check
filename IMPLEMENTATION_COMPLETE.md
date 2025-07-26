@@ -121,7 +121,7 @@ MedBlock-main-check/
 - **Purpose**: JWT-based authentication and authorization
 - **Key Features**:
   - Token verification and user attachment
-  - Role-based access control
+   - Role-based access control
   - Permission-based access
   - Rate limiting for auth endpoints
   - API key validation
