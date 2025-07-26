@@ -31,6 +31,33 @@
   color: #111827 !important; /* text-gray-900 */
 }
 
+/* Force visibility for chat elements in all themes */
+.chat-container .text-gray-900,
+.chat-container .font-medium,
+.chat-container .text-sm,
+.chat-container .text-xs {
+  color: #111827 !important;
+}
+
+/* Ensure chat list items are visible */
+.chat-container .bg-white\/70,
+.chat-container .bg-white\/90 {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Ensure proper contrast for all text in chat */
+.chat-container * {
+  color: inherit;
+}
+
+.chat-container .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+.chat-container .text-gray-500 {
+  color: #6b7280 !important;
+}
+
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .chat-input,

@@ -11,7 +11,16 @@ const mongoose = require('mongoose');
  */
 exports.getChats = async (req, res) => {
   try {
-    const chats = await Chat.find({ participants: req.user._id })
+    const { showArchived = false } = req.query;
+    
+    let query = { participants: req.user._id };
+    
+    if (!showArchived) {
+      // Filter out chats archived by the current user
+      query['archivedBy.userId'] = { $ne: req.user._id };
+    }
+    
+    const chats = await Chat.find(query)
       .populate('participants', 'fullName email role profilePicture')
       .populate({
         path: 'messages',
@@ -255,6 +264,35 @@ exports.archiveChat = async (req, res) => {
     } catch (error) {
         logger.error(`Failed to archive chat ${req.params.chatId}:`, error);
         res.status(500).json({ success: false, error: 'Failed to archive chat' });
+    }
+};
+
+/**
+ * @desc    Unarchive a chat
+ * @route   PATCH /api/v1/chat/:chatId/unarchive
+ * @access  Private
+ */
+exports.unarchiveChat = async (req, res) => {
+    try {
+        const { chatId } = req.params;
+        const chat = await Chat.findOne({ _id: chatId, participants: req.user._id });
+
+        if (!chat) {
+            return res.status(404).json({ success: false, error: 'Chat not found or you are not a participant.' });
+        }
+
+        // Remove user from archivedBy array
+        chat.archivedBy = chat.archivedBy.filter(archive => 
+            archive.userId.toString() !== req.user._id.toString()
+        );
+        
+        await chat.save();
+
+        res.status(200).json({ success: true, message: 'Chat unarchived successfully' });
+
+    } catch (error) {
+        logger.error(`Failed to unarchive chat ${req.params.chatId}:`, error);
+        res.status(500).json({ success: false, error: 'Failed to unarchive chat' });
     }
 };
 

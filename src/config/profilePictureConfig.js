@@ -18,7 +18,9 @@ const storage = multer.diskStorage({
         const userId = req.user?._id || 'unknown';
         const timestamp = Date.now();
         const extension = path.extname(file.originalname);
-        const filename = `profile-${userId}-${timestamp}${extension}`;
+        // Remove spaces and special characters from filename
+        const cleanName = file.originalname.replace(/\s+/g, '-').replace(/[^a-zA-Z0-9.-]/g, '');
+        const filename = `profile-${userId}-${timestamp}-${cleanName}`;
         cb(null, filename);
     }
 });

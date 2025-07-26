@@ -9,6 +9,7 @@ import data from '@emoji-mart/data';
 import Modal from '../components/Modal';
 import { Search, Settings, Check, CheckCheck } from 'lucide-react';
 import { User, Chat, Message } from '../types/chat';
+import { MessageItem } from '../components/chat/MessageItem';
 import UserSettingsModal from '../components/chat/UserSettingsModal';
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
@@ -26,7 +27,8 @@ const emojiReactions = ['👍', '❤️', '😂', '😢', '👏', '🔥'];
 // --- Main ChatPage Component ---
 const ChatPage: React.FC = () => {
   const { user } = useAppSelector((state) => state.auth);
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [activeChats, setActiveChats] = useState<Chat[]>([]);
+  const [archivedChats, setArchivedChats] = useState<Chat[]>([]);
   const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -46,7 +48,6 @@ const ChatPage: React.FC = () => {
   const [userSearchResults, setUserSearchResults] = useState<User[]>([]);
   const [searchLoading, setSearchLoading] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [archivedChats, setArchivedChats] = useState<string[]>([]);
   const [showArchive, setShowArchive] = useState<boolean>(false);
   const [mutedChats, setMutedChats] = useState<string[]>([]);
   const [blockedUsers, setBlockedUsers] = useState<string[]>([]);
@@ -87,8 +88,15 @@ const ChatPage: React.FC = () => {
   const fetchChats = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiClient.get('/chat');
-      setChats(res.data.data || []);
+      const res = await apiClient.get('/chat'); // Fetches ALL chats
+      const allChats = res.data.data || [];
+
+      // Filter chats on the frontend
+      const active = allChats.filter((chat: Chat) => !chat.isArchived);
+      const archived = allChats.filter((chat: Chat) => chat.isArchived);
+
+      setActiveChats(active);
+      setArchivedChats(archived);
       setLoading(false);
     } catch (error: any) {
       if (error.response && error.response.status === 404) {
@@ -98,7 +106,7 @@ const ChatPage: React.FC = () => {
       }
       setLoading(false);
     }
-  }, []);
+  }, [user]); // The only dependency should be `user`
 
   useEffect(() => { fetchChats(); }, [fetchChats]);
 
@@ -157,16 +165,28 @@ const ChatPage: React.FC = () => {
   // --- Real-time Events ---
   useEffect(() => {
     if (!socket) return;
-    socket.on('newMessage', ({ chatId, message }) => {
-      if (chatId === selectedChatId) setMessages((msgs) => [...msgs, message]);
-      fetchChats();
-    });
-    socket.on('messageDelivered', fetchChats);
-    socket.on('messageRead', fetchChats);
+    
+    const handleNewMessage = ({ chatId, message }: { chatId: string, message: Message }) => {
+      if (chatId === selectedChatId) {
+        setMessages((prev) => [...prev, message]);
+      }
+      fetchChats(); // Refresh chat list for last message preview
+    };
+
+    const updateMessageStatus = ({ messageId, status }: { messageId: string; status: 'delivered' | 'read' }) => {
+      setMessages(prevMessages =>
+        prevMessages.map(msg =>
+          msg._id === messageId ? { ...msg, status: status } : msg
+        )
+      );
+    };
+
+    socket.on('newMessage', handleNewMessage);
+    socket.on('messageStatusUpdate', updateMessageStatus);
+
     return () => {
-      socket.off('newMessage');
-      socket.off('messageDelivered');
-      socket.off('messageRead');
+      socket.off('newMessage', handleNewMessage);
+      socket.off('messageStatusUpdate', updateMessageStatus);
     };
   }, [socket, selectedChatId, fetchChats]);
 
@@ -178,16 +198,32 @@ const ChatPage: React.FC = () => {
   // --- Send Message ---
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!messageText.trim() || !selectedChatId) return;
+    if (!messageText.trim() || !selectedChatId || !socket) return;
+    
+    // Optimistic UI update
+    const tempMessage: Message = {
+      _id: `temp-${Date.now()}`,
+      chatId: selectedChatId,
+      senderId: user!._id,
+      senderName: user!.fullName,
+      content: messageText,
+      messageType: 'text',
+      timestamp: new Date().toISOString(),
+      status: 'sent',
+      reactions: [],
+    };
+    setMessages(prev => [...prev, tempMessage]);
+    
     try {
       await apiClient.post(`/chat/${selectedChatId}/messages`, { content: messageText, type: 'text' });
       setMessageText('');
       setShowEmojiPicker(false);
       setIsTyping(false);
-      fetchMessages(selectedChatId);
-      fetchChats();
+      // Backend will confirm via socket, no need to fetch again here
     } catch (error: any) {
       setError('Failed to send message.');
+      // Revert optimistic update on failure
+      setMessages(prev => prev.filter(m => m._id !== tempMessage._id));
     }
   };
 
@@ -284,7 +320,7 @@ const ChatPage: React.FC = () => {
     try {
       const res = await apiClient.get(`/users/search?query=${encodeURIComponent(query)}`);
       // Exclude self and users already in a chat
-      const existingIds = chats.flatMap(c => c.participants.map(p => p._id));
+      const existingIds = [...activeChats, ...archivedChats].flatMap(c => c.participants.map(p => p._id));
       setUserSearchResults((res.data.data || []).filter((u: User) => u._id !== user?._id && !existingIds.includes(u._id)));
       setSearchLoading(false);
     } catch (error: any) {
@@ -355,7 +391,7 @@ const ChatPage: React.FC = () => {
   // Archive chat
   const handleUnarchiveChat = async (chatId: string) => {
     try {
-      await apiClient.patch(`/chat/${chatId}/archive`, { unarchive: true });
+      await apiClient.patch(`/chat/${chatId}/unarchive`);
       setArchivedChats(archivedChats.filter(id => id !== chatId));
       fetchChats();
     } catch (error: any) {
@@ -380,8 +416,8 @@ const ChatPage: React.FC = () => {
     setBlockedUsers(blockedUsers.filter(id => id !== userId));
   };
 
-  // Only show unarchived chats in main list
-  const visibleChats = chats.filter(c => !archivedChats.includes(c._id));
+  // Get the current chat list based on showArchive state
+  const visibleChats = showArchive ? archivedChats : activeChats;
 
   // Get message status icon
   const getMessageStatusIcon = (message: Message, isOwnMessage: boolean) => {
@@ -453,13 +489,13 @@ const ChatPage: React.FC = () => {
       {showUserSearch && (
         <Modal isOpen={showUserSearch} onClose={() => setShowUserSearch(false)} title="Start New Chat">
           <div className="p-4">
-                                <input
-                      type="text"
+            <input
+              type="text"
                       placeholder="Search users by name, email, or userId..."
-                      value={userSearchQuery}
+              value={userSearchQuery}
                       onChange={(e) => handleUserSearch(e.target.value)}
                       className="w-full p-3 border border-gray-300 rounded-lg mb-4 text-gray-900 bg-white/90 placeholder-gray-500 chat-search-input shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    />
+            />
             {searchLoading && <div className="text-center py-4">Searching...</div>}
             {searchError && <div className="text-red-500 text-center py-2">{searchError}</div>}
             <div className="max-h-60 overflow-y-auto">
@@ -467,7 +503,7 @@ const ChatPage: React.FC = () => {
                 <div
                   key={user._id}
                   onClick={() => handleStartChatWithUser(user._id)}
-                  className="flex items-center p-3 hover:bg-gray-100 cursor-pointer rounded-lg border-b"
+                  className="flex items-center p-3 hover:bg-blue-50 cursor-pointer rounded-lg border-b border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-200"
                 >
                                                     <img
                     src={(user as any).profilePicture?.filename 
@@ -520,10 +556,10 @@ const ChatPage: React.FC = () => {
                 <div
                   key={chat._id}
                   onClick={() => setSelectedChatId(chat._id)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 ${
-                    selectedChatId === chat._id ? 'bg-blue-50 border-l-4 border-l-blue-500' : ''
+                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-blue-50/50 transition-all duration-200 ${
+                    selectedChatId === chat._id ? 'bg-blue-100/80 border-l-4 border-l-blue-500 shadow-sm' : 'bg-white/70'
                   }`}
-                >
+                  >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
                       {chat.isGroupChat ? (
@@ -566,11 +602,11 @@ const ChatPage: React.FC = () => {
         </div>
 
         {/* Chat Messages */}
-        <div className="flex-1 flex flex-col bg-gray-100">
+        <div className="flex-1 flex flex-col bg-gradient-to-b from-blue-50/50 to-indigo-100/50">
           {selectedChatId ? (
             <>
               {/* Chat Header */}
-              <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between shadow-sm">
+              <div className="bg-white/90 backdrop-blur-sm border-b border-gray-200 p-4 flex items-center justify-between shadow-lg">
                 <div className="flex items-center space-x-3">
                   {(() => {
                     const chat = chats.find(c => c._id === selectedChatId);
@@ -592,24 +628,24 @@ const ChatPage: React.FC = () => {
                   <div>
                     <div className="font-medium text-gray-900 chat-user-name">
                       {(() => {
-                        const chat = chats.find(c => c._id === selectedChatId);
+                        const chat = [...activeChats, ...archivedChats].find(c => c._id === selectedChatId);
                         return chat?.isGroupChat ? chat.groupName : getOtherParticipant(chat)?.fullName;
                       })()}
                     </div>
                     <div className="text-sm text-gray-500">
-                      {isTyping ? 'Typing...' : (() => {
-                        const chat = chats.find(c => c._id === selectedChatId);
-                        if (!chat || chat.isGroupChat) return 'Online';
-                        const otherUser = getOtherParticipant(chat);
-                        if (!otherUser) return 'Online';
-                        
-                        const status = userStatus[otherUser._id];
-                        if (status?.isOnline) return 'Online';
-                        if (status?.lastSeen && (otherUser as any).preferences?.showLastSeen) {
-                          return `Last seen ${formatLastSeen(status.lastSeen)}`;
-                        }
-                        return 'Offline';
-                      })()}
+                                              {isTyping ? 'Typing...' : (() => {
+                          const chat = [...activeChats, ...archivedChats].find(c => c._id === selectedChatId);
+                          if (!chat || chat.isGroupChat) return 'Online';
+                          const otherUser = getOtherParticipant(chat);
+                          if (!otherUser) return 'Online';
+                          
+                          const status = userStatus[otherUser._id];
+                          if (status?.isOnline) return 'Online';
+                          if (status?.lastSeen && (otherUser as any).preferences?.showLastSeen) {
+                            return `Last seen ${formatLastSeen(status.lastSeen)}`;
+                          }
+                          return 'Offline';
+                        })()}
                     </div>
                   </div>
                 </div>
@@ -645,61 +681,26 @@ const ChatPage: React.FC = () => {
               </div>
 
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-100">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-blue-50/30 to-indigo-100/30">
                 {loading ? (
                   <div className="text-center py-8">Loading messages...</div>
                 ) : messages.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">No messages yet</div>
                 ) : (
-                  messages.map((message) => {
-                    const isOwnMessage = message.senderId === user?._id;
-                    return (
-                      <div
-                        key={message._id}
-                        className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-                      >
-                                                  <div
-                            className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${
-                              isOwnMessage
-                                ? 'bg-blue-500 text-white ml-auto'
-                                : 'bg-white text-gray-900 border border-gray-200'
-                            }`}
-                          >
-                          {!isOwnMessage && (
-                            <div className="text-sm font-medium mb-1">
-                              {message.senderName}
-                            </div>
-                          )}
-                          <div className="text-sm chat-message-text">{message.content}</div>
-                          <div className="flex items-center justify-between mt-1">
-                            <div className="text-xs opacity-75">
-                              {formatTimestamp(message.timestamp)}
-                            </div>
-                            {isOwnMessage && (
-                              <div className="ml-2">
-                                {getMessageStatusIcon(message, isOwnMessage)}
-                              </div>
-                            )}
-                          </div>
-                          {message.reactions && message.reactions.length > 0 && (
-                            <div className="flex space-x-1 mt-2">
-                              {message.reactions.map((reaction, index) => (
-                                <span key={index} className="text-xs bg-white bg-opacity-20 px-1 rounded">
-                                  {reaction.emoji}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
+                  messages.map((message) => (
+                    <MessageItem 
+                      key={message._id}
+                      message={message}
+                      currentUser={user}
+                      onReact={handleReactToMessage}
+                    />
+                  ))
                 )}
                 <div ref={messagesEndRef} />
               </div>
 
               {/* Message Input */}
-              <div className="bg-white border-t border-gray-200 p-4">
+              <div className="bg-white/90 backdrop-blur-sm border-t border-gray-200 p-4 shadow-lg">
                 <form onSubmit={handleSendMessage} className="flex items-center space-x-2">
                   <div className="flex-1 relative">
                     <input
@@ -707,7 +708,7 @@ const ChatPage: React.FC = () => {
                       value={messageText}
                       onChange={(e) => setMessageText(e.target.value)}
                       placeholder="Type a message..."
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500 chat-input"
+                      className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white/95 placeholder-gray-500 chat-input shadow-sm"
                     />
                 {showEmojiPicker && (
                       <div ref={emojiPickerRef} className="absolute bottom-full right-0 mb-2">

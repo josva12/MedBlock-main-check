@@ -10,6 +10,7 @@ const {
   markMessagesAsDelivered,
   markMessagesAsRead,
   archiveChat,
+  unarchiveChat,
   deleteChat
 } = require('../controllers/chatController');
 
@@ -26,6 +27,7 @@ router.post('/:chatId/messages', sendMessage); // Handles POST /api/v1/chat/:cha
 router.put('/:chatId/messages/delivered', markMessagesAsDelivered); // Handles PUT /api/v1/chat/:chatId/messages/delivered
 router.put('/:chatId/messages/read', markMessagesAsRead); // Handles PUT /api/v1/chat/:chatId/messages/read
 router.patch('/:chatId/archive', archiveChat); // Handles PATCH /api/v1/chat/:chatId/archive
+router.patch('/:chatId/unarchive', unarchiveChat); // Handles PATCH /api/v1/chat/:chatId/unarchive
 router.delete('/:chatId', deleteChat); // Handles DELETE /api/v1/chat/:chatId
 
 module.exports = router; 
