@@ -120,7 +120,7 @@ const ChatPage: React.FC = () => {
   // Fetch user status for chat participants
   useEffect(() => {
     if (selectedChatId && user) {
-      const chat = chats.find(c => c._id === selectedChatId);
+      const chat = [...activeChats, ...archivedChats].find(c => c._id === selectedChatId);
       if (chat && !chat.isGroupChat) {
         const otherUser = getOtherParticipant(chat);
         if (otherUser) {
@@ -128,7 +128,7 @@ const ChatPage: React.FC = () => {
         }
       }
     }
-  }, [selectedChatId, chats, user]);
+  }, [selectedChatId, activeChats, archivedChats, user]);
 
   // Mark messages as read when chat is selected
   useEffect(() => {
