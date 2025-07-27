@@ -247,6 +247,48 @@ body {
   padding: 2rem;
 }
 
+/* Dark mode support for resources page */
+.dark .resources-page {
+  background-color: #1f2937;
+}
+
+/* Ensure all text is readable in both themes */
+.resources-page * {
+  color: inherit;
+}
+
+.resources-page .text-gray-900 {
+  color: #111827 !important;
+}
+
+.dark .resources-page .text-gray-900 {
+  color: #f9fafb !important;
+}
+
+.resources-page .text-gray-700 {
+  color: #374151 !important;
+}
+
+.dark .resources-page .text-gray-700 {
+  color: #d1d5db !important;
+}
+
+.resources-page .text-gray-600 {
+  color: #4b5563 !important;
+}
+
+.dark .resources-page .text-gray-600 {
+  color: #9ca3af !important;
+}
+
+.resources-page .text-gray-500 {
+  color: #6b7280 !important;
+}
+
+.dark .resources-page .text-gray-500 {
+  color: #9ca3af !important;
+}
+
 /* Reaction Button Styles */
 .reaction-button {
   transition: all 0.2s ease;
