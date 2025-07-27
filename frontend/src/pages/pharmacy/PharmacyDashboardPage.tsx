@@ -7,7 +7,7 @@ import { fetchTeleconsultations } from '../../features/teleconsultations/telecon
 import { fetchNotifications } from '../../features/notifications/notificationsSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  ShoppingCart, Package, MessageCircle, ClipboardList, Bell, BarChart2, BriefcaseMedical, PlusCircle, Blocks, Settings, MessageSquare, Pill, LogOut
+  ShoppingCart, Package, MessageCircle, ClipboardList, Bell, BarChart2, BriefcaseMedical, PlusCircle, Blocks, Settings, MessageSquare, Pill, LogOut, BookOpen
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -296,6 +296,9 @@ const PharmacyDashboardPage: React.FC = () => {
             </button>
             <button onClick={() => navigateTo('settings')} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
               <Settings className="h-5 w-5 mr-2 text-gray-500" /> Settings
+            </button>
+            <button onClick={() => navigate('/resources')} className="flex items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900 dark:hover:bg-orange-800 rounded-lg shadow-sm text-orange-700 dark:text-orange-300 font-medium transition-colors transform hover:scale-[1.02]">
+              <BookOpen className="h-5 w-5 mr-2 text-orange-500" /> Resources
             </button>
           </div>
         </div>

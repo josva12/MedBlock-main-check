@@ -9,7 +9,7 @@ import { fetchNotifications } from '../../features/notifications/notificationsSl
 import { fetchResources } from '../../features/resources/resourcesSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import {
-  Calendar, FileText, Heart, Clock, MessageSquare
+  Calendar, FileText, Heart, Clock, MessageSquare, BookOpen
 } from 'lucide-react';
 
 const InsuranceCard: React.FC = () => (
@@ -198,7 +198,7 @@ const PatientDashboardPage: React.FC = () => {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 lg:col-span-1 xl:col-span-2">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center">
-              <FileText className="h-6 w-6 mr-3 text-green-500" />Health Resources
+              <BookOpen className="h-6 w-6 mr-3 text-orange-500" />Health Resources
             </h2>
           </div>
           <div className="p-6 space-y-6">
@@ -217,6 +217,9 @@ const PatientDashboardPage: React.FC = () => {
                 </div>
               ))
             )}
+            <button className="mt-4 w-full text-blue-600 hover:underline text-sm font-medium" onClick={() => navigate('/resources')}>
+              View All Resources
+            </button>
           </div>
         </div>
 

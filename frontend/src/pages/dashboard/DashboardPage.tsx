@@ -23,6 +23,7 @@ import {
   Bell,
   Pill,
   MessageCircle,
+  BookOpen,
 } from 'lucide-react';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
@@ -280,6 +281,9 @@ const DoctorDashboardPage: React.FC = () => {
             </button>
             <button onClick={() => navigate('/doctor/chat')} className="flex items-center justify-center p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900 dark:hover:bg-purple-800 rounded-lg shadow-sm text-purple-700 dark:text-purple-300 font-medium transition-colors transform hover:scale-[1.02]">
               <MessageCircle className="h-5 w-5 mr-2 text-teal-500" /> Chat
+            </button>
+            <button onClick={() => navigate('/resources')} className="flex items-center justify-center p-4 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900 dark:hover:bg-orange-800 rounded-lg shadow-sm text-orange-700 dark:text-orange-300 font-medium transition-colors transform hover:scale-[1.02]">
+              <BookOpen className="h-5 w-5 mr-2 text-orange-500" /> Resources
             </button>
           </div>
         </div>
