@@ -44,8 +44,8 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
   };
 
   const getReactionButtonClass = (reactionType: string, isActive: boolean) => {
-    const baseClass = 'flex items-center space-x-1 transition';
-    const activeClass = isActive ? 'text-green-600' : 'text-gray-600 hover:text-green-600';
+    const baseClass = 'reaction-button flex items-center transition-colors duration-200';
+    const activeClass = isActive ? 'active' : '';
     return `${baseClass} ${activeClass}`;
   };
 
@@ -67,41 +67,70 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
       </div>
       
       <div className="p-6 border-t border-gray-200 bg-gray-50">
-        <div className="flex items-center justify-between mb-4">
-          {/* Thumbs Up/Down Reactions */}
-          <div className="flex items-center space-x-4">
+        {/* Reaction Buttons */}
+        <div className="mb-4">
+          <h4 className="text-sm font-semibold text-gray-700 mb-3">How did you find this resource?</h4>
+          <div className="flex flex-wrap items-center gap-2">
             <button 
-              className={getReactionButtonClass('helpful', resource.userReaction === 'helpful')}
-              onClick={() => handleReaction('helpful')}
+              className={`${getReactionButtonClass('happy', resource.userReaction === 'happy')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50`}
+              onClick={() => handleReaction('happy')}
+              title="Happy"
             >
-              <i className="fa-regular fa-thumbs-up text-lg"></i>
-              <span>{resource.reactions.helpful}</span>
+              <i className="fas fa-smile text-lg mr-2"></i>
+              <span className="font-medium">{resource.reactions.happy}</span>
             </button>
             <button 
-              className={getReactionButtonClass('unhelpful', resource.userReaction === 'unhelpful')}
-              onClick={() => handleReaction('unhelpful')}
+              className={`${getReactionButtonClass('sad', resource.userReaction === 'sad')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50`}
+              onClick={() => handleReaction('sad')}
+              title="Sad"
             >
-              <i className="fa-regular fa-thumbs-down text-lg"></i>
-              <span>{resource.reactions.unhelpful}</span>
+              <i className="fas fa-frown text-lg mr-2"></i>
+              <span className="font-medium">{resource.reactions.sad}</span>
+            </button>
+            <button 
+              className={`${getReactionButtonClass('helpful', resource.userReaction === 'helpful')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50`}
+              onClick={() => handleReaction('helpful')}
+              title="Helpful"
+            >
+              <i className="fas fa-thumbs-up text-lg mr-2"></i>
+              <span className="font-medium">{resource.reactions.helpful}</span>
+            </button>
+            <button 
+              className={`${getReactionButtonClass('unhelpful', resource.userReaction === 'unhelpful')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50`}
+              onClick={() => handleReaction('unhelpful')}
+              title="Not Helpful"
+            >
+              <i className="fas fa-thumbs-down text-lg mr-2"></i>
+              <span className="font-medium">{resource.reactions.unhelpful}</span>
+            </button>
+            <button 
+              className={`${getReactionButtonClass('neutral', resource.userReaction === 'neutral')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50`}
+              onClick={() => handleReaction('neutral')}
+              title="Neutral"
+            >
+              <i className="fas fa-meh text-lg mr-2"></i>
+              <span className="font-medium">{resource.reactions.neutral}</span>
             </button>
           </div>
-          
-          {/* Star Rating */}
+        </div>
+        
+        {/* Star Rating */}
+        <div className="flex items-center justify-between">
           <div className="flex items-center space-x-1 text-gray-600">
-            <span className="text-sm font-medium mr-2">Rate:</span>
+            <span className="text-sm font-medium mr-2">Rate this resource:</span>
             <div className="rating-stars">
               {renderStars(resource.userRating || 0, true)}
             </div>
           </div>
+          
+          {/* Average Rating Display */}
+          {resource.averageRating && resource.averageRating > 0 && (
+            <div className="text-sm text-gray-600">
+              <span>Average: {resource.averageRating.toFixed(1)}</span>
+              <span className="ml-2">({resource.totalRatings || 0} ratings)</span>
+            </div>
+          )}
         </div>
-        
-        {/* Average Rating Display */}
-        {resource.averageRating && resource.averageRating > 0 && (
-          <div className="flex items-center justify-between text-sm text-gray-600">
-            <span>Average Rating: {resource.averageRating.toFixed(1)}</span>
-            <span>({resource.totalRatings || 0} ratings)</span>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -246,3 +246,35 @@ body {
   min-height: 100vh;
   padding: 2rem;
 }
+
+/* Reaction Button Styles */
+.reaction-button {
+  transition: all 0.2s ease;
+  border: 1px solid #e5e7eb;
+  min-width: 80px;
+}
+
+.reaction-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.reaction-button.active {
+  background-color: #10b981;
+  color: white;
+  border-color: #10b981;
+}
+
+.reaction-button.active:hover {
+  background-color: #059669;
+  border-color: #059669;
+}
+
+/* Ensure Font Awesome icons are visible */
+.fas, .far, .fab {
+  display: inline-block;
+  font-style: normal;
+  font-variant: normal;
+  text-rendering: auto;
+  line-height: 1;
+}
