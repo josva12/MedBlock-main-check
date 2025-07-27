@@ -70,46 +70,24 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource }) => {
         {/* Reaction Buttons */}
         <div className="mb-4">
           <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">How did you find this resource?</h4>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center space-x-4">
             <button 
-              className={`${getReactionButtonClass('happy', resource.userReaction === 'happy')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
-              onClick={() => handleReaction('happy')}
-              title="Happy"
-            >
-              <i className="fas fa-smile text-lg mr-2"></i>
-              <span className="font-medium text-gray-900 dark:text-white">{resource.reactions.happy}</span>
-            </button>
-            <button 
-              className={`${getReactionButtonClass('sad', resource.userReaction === 'sad')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
-              onClick={() => handleReaction('sad')}
-              title="Sad"
-            >
-              <i className="fas fa-frown text-lg mr-2"></i>
-              <span className="font-medium text-gray-900 dark:text-white">{resource.reactions.sad}</span>
-            </button>
-            <button 
-              className={`${getReactionButtonClass('helpful', resource.userReaction === 'helpful')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
+              className={`${getReactionButtonClass('helpful', resource.userReaction === 'helpful')} flex items-center space-x-1 text-gray-600 hover:text-green-600 transition-colors px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
               onClick={() => handleReaction('helpful')}
               title="Helpful"
+              data-reaction="helpful"
             >
-              <i className="fas fa-thumbs-up text-lg mr-2"></i>
+              <i className="fas fa-thumbs-up text-lg"></i>
               <span className="font-medium text-gray-900 dark:text-white">{resource.reactions.helpful}</span>
             </button>
             <button 
-              className={`${getReactionButtonClass('unhelpful', resource.userReaction === 'unhelpful')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
+              className={`${getReactionButtonClass('unhelpful', resource.userReaction === 'unhelpful')} flex items-center space-x-1 text-gray-600 hover:text-red-600 transition-colors px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
               onClick={() => handleReaction('unhelpful')}
               title="Not Helpful"
+              data-reaction="unhelpful"
             >
-              <i className="fas fa-thumbs-down text-lg mr-2"></i>
+              <i className="fas fa-thumbs-down text-lg"></i>
               <span className="font-medium text-gray-900 dark:text-white">{resource.reactions.unhelpful}</span>
-            </button>
-            <button 
-              className={`${getReactionButtonClass('neutral', resource.userReaction === 'neutral')} px-3 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700`}
-              onClick={() => handleReaction('neutral')}
-              title="Neutral"
-            >
-              <i className="fas fa-meh text-lg mr-2"></i>
-              <span className="font-medium text-gray-900 dark:text-white">{resource.reactions.neutral}</span>
             </button>
           </div>
         </div>

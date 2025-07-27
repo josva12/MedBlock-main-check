@@ -312,6 +312,29 @@ body {
   border-color: #059669;
 }
 
+/* Thumbs Up/Down Specific Styles */
+.reaction-button[data-reaction="helpful"].active {
+  background-color: #10b981; /* green-600 */
+  color: white;
+  border-color: #10b981;
+}
+
+.reaction-button[data-reaction="helpful"].active:hover {
+  background-color: #059669; /* green-700 */
+  border-color: #059669;
+}
+
+.reaction-button[data-reaction="unhelpful"].active {
+  background-color: #ef4444; /* red-500 */
+  color: white;
+  border-color: #ef4444;
+}
+
+.reaction-button[data-reaction="unhelpful"].active:hover {
+  background-color: #dc2626; /* red-600 */
+  border-color: #dc2626;
+}
+
 /* Ensure Font Awesome icons are visible */
 .fas, .far, .fab {
   display: inline-block;
