@@ -9,34 +9,44 @@ const logger = require('../utils/logger');
 exports.searchUsers = async (req, res) => {
   const { query } = req.query;
 
+  console.log('🔍 User search request:', { query, userId: req.user._id });
+
   if (!query || query.trim() === "") {
     // If the query is empty, return an empty array immediately.
+    console.log('Empty query, returning empty results');
     return res.status(200).json({ success: true, data: [] });
   }
 
   // Sanitize the query to prevent Regex crashes on special characters
   const sanitizedQuery = query.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  console.log('Sanitized query:', sanitizedQuery);
 
   try {
     // Build a robust and efficient database query
     const searchRegex = new RegExp(sanitizedQuery, 'i'); // 'i' for case-insensitive
 
-    const users = await User.find({
+    const searchQuery = {
       $or: [
         { fullName: searchRegex },
-        { email: searchRegex },
-        { userId: searchRegex }
+        { email: searchRegex }
       ],
       // Exclude the user who is performing the search from the results
-      _id: { $ne: req.user.userId } 
-    })
-    .limit(10) // Limit results to prevent sending huge payloads
-    .select('_id userId fullName email role profilePicture avatar'); // Only send necessary fields
+      _id: { $ne: req.user._id } // Fixed: use _id instead of userId
+    };
 
-    logger.audit('USER_SEARCH_SUCCESS', req.user.userId, `query:${sanitizedQuery}`);
+    console.log('Search query:', JSON.stringify(searchQuery, null, 2));
+
+    const users = await User.find(searchQuery)
+      .limit(10) // Limit results to prevent sending huge payloads
+      .select('_id fullName email role profilePicture'); // Only send necessary fields
+
+    console.log(`Found ${users.length} users for query "${sanitizedQuery}":`, users.map(u => ({ id: u._id, name: u.fullName, email: u.email })));
+
+    logger.audit('USER_SEARCH_SUCCESS', req.user._id, `query:${sanitizedQuery}`);
     res.status(200).json({ success: true, data: users });
 
   } catch (error) {
+    console.error('❌ User search failed:', error);
     logger.error('USER_SEARCH_FAILED:', error);
     res.status(500).json({ success: false, error: 'Failed to search users.' });
   }

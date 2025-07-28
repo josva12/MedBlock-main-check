@@ -23,6 +23,13 @@ export interface User {
   isActive: boolean;
   isVerified: boolean;
   isGovernmentVerified: boolean;
+  profilePicture?: {
+    filename?: string;
+    path?: string;
+    mimeType?: string;
+    size?: number;
+    url?: string;
+  };
   professionalVerification: {
     status: 'unsubmitted' | 'pending' | 'verified' | 'rejected';
     licensingBody?: string;

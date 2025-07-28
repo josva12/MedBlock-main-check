@@ -82,7 +82,7 @@ router.post('/:id/react', authenticateToken, async (req, res) => {
       }
     } else {
       // New reaction
-      resource.reactions[reaction]++;
+    resource.reactions[reaction]++;
       resource.userReactions.push({ userId, reaction });
     }
 

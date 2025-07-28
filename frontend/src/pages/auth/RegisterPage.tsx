@@ -174,7 +174,7 @@ const RegisterPage: React.FC = () => {
       {showNotification && (
         <div className={`fixed top-4 z-50 p-4 rounded-lg shadow-lg text-white ${notificationType === 'success' ? 'bg-green-500' : 'bg-red-500'}`}>
           {notificationMessage}
-        </div>
+      </div>
       )}
       <div className="bg-white p-6 md:p-8 rounded-xl shadow-2xl w-full max-w-3xl border-t-4 border-blue-600">
         <div className="text-center mb-8">
@@ -187,15 +187,15 @@ const RegisterPage: React.FC = () => {
 
         <h2 className="text-2xl md:text-3xl font-bold text-center text-gray-800 mb-6">Create Your Account</h2>
 
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          {/* Personal Information */}
-          <fieldset>
+          <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+            {/* Personal Information */}
+            <fieldset>
             <legend className="text-lg font-semibold text-gray-700 mb-4">Personal Information</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                 <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
                     type="text" 
                     id="fullName" 
@@ -206,13 +206,13 @@ const RegisterPage: React.FC = () => {
                     placeholder="John Doe" 
                     className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.fullName ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                   />
+                  </div>
+                  {errors.fullName && <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>}
                 </div>
-                {errors.fullName && <p className="mt-1 text-xs text-red-600">{errors.fullName}</p>}
-              </div>
-              <div>
+                <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
                     type="email" 
                     id="email" 
@@ -223,17 +223,17 @@ const RegisterPage: React.FC = () => {
                     placeholder="you@example.com" 
                     className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                   />
+                  </div>
+                  {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
                 </div>
-                {errors.email && <p className="mt-1 text-xs text-red-600">{errors.email}</p>}
               </div>
-            </div>
-          </fieldset>
+            </fieldset>
 
-          {/* Professional Details */}
-          <fieldset>
+            {/* Professional Details */}
+            <fieldset>
             <legend className="text-lg font-semibold text-gray-700 mb-4">Professional Details</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                 <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                 <div className="relative">
                   <Stethoscope className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -248,8 +248,8 @@ const RegisterPage: React.FC = () => {
                     {TITLES.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
-              </div>
-              <div>
+                </div>
+                <div>
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <div className="relative">
                   <BriefcaseMedical className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -281,7 +281,7 @@ const RegisterPage: React.FC = () => {
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" 
                   />
                 </div>
-                <div>
+            <div>
                   <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">Department</label>
                   <input 
                     type="text" 
@@ -292,8 +292,8 @@ const RegisterPage: React.FC = () => {
                     placeholder="e.g., Internal Medicine" 
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" 
                   />
-                </div>
-                <div>
+              </div>
+                    <div>
                   <label htmlFor="submittedLicenseNumber" className="block text-sm font-medium text-gray-700 mb-1">License Number</label>
                   <input 
                     type="text" 
@@ -304,8 +304,8 @@ const RegisterPage: React.FC = () => {
                     placeholder="e.g., 12345" 
                     className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" 
                   />
-                </div>
-                <div>
+            </div>
+            <div>
                   <label htmlFor="licensingBody" className="block text-sm font-medium text-gray-700 mb-1">Licensing Body</label>
                   <select 
                     id="licensingBody" 
@@ -316,20 +316,20 @@ const RegisterPage: React.FC = () => {
                   >
                     <option value="">Select Licensing Body</option>
                     {LICENSING_BODIES.map(body => <option key={body} value={body}>{body}</option>)}
-                  </select>
-                </div>
+                      </select>
+                    </div>
               </div>
             )}
-          </fieldset>
+            </fieldset>
 
-          {/* Contact Information */}
-          <fieldset>
+            {/* Contact Information */}
+            <fieldset>
             <legend className="text-lg font-semibold text-gray-700 mb-4">Contact Information</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
                     type="tel" 
                     id="phone" 
@@ -340,17 +340,17 @@ const RegisterPage: React.FC = () => {
                     placeholder="+254712345678" 
                     className={`block w-full pl-10 pr-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors.phone ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                   />
-                </div>
-                {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
-              </div>
+                  </div>
+                  {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
             </div>
-          </fieldset>
+              </div>
+            </fieldset>
 
           {/* Address Information */}
-          <fieldset>
+            <fieldset>
             <legend className="text-lg font-semibold text-gray-700 mb-4">Address Information</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                 <label htmlFor="address.street" className="block text-sm font-medium text-gray-700 mb-1">Street Address</label>
                 <input 
                   type="text" 
@@ -362,9 +362,9 @@ const RegisterPage: React.FC = () => {
                   placeholder="123 Main Street" 
                   className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.street'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                 />
-                {errors['address.street'] && <p className="mt-1 text-xs text-red-600">{errors['address.street']}</p>}
-              </div>
-              <div>
+                  {errors['address.street'] && <p className="mt-1 text-xs text-red-600">{errors['address.street']}</p>}
+                </div>
+                <div>
                 <label htmlFor="address.city" className="block text-sm font-medium text-gray-700 mb-1">City</label>
                 <input 
                   type="text" 
@@ -376,9 +376,9 @@ const RegisterPage: React.FC = () => {
                   placeholder="Nairobi" 
                   className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.city'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                 />
-                {errors['address.city'] && <p className="mt-1 text-xs text-red-600">{errors['address.city']}</p>}
-              </div>
-              <div>
+                  {errors['address.city'] && <p className="mt-1 text-xs text-red-600">{errors['address.city']}</p>}
+            </div>
+            <div>
                 <label htmlFor="address.county" className="block text-sm font-medium text-gray-700 mb-1">County</label>
                 <select 
                   id="address.county" 
@@ -390,9 +390,9 @@ const RegisterPage: React.FC = () => {
                 >
                   {COUNTIES.map(county => <option key={county} value={county}>{county}</option>)}
                 </select>
-                {errors['address.county'] && <p className="mt-1 text-xs text-red-600">{errors['address.county']}</p>}
-              </div>
-              <div>
+                  {errors['address.county'] && <p className="mt-1 text-xs text-red-600">{errors['address.county']}</p>}
+                </div>
+                <div>
                 <label htmlFor="address.subCounty" className="block text-sm font-medium text-gray-700 mb-1">Sub-County</label>
                 <input 
                   type="text" 
@@ -404,9 +404,9 @@ const RegisterPage: React.FC = () => {
                   placeholder="Westlands" 
                   className={`block w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 sm:text-sm ${errors['address.subCounty'] ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'}`} 
                 />
-                {errors['address.subCounty'] && <p className="mt-1 text-xs text-red-600">{errors['address.subCounty']}</p>}
+                  {errors['address.subCounty'] && <p className="mt-1 text-xs text-red-600">{errors['address.subCounty']}</p>}
               </div>
-              <div>
+                <div>
                 <label htmlFor="address.postalCode" className="block text-sm font-medium text-gray-700 mb-1">Postal Code</label>
                 <input 
                   type="text" 
@@ -417,18 +417,18 @@ const RegisterPage: React.FC = () => {
                   placeholder="00100" 
                   className="block w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 sm:text-sm" 
                 />
+                </div>
               </div>
-            </div>
-          </fieldset>
+            </fieldset>
 
-          {/* Password */}
-          <fieldset>
+            {/* Password */}
+            <fieldset>
             <legend className="text-lg font-semibold text-gray-700 mb-4">Security</legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
                     type={showPassword ? "text" : "password"} 
                     id="password" 
@@ -445,14 +445,14 @@ const RegisterPage: React.FC = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                   >
                     <Eye className="h-5 w-5 text-gray-400" />
-                  </button>
-                </div>
-                {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
-              </div>
-              <div>
+                    </button>
+                  </div>
+                  {errors.password && <p className="mt-1 text-xs text-red-600">{errors.password}</p>}
+            </div>
+            <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input 
                     type={showConfirmPassword ? "text" : "password"} 
                     id="confirmPassword" 
@@ -469,12 +469,12 @@ const RegisterPage: React.FC = () => {
                     className="absolute right-3 top-1/2 -translate-y-1/2"
                   >
                     <Eye className="h-5 w-5 text-gray-400" />
-                  </button>
+                    </button>
+                  </div>
+                  {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
                 </div>
-                {errors.confirmPassword && <p className="mt-1 text-xs text-red-600">{errors.confirmPassword}</p>}
               </div>
-            </div>
-          </fieldset>
+            </fieldset>
 
           <div className="flex items-center justify-between">
             <button 
@@ -483,8 +483,8 @@ const RegisterPage: React.FC = () => {
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
             >
               {isLoading ? "Creating Account..." : "Create Account"}
-            </button>
-          </div>
+              </button>
+            </div>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
@@ -493,8 +493,8 @@ const RegisterPage: React.FC = () => {
                 Sign in here
               </Link>
             </p>
-          </div>
-        </form>
+            </div>
+          </form>
       </div>
     </div>
   );

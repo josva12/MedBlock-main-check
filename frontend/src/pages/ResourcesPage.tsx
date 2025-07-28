@@ -109,7 +109,7 @@ const ResourcesPage: React.FC = () => {
 
       {/* Resources Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {isLoading ? (
+            {isLoading ? (
           // Loading skeleton cards
           Array.from({ length: 6 }).map((_, index) => (
             <div key={index} className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden animate-pulse">
@@ -121,7 +121,7 @@ const ResourcesPage: React.FC = () => {
               </div>
             </div>
           ))
-        ) : resources.length === 0 ? (
+            ) : resources.length === 0 ? (
           <div className="col-span-full text-center py-12">
             <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
               <i className="fas fa-book-open text-4xl mb-4"></i>
@@ -132,8 +132,8 @@ const ResourcesPage: React.FC = () => {
         ) : (
           resources.map((resource) => (
             <ResourceCard key={resource._id} resource={resource} />
-          ))
-        )}
+              ))
+            )}
       </div>
 
       {/* Create Resource Modal */}
