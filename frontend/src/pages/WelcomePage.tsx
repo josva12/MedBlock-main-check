@@ -21,8 +21,7 @@ import ThemeToggle from '../components/common/ThemeToggle';
 const WelcomePage: React.FC = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [activeTab, setActiveTab] = useState('features');
-  const [isVisible, setIsVisible] = useState(false);
+  // Removed unused state variables
 
   useEffect(() => {
     // Load theme from localStorage
@@ -32,7 +31,7 @@ const WelcomePage: React.FC = () => {
     }
 
     // Trigger animations on mount
-    setIsVisible(true);
+    // Removed setIsVisible call since variable was removed
 
     // Intersection Observer for scroll animations
     const observer = new IntersectionObserver(
@@ -52,11 +51,7 @@ const WelcomePage: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleThemeToggle = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    localStorage.setItem('theme', newTheme);
-  };
+  // Removed unused handleThemeToggle function
 
   const handleScrollToJoin = () => {
     document.getElementById('join-section')?.scrollIntoView({ behavior: 'smooth' });

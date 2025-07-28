@@ -1,8 +1,29 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import axios from 'axios';
 import { useSelector } from 'react-redux';
+import { useAppDispatch } from '../hooks/useAppDispatch';
 import type { RootState } from '../store';
+import { updateUserProfile } from '../features/auth/authSlice';
+import {
+  setRecentChats,
+  updateRecentChat,
+  setActiveConversation,
+  setMessages,
+  addMessage,
+  updateMessageReaction,
+  setDraftMessage,
+  clearDraftMessage,
+  updateMessageStatus,
+  setError,
+} from '../features/chat/chatSlice';
+
+// --- Development Logging Utility ---
+const devLog = (...args: any[]) => {
+  if (import.meta.env.DEV) {
+    console.log(...args);
+  }
+};
 
 // --- Interfaces ---
 interface Message {
@@ -154,12 +175,13 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 const ChatPage: React.FC = () => {
   // --- State ---
   const [socket, setSocket] = useState<Socket | null>(null);
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+
   const [newMessageText, setNewMessageText] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
+  const [socketConnected, setSocketConnected] = useState<boolean>(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [typingUsers, setTypingUsers] = useState<{ [chatId: string]: string[] }>({});
+  const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showReactionPicker, setShowReactionPicker] = useState<{
     messageId: string;
     position: { x: number; y: number };
@@ -179,16 +201,39 @@ const ChatPage: React.FC = () => {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system');
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { token, user } = useSelector((state: RootState) => state.auth);
+  const isMountedRef = useRef(true);
+  const socketRef = useRef<Socket | null>(null);
+  const renderCountRef = useRef(0);
+  const hasConnectedRef = useRef(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Use separate selectors to avoid creating new object references
+  const dispatch = useAppDispatch();
+  const token = useSelector((state: RootState) => state.auth.token);
+  const user = useSelector((state: RootState) => state.auth.user);
   
-  console.log('API_BASE:', API_BASE);
-  console.log('SOCKET_URL:', SOCKET_URL);
+  // Chat state from Redux
+  const recentChats = useSelector((state: RootState) => state.chat.recentChats);
+  const drafts = useSelector((state: RootState) => state.chat.drafts);
+  const activeConversation = useSelector((state: RootState) => state.chat.activeConversation);
+  const messages = useSelector((state: RootState) => state.chat.messages);
+  
+  renderCountRef.current += 1;
+  
+  // Only log renders when important state changes
+  if (renderCountRef.current <= 3 || socketConnected !== hasConnectedRef.current) {
+    devLog(`ChatPage render #${renderCountRef.current} - token:`, !!token, 'user:', !!user, 'socketConnected:', socketConnected);
+  }
   
   // Memoize axios instance to prevent recreation
   const axiosAuth = useMemo(() => axios.create({
     baseURL: API_BASE,
     headers: { Authorization: token ? `Bearer ${token}` : '' },
   }), [token]);
+
+  // Memoize stable values to prevent unnecessary re-renders
+  const stableSocketStatus = useMemo(() => socketConnected, [socketConnected]);
+  const stableUser = useMemo(() => user, [user]);
 
   // --- Socket.IO Connection ---
   useEffect(() => {
@@ -198,13 +243,23 @@ const ChatPage: React.FC = () => {
     }
 
     // Prevent multiple connections
-    if (socket && socket.connected) {
-      console.log('Socket already connected, skipping new connection');
+    if (socketRef.current && socketRef.current.connected && hasConnectedRef.current) {
+      devLog('Socket already connected, skipping new connection');
       return;
     }
 
-    console.log('Attempting to connect to Socket.IO at:', SOCKET_URL);
-    console.log('Token available:', !!token);
+    // Don't create new connection if component is unmounting
+    if (!isMountedRef.current) {
+      return;
+    }
+
+    // Reset connection flag if socket is disconnected
+    if (socketRef.current && !socketRef.current.connected) {
+      hasConnectedRef.current = false;
+    }
+
+    devLog('Attempting to connect to Socket.IO at:', SOCKET_URL);
+    devLog('Token available:', !!token);
 
     const newSocket = io(SOCKET_URL, {
       auth: { token },
@@ -214,86 +269,264 @@ const ChatPage: React.FC = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected successfully:', newSocket.id);
-      setLoading(false);
+      if (!hasConnectedRef.current) {
+        hasConnectedRef.current = true;
+        devLog('Socket connected successfully:', newSocket.id);
+        setLoading(false);
+        setSocketConnected(true);
+      }
     });
 
     newSocket.on('connect_error', (error) => {
-      console.error('Socket connection error:', error);
+      devLog('Socket connection error:', error);
       setLoading(false);
     });
 
     newSocket.on('disconnect', (reason) => {
-      console.log('Socket disconnected:', reason);
+      devLog('Socket disconnected:', reason);
+      setSocketConnected(false);
     });
 
     newSocket.on('newMessage', (data: { chatId: string; message: Message }) => {
-      console.log('New message received:', data);
+      devLog('New message received:', data);
+      
+      // Update messages if this conversation is currently active
       if (activeConversation?._id === data.chatId) {
-        setMessages(prev => [...prev, data.message]);
+        dispatch(addMessage(data.message));
+        // Auto-scroll to bottom after a short delay
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
-      // Update conversation list
-      fetchConversations();
+      
+      // Update Redux state for real-time persistence
+      dispatch(updateRecentChat({ chatId: data.chatId, message: data.message }));
+      
+
+      
+      // Show notification if conversation is not active
+      if (activeConversation?._id !== data.chatId) {
+        const senderName = data.message.senderId?.fullName || 'Someone';
+        setNotifications(prev => [...prev, {
+          id: Date.now().toString(),
+          message: `New message from ${senderName}`,
+          type: 'user',
+          timestamp: Date.now()
+        }]);
+      }
     });
 
     newSocket.on('reactionUpdate', (data: { chatId: string; messageId: string; message: Message }) => {
-      console.log('Reaction update received:', data);
+      devLog('Reaction update received:', data);
       if (activeConversation?._id === data.chatId) {
-        setMessages(prev => prev.map(msg => 
-          msg._id === data.messageId ? data.message : msg
-        ));
+        dispatch(updateMessageReaction({ messageId: data.messageId, reaction: data.message.reactions }));
       }
     });
 
-    newSocket.on('user-typing', (data: { userId: string; userName: string; isTyping: boolean }) => {
-      // Handle typing indicators
-      console.log('User typing:', data);
+    newSocket.on('messageStatusUpdate', (data: { chatId: string; messageId: string; status: string }) => {
+      devLog('Message status update received:', data);
+      if (activeConversation?._id === data.chatId) {
+        dispatch(updateMessageStatus({ messageId: data.messageId, status: data.status as 'sent' | 'delivered' | 'read' }));
+      }
     });
 
+    // Enhanced typing indicator handlers
+    newSocket.on('user-typing', (data: { chatId: string; userId: string; userName: string; isTyping: boolean }) => {
+      devLog('User typing:', data);
+      if (data.isTyping) {
+        setTypingUsers(prev => ({
+          ...prev,
+          [data.chatId]: [...(prev[data.chatId] || []).filter(id => id !== data.userId), data.userId]
+        }));
+      } else {
+        setTypingUsers(prev => ({
+          ...prev,
+          [data.chatId]: (prev[data.chatId] || []).filter(id => id !== data.userId)
+        }));
+      }
+    });
+
+    socketRef.current = newSocket;
     setSocket(newSocket);
 
+    // No cleanup function here - let the unmount effect handle it
     return () => {
-      console.log('Cleaning up Socket.IO connection');
-      newSocket.close();
+      // Intentionally empty - don't close socket on effect re-run
     };
-  }, [token, user]); // Removed SOCKET_URL since it's now a constant
+  }, [token, user]); // Only depend on token and user
 
-  // --- Fetch Conversations ---
-  const fetchConversations = async () => {
+  // --- Fetch Recent Chats on Mount ---
+  const fetchRecentChats = useCallback(async () => {
     try {
+      devLog('Fetching recent chats...');
       const response = await axiosAuth.get('/chat');
-      setConversations(response.data.data);
+      const chats = response.data.data || [];
+      devLog('Recent chats fetched:', chats.length, 'chats');
+      dispatch(setRecentChats(chats));
     } catch (error) {
-      console.error('Failed to fetch conversations:', error);
+      devLog('Failed to fetch recent chats:', error);
+      dispatch(setError('Failed to load recent chats. Please refresh.'));
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        message: 'Failed to load recent chats. Please refresh.',
+        type: 'system',
+        timestamp: Date.now()
+      }]);
     }
-  };
+  }, [axiosAuth, dispatch]);
+
+  // --- Fetch Conversations (Alias for backward compatibility) ---
+  const fetchConversations = fetchRecentChats;
 
   // --- Fetch Messages ---
   const fetchMessages = async (chatId: string) => {
     try {
       const response = await axiosAuth.get(`/chat/${chatId}/messages`);
-      setMessages(response.data.data);
+      dispatch(setMessages(response.data.data));
     } catch (error) {
-      console.error('Failed to fetch messages:', error);
+      devLog('Failed to fetch messages:', error);
     }
   };
 
   // --- Load Conversations on Mount ---
   useEffect(() => {
-    if (socket && socket.connected) {
+    if (stableSocketStatus && socketRef.current && socketRef.current.connected) {
       fetchConversations();
     }
-  }, [socket]);
+  }, [stableSocketStatus, fetchConversations]); // Use memoized socket status
+
+  // --- Load Recent Chats on Component Mount ---
+  useEffect(() => {
+    if (user && token && !loading) {
+      devLog('Loading recent chats on component mount...');
+      fetchRecentChats();
+    }
+  }, [user, token, loading, fetchRecentChats]);
+
+  // --- Load draft when opening conversation ---
+  useEffect(() => {
+    if (activeConversation) {
+      if (drafts[activeConversation._id]) {
+        setNewMessageText(drafts[activeConversation._id]);
+        devLog('Loaded draft for conversation:', activeConversation._id);
+      } else {
+        setNewMessageText('');
+      }
+    }
+  }, [activeConversation, drafts]);
+
+  // --- Open Conversation ---
+  const openConversation = useCallback(async (conversation: Conversation) => {
+    dispatch(setActiveConversation(conversation));
+    dispatch(setMessages([]));
+    
+    // Join the chat room
+    if (socketRef.current) {
+      socketRef.current.emit('join-chat', conversation._id);
+      devLog('Joined chat room:', conversation._id);
+    }
+    
+    // Fetch messages for this conversation
+    await fetchMessages(conversation._id);
+  }, [fetchMessages, dispatch]);
+
+  // --- Touch Conversation (create if doesn't exist) ---
+  const touchConversation = useCallback(async (participantId: string) => {
+    try {
+      const response = await axiosAuth.post('/chat/touch-conversation', {
+        participantId
+      });
+      
+      if (response.data.success) {
+        const conversation = response.data.data;
+        // Update Redux state with the conversation
+        dispatch(updateRecentChat({ 
+          chatId: conversation._id, 
+          message: conversation.messages[conversation.messages.length - 1] || {
+            _id: 'temp',
+            senderId: { _id: 'temp', fullName: 'System' },
+            content: 'Conversation started',
+            type: 'text',
+            status: 'sent',
+            reactions: [],
+            readBy: [],
+            deliveredTo: [],
+            createdAt: new Date()
+          }
+        }));
+        return conversation;
+      }
+    } catch (error) {
+      devLog('Failed to touch conversation:', error);
+    }
+  }, [axiosAuth, dispatch]);
+
+  // --- Typing Indicator Functions ---
+  const handleTyping = useCallback(() => {
+    if (!activeConversation || !socketRef.current) return;
+    
+    if (!isTyping) {
+      setIsTyping(true);
+      socketRef.current.emit('typing', {
+        chatId: activeConversation._id,
+        userId: user?._id,
+        userName: user?.fullName,
+        isTyping: true
+      });
+    }
+  }, [activeConversation, user, isTyping]);
+
+  const handleStopTyping = useCallback(() => {
+    if (!activeConversation || !socketRef.current) return;
+    
+    setIsTyping(false);
+    socketRef.current.emit('typing', {
+      chatId: activeConversation._id,
+      userId: user?._id,
+      userName: user?.fullName,
+      isTyping: false
+    });
+  }, [activeConversation, user]);
+
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const text = e.target.value;
+    setNewMessageText(text);
+    
+    // Save draft to Redux
+    if (activeConversation) {
+      dispatch(setDraftMessage({ chatId: activeConversation._id, text }));
+    }
+    
+    // Handle typing indicators
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+    
+    handleTyping();
+    
+    typingTimeoutRef.current = setTimeout(() => {
+      handleStopTyping();
+    }, 3000); // Stop typing after 3 seconds of inactivity
+  }, [handleTyping, handleStopTyping, activeConversation, dispatch]);
 
   // --- Cleanup on unmount ---
   useEffect(() => {
     return () => {
-      if (socket) {
-        console.log('Component unmounting, closing socket connection');
-        socket.close();
+      devLog('Component unmounting, setting mounted flag to false');
+      isMountedRef.current = false;
+      hasConnectedRef.current = false;
+      
+      // Clear typing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      if (socketRef.current && socketRef.current.connected) {
+        devLog('Component unmounting, closing socket connection');
+        socketRef.current.close();
       }
     };
-  }, [socket]);
+  }, []); // Empty dependency array - only run on unmount
 
   // --- User Search ---
   const handleUserSearch = async () => {
@@ -303,12 +536,12 @@ const ChatPage: React.FC = () => {
     }
     setSearching(true);
     try {
-      console.log('Searching for:', searchQuery);
+      devLog('Searching for:', searchQuery);
       const results = await searchUsers(searchQuery);
-      console.log('Search results:', results);
+      devLog('Search results:', results);
       setSearchResults(results);
     } catch (error) {
-      console.error('Search failed:', error);
+      devLog('Search failed:', error);
       setSearchResults([]);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
@@ -324,15 +557,15 @@ const ChatPage: React.FC = () => {
   const searchUsers = async (query: string) => {
     if (!query.trim()) return [];
     try {
-      console.log('Making search request to:', `${API_BASE}/users/search?query=${encodeURIComponent(query)}`);
+      devLog('Making search request to:', `${API_BASE}/users/search?query=${encodeURIComponent(query)}`);
       const res = await axiosAuth.get(`/users/search?query=${encodeURIComponent(query)}`);
-      console.log('Search response:', res.data);
+      devLog('Search response:', res.data);
       return res.data.data || [];
     } catch (error: any) {
-      console.error('Search request failed:', error);
+      devLog('Search request failed:', error);
       if (error.response) {
-        console.error('Response status:', error.response.status);
-        console.error('Response data:', error.response.data);
+        devLog('Response status:', error.response.status);
+        devLog('Response data:', error.response.data);
       }
       throw error;
     }
@@ -341,28 +574,29 @@ const ChatPage: React.FC = () => {
   // --- Start New Conversation ---
   const handleStartNewChat = async (targetUser: any) => {
     try {
-      const response = await axiosAuth.post('/chat/conversation', {
-        participantId: targetUser._id
-      });
+      devLog('Starting new chat with user:', targetUser.fullName);
       
-      if (response.data.success) {
-        const conversation = response.data.data;
-        setActiveConversation(conversation);
-        setMessages([]);
+      // Touch conversation to ensure it exists
+      const conversation = await touchConversation(targetUser._id);
+      
+      if (conversation) {
+        // Open the conversation
+        await openConversation(conversation);
+        
         setShowUserSearchModal(false);
         setSearchQuery('');
         setSearchResults([]);
         
-        // Join the chat room
-        if (socket) {
-          socket.emit('join-chat', conversation._id);
-        }
-        
-        // Fetch messages for this conversation
-        await fetchMessages(conversation._id);
+        devLog('New chat started successfully:', conversation._id);
       }
     } catch (error) {
-      console.error('Failed to start new chat:', error);
+      devLog('Failed to start new chat:', error);
+      setNotifications(prev => [...prev, {
+        id: Date.now().toString(),
+        message: 'Failed to start new chat. Please try again.',
+        type: 'system',
+        timestamp: Date.now()
+      }]);
     }
   };
 
@@ -392,11 +626,25 @@ const ChatPage: React.FC = () => {
       }
 
       if (response.data.success) {
+        const newMessage = response.data.data;
+        
+        // Add message to current conversation
+        dispatch(addMessage(newMessage));
+        
+        // Update Redux state for conversation list
+        dispatch(updateRecentChat({ chatId: activeConversation._id, message: newMessage }));
+        
+        // Clear draft for this chat
+        dispatch(clearDraftMessage(activeConversation._id));
+        
         setNewMessageText('');
-        // Message will be added via socket event
+        // Auto-scroll to bottom
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     } catch (error) {
-      console.error('Failed to send message:', error);
+      devLog('Failed to send message:', error);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
         message: 'Failed to send message. Please try again.',
@@ -423,7 +671,7 @@ const ChatPage: React.FC = () => {
       await axiosAuth.post(`/chat/messages/${messageId}/react`, { emoji });
       setShowReactionPicker(null);
     } catch (error) {
-      console.error('Failed to add reaction:', error);
+      devLog('Failed to add reaction:', error);
     }
   };
 
@@ -443,9 +691,13 @@ const ChatPage: React.FC = () => {
     if (!profilePictureFile) return;
     setUploadingPicture(true);
     try {
-      console.log('Uploading profile picture:', profilePictureFile.name);
+      devLog('Uploading profile picture:', profilePictureFile.name);
       const response = await uploadProfilePicture(profilePictureFile);
-      console.log('Upload response:', response);
+      devLog('Upload response:', response);
+      
+      // Update Redux state with new user data
+      await dispatch(updateUserProfile(response));
+      
       setProfilePictureFile(null);
       setShowProfileModal(false);
       setNotifications(prev => [...prev, {
@@ -455,7 +707,7 @@ const ChatPage: React.FC = () => {
         timestamp: Date.now()
       }]);
     } catch (error) {
-      console.error('Profile picture upload failed:', error);
+      devLog('Profile picture upload failed:', error);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
         message: 'Failed to upload profile picture. Please try again.',
@@ -469,7 +721,13 @@ const ChatPage: React.FC = () => {
 
   const handleRemoveProfilePicture = async () => {
     try {
-      await removeProfilePicture();
+      const response = await removeProfilePicture();
+      
+      // Update Redux state with new user data (profile picture removed)
+      if (user) {
+        await dispatch(updateUserProfile({ ...user, profilePicture: undefined }));
+      }
+      
       setShowProfileModal(false);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
@@ -478,7 +736,7 @@ const ChatPage: React.FC = () => {
         timestamp: Date.now()
       }]);
     } catch (error) {
-      console.error('Profile picture removal failed:', error);
+      devLog('Profile picture removal failed:', error);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
         message: 'Failed to remove profile picture. Please try again.',
@@ -511,7 +769,7 @@ const ChatPage: React.FC = () => {
         timestamp: Date.now()
       }]);
     } catch (error) {
-      console.error('Privacy settings update failed:', error);
+      devLog('Privacy settings update failed:', error);
       setNotifications(prev => [...prev, {
         id: Date.now().toString(),
         message: 'Failed to update privacy settings. Please try again.',
@@ -578,18 +836,23 @@ const ChatPage: React.FC = () => {
             <button onClick={() => setShowUserSearchModal(true)} className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm">New Chat</button>
           </div>
           <div className="flex-1 overflow-y-auto custom-scrollbar">
-            {conversations.length === 0 ? (
+            {recentChats.length === 0 ? (
               <p className="p-4 text-gray-500 dark:text-gray-400 text-center">No recent chats. Start a new one!</p>
             ) : (
-              conversations.map((conv) => {
+              recentChats.map((conv) => {
                 const otherParticipant = conv.participants.find(p => p._id !== user?._id);
                 const displayUserName = otherParticipant?.fullName || 'Unknown User';
+                const draft = drafts[conv._id];
+                
                 return (
                   <div 
                     key={conv._id} 
                     className={`flex items-center p-3 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-150 ${activeConversation?._id === conv._id ? 'bg-blue-100 dark:bg-blue-900' : ''}`} 
-                    onClick={() => {
-                      setActiveConversation(conv);
+                    onClick={async () => {
+                      // Touch conversation to ensure it's active
+                      await touchConversation(conv.participants.find(p => p._id !== user?._id)?._id || '');
+                      
+                      dispatch(setActiveConversation(conv));
                       fetchMessages(conv._id);
                       if (socket) {
                         socket.emit('join-chat', conv._id);
@@ -606,9 +869,17 @@ const ChatPage: React.FC = () => {
                         <span>{displayUserName}</span>
                       </div>
                       <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-                        {conv.messages.length > 0 ? conv.messages[conv.messages.length - 1].content : 'No messages yet.'}
+                        {draft ? (
+                          <span className="italic text-blue-600 dark:text-blue-400">
+                            (Draft) {draft}
+                          </span>
+                        ) : conv.messages.length > 0 ? (
+                          conv.messages[conv.messages.length - 1].content
+                        ) : (
+                          'No messages yet.'
+                        )}
                       </p>
-                      {conv.lastMessage && (
+                      {conv.lastMessage && !draft && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                           {new Date(conv.lastMessage).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -650,7 +921,11 @@ const ChatPage: React.FC = () => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <button 
-                    onClick={() => setActiveConversation(null)} 
+                    onClick={() => {
+                      dispatch(setActiveConversation(null));
+                      dispatch(setMessages([]));
+                      setNewMessageText('');
+                    }} 
                     className="px-3 py-1 bg-gray-300 hover:bg-gray-400 text-gray-800 rounded-md text-sm dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100"
                   >
                     Exit Chat
@@ -709,6 +984,27 @@ const ChatPage: React.FC = () => {
                   })
                 )}
                 
+                {/* Typing Indicator */}
+                {activeConversation && typingUsers[activeConversation._id] && typingUsers[activeConversation._id].length > 0 && (
+                  <div className="flex justify-start">
+                    <div className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 text-sm p-2 rounded-lg rounded-bl-none">
+                      <div className="flex items-center space-x-1">
+                        <span className="typing-dots">
+                          <span className="dot"></span>
+                          <span className="dot"></span>
+                          <span className="dot"></span>
+                        </span>
+                        <span>
+                          {typingUsers[activeConversation._id].length === 1 
+                            ? `${typingUsers[activeConversation._id][0]} is typing...`
+                            : `${typingUsers[activeConversation._id].length} people are typing...`
+                          }
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 {notifications.map((notification) => (
                   <div key={notification.id} className="flex justify-center text-center text-gray-600 dark:text-gray-400 text-sm font-mono italic">
                     {notification.message}
@@ -754,7 +1050,7 @@ const ChatPage: React.FC = () => {
                   className="flex-1 p-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-gray-100" 
                   placeholder={selectedMediaFile ? "Add a caption (optional)..." : "Type your message..."} 
                   value={newMessageText} 
-                  onChange={(e) => setNewMessageText(e.target.value)} 
+                  onChange={handleInputChange} 
                   onKeyPress={(e) => { if (e.key === 'Enter') { sendMessage(); } }} 
                 />
                 

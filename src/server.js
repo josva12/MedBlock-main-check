@@ -99,8 +99,10 @@ io.on('connection', (socket) => {
     logger.info(`User ${socket.userId} left chat: ${chatId}`);
   });
   
-  socket.on('typing', ({ chatId, isTyping }) => {
+  socket.on('typing', ({ chatId, userId, userName, isTyping }) => {
+    logger.info(`User ${socket.userId} ${isTyping ? 'started' : 'stopped'} typing in chat: ${chatId}`);
     socket.to(`chat:${chatId}`).emit('user-typing', {
+      chatId,
       userId: socket.userId,
       userName: socket.user.fullName,
       isTyping

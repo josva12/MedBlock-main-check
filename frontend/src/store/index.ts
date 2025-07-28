@@ -14,6 +14,7 @@ import notificationsReducer from '../features/notifications/notificationsSlice';
 import teleconsultationsReducer from '../features/teleconsultations/teleconsultationsSlice';
 import reportsReducer from '../features/reports/reportsSlice';
 import blockchainReducer from '../features/blockchain/blockchainSlice';
+import chatReducer from '../features/chat/chatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -32,6 +33,7 @@ export const store = configureStore({
     ui: uiReducer,
     reports: reportsReducer,
     blockchain: blockchainReducer, // Add blockchain reducer
+    chat: chatReducer, // Add chat reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

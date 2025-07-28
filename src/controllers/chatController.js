@@ -27,17 +27,24 @@ exports.getChats = async (req, res) => {
     }
     
     const chats = await Chat.find(query)
-      .populate('participants', 'fullName email role profilePicture')
+      .populate('participants', 'fullName email role profilePicture showLastSeen showOnlineStatus lastSeen isOnline')
       .populate({
         path: 'messages',
         populate: {
             path: 'senderId',
-            select: 'fullName'
+            select: 'fullName profilePicture'
         }
        })
-      .sort({ updatedAt: -1 }); // Sort by most recently updated
+      .sort({ lastMessage: -1, updatedAt: -1 }); // Sort by last message time, then by update time
 
-    res.status(200).json({ success: true, data: chats });
+    // Ensure all chats have at least an empty messages array and lastMessage
+    const processedChats = chats.map(chat => {
+      if (!chat.messages) chat.messages = [];
+      if (!chat.lastMessage) chat.lastMessage = chat.updatedAt || chat.createdAt;
+      return chat;
+    });
+
+    res.status(200).json({ success: true, data: processedChats });
   } catch (error) {
     logger.error('Failed to fetch user chats:', error);
     res.status(500).json({ success: false, error: 'Failed to fetch chats' });
@@ -87,12 +94,22 @@ exports.createOrGetConversation = async (req, res) => {
   };
 
   try {
-    const existingChat = await Chat.findOne(query).populate('participants', 'fullName email role profilePicture');
-    if (existingChat) return res.status(200).json({ success: true, data: existingChat });
+    const existingChat = await Chat.findOne(query).populate('participants', 'fullName email role profilePicture showLastSeen showOnlineStatus lastSeen isOnline');
+    if (existingChat) {
+      // Update the lastMessage timestamp to keep conversation active
+      existingChat.lastMessage = new Date();
+      existingChat.updatedAt = new Date();
+      await existingChat.save();
+      return res.status(200).json({ success: true, data: existingChat });
+    }
 
-    const newChat = new Chat({ participants: [currentUserId, participantId] });
+    const newChat = new Chat({ 
+      participants: [currentUserId, participantId],
+      lastMessage: new Date(), // Set initial lastMessage to ensure conversation appears in recent chats
+      updatedAt: new Date()
+    });
     let savedChat = await newChat.save();
-    savedChat = await savedChat.populate('participants', 'fullName email role profilePicture');
+    savedChat = await savedChat.populate('participants', 'fullName email role profilePicture showLastSeen showOnlineStatus lastSeen isOnline');
 
     logger.audit('CONVERSATION_CREATED', currentUserId, `chat:${savedChat._id}`);
     res.status(201).json({ success: true, data: savedChat });
@@ -361,6 +378,52 @@ exports.addReaction = async (req, res) => {
         logger.error(`Failed to add reaction to message ${req.params.messageId}:`, error);
         res.status(500).json({ success: false, error: 'Failed to add reaction' });
     }
+};
+
+/**
+ * @desc    Touch or create conversation (for when user opens chat or starts typing)
+ * @route   POST /api/v1/chat/touch-conversation
+ * @access  Private
+ */
+exports.touchConversation = async (req, res) => {
+  const currentUserId = req.user._id; 
+  const { participantId } = req.body;
+
+  if (!participantId) return res.status(400).json({ success: false, error: 'Participant ID is required.' });
+  if (currentUserId.toString() === participantId) return res.status(400).json({ success: false, error: 'You cannot start a conversation with yourself.' });
+  
+  const query = {
+    isGroupChat: false,
+    participants: { $all: [new mongoose.Types.ObjectId(currentUserId), new mongoose.Types.ObjectId(participantId)] }
+  };
+
+  try {
+    const existingChat = await Chat.findOne(query).populate('participants', 'fullName email role profilePicture showLastSeen showOnlineStatus lastSeen isOnline');
+    
+    if (existingChat) {
+      // Update the lastMessage timestamp to keep conversation active
+      existingChat.lastMessage = new Date();
+      existingChat.updatedAt = new Date();
+      await existingChat.save();
+      return res.status(200).json({ success: true, data: existingChat });
+    }
+
+    // Create new conversation if it doesn't exist
+    const newChat = new Chat({ 
+      participants: [currentUserId, participantId],
+      lastMessage: new Date(), // Set initial lastMessage to ensure conversation appears in recent chats
+      updatedAt: new Date()
+    });
+    let savedChat = await newChat.save();
+    savedChat = await savedChat.populate('participants', 'fullName email role profilePicture showLastSeen showOnlineStatus lastSeen isOnline');
+
+    logger.audit('CONVERSATION_TOUCHED', currentUserId, `chat:${savedChat._id}`);
+    res.status(201).json({ success: true, data: savedChat });
+
+  } catch (error) {
+    logger.error('Failed to touch conversation:', error);
+    return res.status(500).json({ success: false, error: 'An unexpected server error occurred.' });
+  }
 };
 
 /**

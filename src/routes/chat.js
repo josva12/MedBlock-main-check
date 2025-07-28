@@ -6,6 +6,7 @@ const {
   getChats, 
   getMessages,
   createOrGetConversation,
+  touchConversation,
   sendMessage,
   sendMediaMessage,
   markMessagesAsDelivered,
@@ -27,6 +28,7 @@ router.use(authenticate);
 // Define all chat-related routes
 router.get('/', getChats); // Handles GET /api/v1/chat
 router.post('/conversation', createOrGetConversation); // Handles POST /api/v1/chat/conversation
+router.post('/touch-conversation', touchConversation); // Handles POST /api/v1/chat/touch-conversation
 router.get('/:chatId/messages', getMessages); // Handles GET /api/v1/chat/:chatId/messages
 router.post('/:chatId/messages', sendMessage); // Handles POST /api/v1/chat/:chatId/messages
 router.post('/:chatId/media', mediaUpload.single('media'), sendMediaMessage); // Handles POST /api/v1/chat/:chatId/media
