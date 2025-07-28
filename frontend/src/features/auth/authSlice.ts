@@ -204,6 +204,22 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
+// Add resetPassword thunk
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (payload: { token: string; password: string }, { rejectWithValue }) => {
+    try {
+      await api.post('/auth/reset-password', payload);
+      toast.success('Password reset successful!');
+      return true;
+    } catch (error: any) {
+      const message = error.response?.data?.error || 'Failed to reset password';
+      toast.error(message);
+      return rejectWithValue(message);
+    }
+  }
+);
+
 // Slice
 const authSlice = createSlice({
   name: 'auth',

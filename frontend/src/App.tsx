@@ -37,6 +37,7 @@ const AdminClaimsPage = React.lazy(() => import('./pages/admin/AdminClaimsPage')
 const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
 
 // General Pages
+const WelcomePage = React.lazy(() => import('./pages/WelcomePage'));
 const DashboardPage = React.lazy(() => import('./pages/dashboard/DashboardPage'));
 const PatientsPage = React.lazy(() => import('./pages/patients/PatientsPage'));
 const AppointmentsPage = React.lazy(() => import('./pages/appointments/AppointmentsPage'));
@@ -77,7 +78,7 @@ import PharmacyProfilePage from './pages/pharmacy/ProfilePage';
 
 const RootRedirector: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  if (!user) return <Navigate to="/login" replace />;
+  if (!user) return <Navigate to="/welcome" replace />;
   switch (user.role) {
     case 'admin': return <Navigate to="/admin/dashboard" replace />;
     case 'doctor': return <Navigate to="/doctor/dashboard" replace />;
@@ -110,11 +111,13 @@ function AppContent() {
           <Suspense fallback={<LoadingSpinner />}>
             <Routes>
               {/* --- Public Routes --- */}
+              <Route path="/welcome" element={<WelcomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
               <Route path="/insurance-marketplace" element={<InsuranceMarketplacePage />} />
+              <Route path="/resources" element={<ResourcesPage />} />
               <Route path="/unauthorized" element={<div>Unauthorized Access</div>} />
 
               {/* --- Root Redirect --- */}
@@ -212,7 +215,6 @@ function AppContent() {
                       <Route index element={<DashboardPage />} />
                   </Route>
                   <Route path="/facilities" element={<FacilitiesPage />} />
-                  <Route path="/resources" element={<ResourcesPage />} />
                   <Route path="/subscriptions" element={<SubscriptionsPage />} />
                   <Route path="/vitals" element={<VitalsPage />} />
                   <Route path="/blockchain" element={<BlockchainPage />} />

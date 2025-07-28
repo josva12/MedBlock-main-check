@@ -5,12 +5,13 @@ import { fetchResources, createResource } from '../features/resources/resourcesS
 import ResourceCard from '../components/resources/ResourceCard';
 import MessageBox from '../components/resources/MessageBox';
 import ThemeToggle from '../components/common/ThemeToggle';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, LogIn } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ResourcesPage: React.FC = () => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const { user } = useAppSelector((state) => state.auth);
   const { resources = [], isLoading, error } = useAppSelector((state) => state.resources || { resources: [], isLoading: false, error: null });
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ title: '', content: '', category: 'health' });
@@ -72,13 +73,31 @@ const ResourcesPage: React.FC = () => {
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white">Resources</h2>
           <span className="text-gray-600 dark:text-gray-400">({resources.length} resources)</span>
         </div>
-        <button
-          className="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-colors duration-200 font-semibold"
-          onClick={() => setShowModal(true)}
-        >
-          <i className="fas fa-plus mr-2"></i>
-          New Resource
-        </button>
+        <div className="flex items-center space-x-4">
+          {!user && (
+            <div className="flex items-center space-x-2 bg-blue-50 dark:bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-200 dark:border-blue-800">
+              <LogIn className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+              <span className="text-sm text-blue-600 dark:text-blue-400">
+                Sign in to interact with resources
+              </span>
+              <button
+                onClick={() => navigate('/login')}
+                className="ml-2 px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 transition-colors"
+              >
+                Sign In
+              </button>
+            </div>
+          )}
+          {user && (
+            <button
+              className="bg-green-600 text-white px-6 py-3 rounded-lg shadow hover:bg-green-700 transition-colors duration-200 font-semibold"
+              onClick={() => setShowModal(true)}
+            >
+              <i className="fas fa-plus mr-2"></i>
+              New Resource
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Error Display */}
