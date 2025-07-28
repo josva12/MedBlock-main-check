@@ -20,7 +20,7 @@ import {
 
 // --- Development Logging Utility ---
 const devLog = (...args: any[]) => {
-  if (import.meta.env.DEV) {
+  if (import.meta.env.MODE === 'development') {
     console.log(...args);
   }
 };
@@ -299,10 +299,8 @@ const ChatPage: React.FC = () => {
         }, 100);
       }
       
-      // Update Redux state for real-time persistence
+      // Update Redux state for real-time persistence - this ensures the conversation moves to top
       dispatch(updateRecentChat({ chatId: data.chatId, message: data.message }));
-      
-
       
       // Show notification if conversation is not active
       if (activeConversation?._id !== data.chatId) {
@@ -495,6 +493,14 @@ const ChatPage: React.FC = () => {
     // Save draft to Redux
     if (activeConversation) {
       dispatch(setDraftMessage({ chatId: activeConversation._id, text }));
+      
+      // Touch conversation to ensure it stays in recent chats when typing
+      if (text.trim()) {
+        const otherParticipant = activeConversation.participants.find(p => p._id !== user?._id);
+        if (otherParticipant) {
+          touchConversation(otherParticipant._id);
+        }
+      }
     }
     
     // Handle typing indicators
@@ -507,7 +513,7 @@ const ChatPage: React.FC = () => {
     typingTimeoutRef.current = setTimeout(() => {
       handleStopTyping();
     }, 3000); // Stop typing after 3 seconds of inactivity
-  }, [handleTyping, handleStopTyping, activeConversation, dispatch]);
+  }, [handleTyping, handleStopTyping, activeConversation, dispatch, user, touchConversation]);
 
   // --- Cleanup on unmount ---
   useEffect(() => {

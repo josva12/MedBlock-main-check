@@ -149,6 +149,7 @@ exports.sendMessage = async (req, res) => {
 
         chat.messages.push(newMessage);
         chat.lastMessage = new Date();
+        chat.updatedAt = new Date();
         await chat.save();
 
         // Populate the sender information for the response

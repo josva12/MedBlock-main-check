@@ -118,5 +118,7 @@ const ChatSchema = new mongoose.Schema({
 // Index for efficient querying
 ChatSchema.index({ participants: 1 });
 ChatSchema.index({ lastMessage: -1 });
+ChatSchema.index({ updatedAt: -1 });
+ChatSchema.index({ participants: 1, lastMessage: -1 }); // Compound index for better performance
 
 module.exports = mongoose.model('Chat', ChatSchema); 
