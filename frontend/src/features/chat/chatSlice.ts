@@ -1,76 +1,16 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import chatService, { Message, Conversation, User } from '../../services/chatService';
 
 // --- Interfaces ---
-interface Message {
-  _id: string;
-  senderId: {
-    _id: string;
-    fullName: string;
-    profilePicture?: {
-      url?: string;
-      filename?: string;
-    };
-  };
-  content: string;
-  type: 'text' | 'image' | 'video' | 'audio' | 'file';
-  fileUrl?: string;
-  fileName?: string;
-  fileSize?: number;
-  mimeType?: string;
-  status: 'sent' | 'delivered' | 'read';
-  reactions: Array<{
-    userId: string;
-    userName: string;
-    emoji: string;
-    reactedAt: Date;
-  }>;
-  readBy: Array<{
-    userId: string;
-    readAt: Date;
-  }>;
-  deliveredTo: Array<{
-    userId: string;
-    deliveredAt: Date;
-  }>;
-  createdAt: Date;
-}
-
-interface Conversation {
-  _id: string;
-  participants: Array<{
-    _id: string;
-    fullName: string;
-    email: string;
-    role: string;
-    profilePicture?: {
-      url?: string;
-      filename?: string;
-    };
-    showLastSeen?: boolean;
-    showOnlineStatus?: boolean;
-    lastSeen?: Date;
-    isOnline?: boolean;
-  }>;
-  messages: Message[];
-  lastMessage?: Date;
-  isGroupChat: boolean;
-  groupName?: string;
-  groupAdmin?: string;
-  archivedBy: Array<{
-    userId: string;
-    archivedAt: Date;
-  }>;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 interface ChatState {
   recentChats: Conversation[];
   drafts: { [chatId: string]: string };
   activeConversation: Conversation | null;
   messages: Message[];
+  searchResults: User[];
   loading: boolean;
   error: string | null;
+  searching: boolean;
 }
 
 const initialState: ChatState = {
@@ -78,9 +18,100 @@ const initialState: ChatState = {
   drafts: {},
   activeConversation: null,
   messages: [],
+  searchResults: [],
   loading: false,
   error: null,
+  searching: false,
 };
+
+// --- Async Thunks ---
+export const fetchRecentChats = createAsyncThunk(
+  'chat/fetchRecentChats',
+  async (showArchived: boolean = false) => {
+    return await chatService.getRecentChats(showArchived);
+  }
+);
+
+export const searchUsers = createAsyncThunk(
+  'chat/searchUsers',
+  async (query: string) => {
+    return await chatService.searchUsers(query);
+  }
+);
+
+export const createOrGetConversation = createAsyncThunk(
+  'chat/createOrGetConversation',
+  async (participantId: string) => {
+    return await chatService.createOrGetConversation(participantId);
+  }
+);
+
+export const touchConversation = createAsyncThunk(
+  'chat/touchConversation',
+  async (participantId: string) => {
+    return await chatService.touchConversation(participantId);
+  }
+);
+
+export const fetchMessages = createAsyncThunk(
+  'chat/fetchMessages',
+  async (chatId: string) => {
+    return await chatService.getMessages(chatId);
+  }
+);
+
+export const sendMessage = createAsyncThunk(
+  'chat/sendMessage',
+  async ({ chatId, content }: { chatId: string; content: string }) => {
+    return await chatService.sendMessage(chatId, content);
+  }
+);
+
+export const sendMediaMessage = createAsyncThunk(
+  'chat/sendMediaMessage',
+  async ({ chatId, file, content }: { chatId: string; file: File; content?: string }) => {
+    return await chatService.sendMediaMessage(chatId, file, content);
+  }
+);
+
+export const addReaction = createAsyncThunk(
+  'chat/addReaction',
+  async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+    return await chatService.addReaction(messageId, emoji);
+  }
+);
+
+export const removeReaction = createAsyncThunk(
+  'chat/removeReaction',
+  async ({ messageId, emoji }: { messageId: string; emoji: string }) => {
+    await chatService.removeReaction(messageId, emoji);
+    return { messageId, emoji };
+  }
+);
+
+export const archiveChat = createAsyncThunk(
+  'chat/archiveChat',
+  async (chatId: string) => {
+    await chatService.archiveChat(chatId);
+    return chatId;
+  }
+);
+
+export const unarchiveChat = createAsyncThunk(
+  'chat/unarchiveChat',
+  async (chatId: string) => {
+    await chatService.unarchiveChat(chatId);
+    return chatId;
+  }
+);
+
+export const deleteChat = createAsyncThunk(
+  'chat/deleteChat',
+  async (chatId: string) => {
+    await chatService.deleteChat(chatId);
+    return chatId;
+  }
+);
 
 const chatSlice = createSlice({
   name: 'chat',
@@ -202,14 +233,182 @@ const chatSlice = createSlice({
       }
     },
 
+    // Clear search results
+    clearSearchResults: (state) => {
+      state.searchResults = [];
+    },
+
     // Clear chat state
     clearChatState: (state) => {
       state.recentChats = [];
       state.drafts = {};
       state.activeConversation = null;
       state.messages = [];
+      state.searchResults = [];
       state.error = null;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      // Fetch Recent Chats
+      .addCase(fetchRecentChats.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchRecentChats.fulfilled, (state, action) => {
+        state.loading = false;
+        state.recentChats = action.payload;
+      })
+      .addCase(fetchRecentChats.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch recent chats';
+      })
+
+      // Search Users
+      .addCase(searchUsers.pending, (state) => {
+        state.searching = true;
+        state.error = null;
+      })
+      .addCase(searchUsers.fulfilled, (state, action) => {
+        state.searching = false;
+        state.searchResults = action.payload;
+      })
+      .addCase(searchUsers.rejected, (state, action) => {
+        state.searching = false;
+        state.error = action.error.message || 'Failed to search users';
+      })
+
+      // Create or Get Conversation
+      .addCase(createOrGetConversation.fulfilled, (state, action) => {
+        // Add to recent chats if not already there
+        const existingIndex = state.recentChats.findIndex(chat => chat._id === action.payload._id);
+        if (existingIndex === -1) {
+          state.recentChats.unshift(action.payload);
+        } else {
+          // Update existing conversation
+          state.recentChats[existingIndex] = action.payload;
+          // Move to top
+          const conversation = state.recentChats.splice(existingIndex, 1)[0];
+          state.recentChats.unshift(conversation);
+        }
+      })
+
+      // Touch Conversation
+      .addCase(touchConversation.fulfilled, (state, action) => {
+        // Add to recent chats if not already there
+        const existingIndex = state.recentChats.findIndex(chat => chat._id === action.payload._id);
+        if (existingIndex === -1) {
+          state.recentChats.unshift(action.payload);
+        } else {
+          // Update existing conversation
+          state.recentChats[existingIndex] = action.payload;
+          // Move to top
+          const conversation = state.recentChats.splice(existingIndex, 1)[0];
+          state.recentChats.unshift(conversation);
+        }
+      })
+
+      // Fetch Messages
+      .addCase(fetchMessages.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchMessages.fulfilled, (state, action) => {
+        state.loading = false;
+        state.messages = action.payload;
+      })
+      .addCase(fetchMessages.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message || 'Failed to fetch messages';
+      })
+
+      // Send Message
+      .addCase(sendMessage.fulfilled, (state, action) => {
+        // Add message to current conversation
+        state.messages.push(action.payload);
+        
+        // Update recent chats
+        const chatIndex = state.recentChats.findIndex(chat => chat._id === state.activeConversation?._id);
+        if (chatIndex !== -1) {
+          state.recentChats[chatIndex].messages.push(action.payload);
+          state.recentChats[chatIndex].lastMessage = action.payload.createdAt;
+          
+          // Move to top
+          const conversation = state.recentChats.splice(chatIndex, 1)[0];
+          state.recentChats.unshift(conversation);
+        }
+        
+        // Clear draft for this chat
+        if (state.activeConversation) {
+          delete state.drafts[state.activeConversation._id];
+        }
+      })
+
+      // Send Media Message
+      .addCase(sendMediaMessage.fulfilled, (state, action) => {
+        // Add message to current conversation
+        state.messages.push(action.payload);
+        
+        // Update recent chats
+        const chatIndex = state.recentChats.findIndex(chat => chat._id === state.activeConversation?._id);
+        if (chatIndex !== -1) {
+          state.recentChats[chatIndex].messages.push(action.payload);
+          state.recentChats[chatIndex].lastMessage = action.payload.createdAt;
+          
+          // Move to top
+          const conversation = state.recentChats.splice(chatIndex, 1)[0];
+          state.recentChats.unshift(conversation);
+        }
+        
+        // Clear draft for this chat
+        if (state.activeConversation) {
+          delete state.drafts[state.activeConversation._id];
+        }
+      })
+
+      // Add Reaction
+      .addCase(addReaction.fulfilled, (state, action) => {
+        const messageIndex = state.messages.findIndex(msg => msg._id === action.payload._id);
+        if (messageIndex !== -1) {
+          state.messages[messageIndex] = action.payload;
+        }
+      })
+
+      // Remove Reaction
+      .addCase(removeReaction.fulfilled, (state, action) => {
+        const { messageId, emoji } = action.payload;
+        const messageIndex = state.messages.findIndex(msg => msg._id === messageId);
+        if (messageIndex !== -1) {
+          state.messages[messageIndex].reactions = state.messages[messageIndex].reactions.filter(
+            reaction => !(reaction.emoji === emoji)
+          );
+        }
+      })
+
+      // Archive Chat
+      .addCase(archiveChat.fulfilled, (state, action) => {
+        const chatId = action.payload;
+        state.recentChats = state.recentChats.filter(chat => chat._id !== chatId);
+        if (state.activeConversation?._id === chatId) {
+          state.activeConversation = null;
+          state.messages = [];
+        }
+      })
+
+      // Unarchive Chat
+      .addCase(unarchiveChat.fulfilled, (state, action) => {
+        // Chat will be re-added when user fetches recent chats
+      })
+
+      // Delete Chat
+      .addCase(deleteChat.fulfilled, (state, action) => {
+        const chatId = action.payload;
+        state.recentChats = state.recentChats.filter(chat => chat._id !== chatId);
+        if (state.activeConversation?._id === chatId) {
+          state.activeConversation = null;
+          state.messages = [];
+        }
+      });
   },
 });
 
@@ -227,6 +426,7 @@ export const {
   clearDraftMessage,
   clearAllDrafts,
   updateMessageStatus,
+  clearSearchResults,
   clearChatState,
 } = chatSlice.actions;
 
