@@ -138,6 +138,21 @@ cd frontend && npm run dev
 - **Appointment Scheduling**: Manage appointment bookings
 - **Patient Registration**: Register new patients
 - **Insurance Verification**: Verify patient insurance
+- **Chat Communication**: Communicate with patients and staff
+
+### **7. Real-time Chat System**
+- **Cross-Role Communication**: Chat between all user roles (doctors, nurses, patients, admin, pharmacy, front desk)
+- **User Search**: Search for any user in the system by name, email, or role
+- **Persistent Chat History**: All conversations are permanently stored and never disappear
+- **Real-time Messaging**: Instant message delivery with Socket.IO
+- **Media Sharing**: Send images, videos, and files
+- **Message Reactions**: React to messages with emojis
+- **Typing Indicators**: See when others are typing
+- **Message Status**: Track sent, delivered, and read status
+- **Chat Archiving**: Archive conversations without losing history
+- **Draft Messages**: Auto-save message drafts
+- **Profile Pictures**: User profile pictures in chat
+- **Privacy Settings**: Control online status and last seen visibility
 
 ## 🔐 Security Features
 
@@ -211,6 +226,17 @@ cd frontend && npm run dev
 - SMS alerts (configurable)
 - Appointment reminders
 - System alerts
+- Real-time chat notifications
+
+### **Real-time Chat System**
+- **Cross-platform Communication**: Chat between all user roles
+- **Persistent Conversations**: All chat history is permanently stored
+- **User Search & Discovery**: Find any user in the system
+- **Real-time Features**: Instant messaging, typing indicators, message status
+- **Media Support**: Share images, videos, and files
+- **Message Reactions**: React with emojis
+- **Privacy Controls**: Manage online status and visibility
+- **Chat Management**: Archive, delete, and organize conversations
 
 ## 🔧 API Documentation
 
@@ -248,6 +274,24 @@ PUT    /medical-records/:id       # Update record
 DELETE /medical-records/:id       # Delete record
 POST   /medical-records/:id/blockchain/record    # Record on blockchain
 POST   /medical-records/:id/blockchain/verify    # Verify on blockchain
+```
+
+### **Chat API Endpoints**
+```
+GET    /chat                    # Get user's recent chats
+POST   /chat/conversation       # Create or get conversation
+POST   /chat/touch-conversation # Touch conversation (create if doesn't exist)
+GET    /chat/:chatId/messages   # Get messages for a chat
+POST   /chat/:chatId/messages   # Send text message
+POST   /chat/:chatId/media      # Send media message
+PUT    /chat/:chatId/messages/delivered  # Mark messages as delivered
+PUT    /chat/:chatId/messages/read       # Mark messages as read
+POST   /chat/messages/:messageId/react   # Add reaction to message
+DELETE /chat/messages/:messageId/react    # Remove reaction from message
+PATCH  /chat/:chatId/archive    # Archive chat
+PATCH  /chat/:chatId/unarchive  # Unarchive chat
+DELETE /chat/:chatId            # Delete chat
+GET    /users/search            # Search users for chat
 ```
 
 ### **Complete API Documentation**
@@ -319,24 +363,32 @@ MedBlock-main-check/
 ├── frontend/                 # React TypeScript Frontend
 │   ├── src/
 │   │   ├── components/      # Reusable UI components
+│   │   │   ├── chat/        # Chat system components
+│   │   │   └── common/      # Common UI components
 │   │   ├── features/        # Redux slices
+│   │   │   └── chat/        # Chat state management
 │   │   ├── layouts/         # Role-specific layouts
 │   │   ├── pages/           # Route components
 │   │   ├── services/        # API services
+│   │   │   └── chatService.ts # Chat API service
 │   │   ├── store/           # Redux store
 │   │   └── types/           # TypeScript types
 │   └── package.json
 ├── src/                     # Node.js Express Backend
 │   ├── config/              # Configuration files
 │   ├── controllers/         # Route controllers
+│   │   └── chatController.js # Chat functionality
 │   ├── middleware/          # Custom middleware
 │   ├── models/              # MongoDB models
+│   │   └── Chat.js          # Chat data model
 │   ├── routes/              # API routes
+│   │   └── chat.js          # Chat API endpoints
 │   ├── services/            # Business logic services
 │   ├── utils/               # Utility functions
 │   └── server.js            # Main server file
 ├── ai/                      # AI/ML Services (Python)
 ├── logs/                    # Application logs
+├── CHAT_IMPLEMENTATION.md   # Chat system documentation
 └── Documentation Files
 ```
 
@@ -377,6 +429,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 - **Documentation**: See `IMPLEMENTATION_COMPLETE.md` for detailed implementation guide
+- **Chat System**: See `CHAT_IMPLEMENTATION.md` for comprehensive chat documentation
 - **Issues**: Report bugs and feature requests via GitHub Issues
 - **Discussions**: Join discussions in GitHub Discussions
 
