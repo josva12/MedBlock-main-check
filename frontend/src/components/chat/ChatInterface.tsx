@@ -46,7 +46,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   } = useAppSelector(state => state.chat);
 
   // Local state
-  const [socket, setSocket] = useState<Socket | null>(null);
+  const [, setSocket] = useState<Socket | null>(null);
   const [newMessageText, setNewMessageText] = useState<string>('');
   const [selectedMediaFile, setSelectedMediaFile] = useState<File | null>(null);
   const [showUserSearchModal, setShowUserSearchModal] = useState<boolean>(false);

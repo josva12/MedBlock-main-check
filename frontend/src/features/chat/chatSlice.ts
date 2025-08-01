@@ -396,7 +396,7 @@ const chatSlice = createSlice({
       })
 
       // Unarchive Chat
-      .addCase(unarchiveChat.fulfilled, (state, action) => {
+      .addCase(unarchiveChat.fulfilled, () => {
         // Chat will be re-added when user fetches recent chats
       })
 
