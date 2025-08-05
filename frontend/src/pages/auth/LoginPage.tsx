@@ -74,6 +74,10 @@ const LoginPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleCaptchaChange = (sessionId: string, captchaInput: string) => {
+    setCaptchaData({ sessionId, captchaInput });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -81,11 +85,35 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    // Check if CAPTCHA is required
+    if (captchaRequired && (!captchaData.sessionId || !captchaData.captchaInput)) {
+      setErrors(prev => ({
+        ...prev,
+        captcha: 'CAPTCHA is required. Please complete the verification.'
+      }));
+      return;
+    }
+
     try {
-      const result = await dispatch(login(formData) as any);
+      const loginData = captchaRequired 
+        ? { ...formData, ...captchaData }
+        : formData;
+        
+      const result = await dispatch(login(loginData) as any);
+      
       if (login.fulfilled.match(result)) {
         // Redirect to root so RootRedirector handles role-based dashboard
         navigate('/');
+      } else if (login.rejected.match(result)) {
+        // Check if CAPTCHA is required from error response
+        const errorPayload = result.payload as any;
+        if (errorPayload?.code === 'CAPTCHA_REQUIRED' || errorPayload?.captchaRequired) {
+          setCaptchaRequired(true);
+          setErrors(prev => ({
+            ...prev,
+            captcha: 'CAPTCHA verification is now required due to multiple failed attempts.'
+          }));
+        }
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -166,6 +194,15 @@ const LoginPage: React.FC = () => {
                 )}
               </div>
             </div>
+
+            {/* CAPTCHA Component */}
+            {captchaRequired && (
+              <CaptchaComponent
+                onCaptchaChange={handleCaptchaChange}
+                error={errors.captcha}
+                className="mt-4"
+              />
+            )}
 
             <div className="flex items-center justify-between">
               <div className="text-sm">

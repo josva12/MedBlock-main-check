@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 
 // Lucide React icons
 import { Mail, Lock, User, Phone, BriefcaseMedical, Stethoscope, Eye } from 'lucide-react';
+import CaptchaComponent from '../../components/auth/CaptchaComponent';
 
 // Constants for form dropdowns - aligned with backend validation
 const TITLES = ["Dr.", "Prof.", "Mr.", "Mrs.", "Ms.", "Nurse", "Pharm.", "Tech.", "Facility"];
@@ -75,6 +76,11 @@ const RegisterPage: React.FC = () => {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationType, setNotificationType] = useState<'success' | 'error'>('success');
+  const [captchaData, setCaptchaData] = useState({
+    sessionId: '',
+    captchaInput: '',
+  });
+  const [captchaRequired, setCaptchaRequired] = useState(false);
 
   useEffect(() => {
     dispatch(clearError());
@@ -145,11 +151,24 @@ const RegisterPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleCaptchaChange = (sessionId: string, captchaInput: string) => {
+    setCaptchaData({ sessionId, captchaInput });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!validateForm()) {
       setNotificationMessage('Please correct the errors in the form.');
+      setNotificationType('error');
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 5000);
+      return;
+    }
+
+    // Check if CAPTCHA is required
+    if (captchaRequired && (!captchaData.sessionId || !captchaData.captchaInput)) {
+      setNotificationMessage('CAPTCHA is required. Please complete the verification.');
       setNotificationType('error');
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 5000);
@@ -162,9 +181,26 @@ const RegisterPage: React.FC = () => {
       ...dataToSubmit,
       role: dataToSubmit.role as 'doctor' | 'nurse' | 'admin' | 'front-desk' | 'pharmacy',
       licensingBody: (dataToSubmit.licensingBody || undefined) as 'KMPDC' | 'NCK' | 'PPB' | 'other' | undefined,
+      ...(captchaRequired && captchaData),
     };
 
-    dispatch(register(finalData));
+    try {
+      const result = await dispatch(register(finalData) as any);
+      
+      if (register.rejected.match(result)) {
+        // Check if CAPTCHA is required from error response
+        const errorPayload = result.payload as any;
+        if (errorPayload?.code === 'CAPTCHA_REQUIRED' || errorPayload?.captchaRequired) {
+          setCaptchaRequired(true);
+          setNotificationMessage('CAPTCHA verification is now required due to multiple failed attempts.');
+          setNotificationType('error');
+          setShowNotification(true);
+          setTimeout(() => setShowNotification(false), 5000);
+        }
+      }
+    } catch (error) {
+      console.error('Registration error:', error);
+    }
   };
 
   const isProfessionalRole = ["doctor", "nurse"].includes(form.role);
@@ -475,6 +511,17 @@ const RegisterPage: React.FC = () => {
                 </div>
               </div>
             </fieldset>
+
+            {/* CAPTCHA Component */}
+            {captchaRequired && (
+              <fieldset>
+                <legend className="text-lg font-semibold text-gray-700 mb-4">Security Verification</legend>
+                <CaptchaComponent
+                  onCaptchaChange={handleCaptchaChange}
+                  className="mt-4"
+                />
+              </fieldset>
+            )}
 
           <div className="flex items-center justify-between">
             <button 
