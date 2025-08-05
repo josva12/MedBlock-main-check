@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const logger = require('../utils/logger');
+const captchaMetrics = require('../services/captchaMetrics');
 
 // CAPTCHA configuration
 const CAPTCHA_CONFIG = {
@@ -16,6 +17,7 @@ const CAPTCHA_CONFIG = {
 // In-memory storage for CAPTCHA sessions (in production, use Redis)
 const captchaSessions = new Map();
 const failedAttempts = new Map();
+const captchaValidationAttempts = new Map(); // Track CAPTCHA validation attempts per IP
 
 /**
  * Generate a random CAPTCHA string
@@ -118,6 +120,9 @@ exports.generateCaptcha = (req, res) => {
       sessionId
     });
 
+    // Record metrics
+    captchaMetrics.recordCaptchaGenerated(req.ip, req.get('User-Agent'), req.originalUrl);
+
     res.send(imageBuffer);
   } catch (error) {
     logger.error('CAPTCHA generation failed:', error);
@@ -131,8 +136,49 @@ exports.generateCaptcha = (req, res) => {
 /**
  * Validate CAPTCHA response
  */
-exports.validateCaptcha = (sessionId, userInput) => {
+exports.validateCaptcha = (sessionId, userInput, clientIP = null) => {
   try {
+    // Sanitize user input to prevent injection attacks
+    const originalInput = String(userInput || '').trim();
+    const sanitizedInput = originalInput.replace(/[^A-Za-z0-9]/g, '');
+    
+    if (!sanitizedInput) {
+      logger.warn('CAPTCHA validation failed: Empty or invalid input', { sessionId });
+      return { valid: false, reason: 'INVALID_INPUT' };
+    }
+
+    // Record input sanitization metrics if input was modified
+    if (originalInput !== sanitizedInput) {
+      captchaMetrics.recordInputSanitization(clientIP, originalInput.length, sanitizedInput.length);
+    }
+
+    // Check IP-based CAPTCHA validation attempt limits
+    if (clientIP) {
+      const ipAttempts = captchaValidationAttempts.get(clientIP) || { count: 0, resetTime: Date.now() + (5 * 60 * 1000) }; // 5 minutes
+      
+      // Reset counter if time window has passed
+      if (Date.now() > ipAttempts.resetTime) {
+        ipAttempts.count = 0;
+        ipAttempts.resetTime = Date.now() + (5 * 60 * 1000);
+      }
+      
+      // Limit to 20 CAPTCHA validation attempts per IP per 5 minutes
+      if (ipAttempts.count >= 20) {
+              logger.warn('CAPTCHA validation rate limit exceeded', { 
+        clientIP, 
+        attempts: ipAttempts.count 
+      });
+      
+      // Record metrics
+      captchaMetrics.recordRateLimitExceeded(clientIP, ipAttempts.count);
+      
+      return { valid: false, reason: 'RATE_LIMIT_EXCEEDED' };
+      }
+      
+      ipAttempts.count++;
+      captchaValidationAttempts.set(clientIP, ipAttempts);
+    }
+
     const session = captchaSessions.get(sessionId);
     
     if (!session) {
@@ -144,6 +190,10 @@ exports.validateCaptcha = (sessionId, userInput) => {
     if (Date.now() - session.timestamp > CAPTCHA_CONFIG.sessionTimeout) {
       captchaSessions.delete(sessionId);
       logger.warn('CAPTCHA validation failed: Session expired', { sessionId });
+      
+      // Record session expiration metrics
+      captchaMetrics.recordSessionExpiration(clientIP, sessionId);
+      
       return { valid: false, reason: 'SESSION_EXPIRED' };
     }
 
@@ -157,19 +207,27 @@ exports.validateCaptcha = (sessionId, userInput) => {
     session.attempts++;
 
     // Validate input (case-insensitive)
-    const isValid = userInput.toUpperCase() === session.text.toUpperCase();
+    const isValid = sanitizedInput.toUpperCase() === session.text.toUpperCase();
     
     if (isValid) {
       captchaSessions.delete(sessionId);
       logger.audit('captcha_validated', null, 'auth', { sessionId });
+      
+      // Record metrics
+      captchaMetrics.recordCaptchaValidated(clientIP, sessionId);
+      
       return { valid: true };
     } else {
       logger.warn('CAPTCHA validation failed: Incorrect input', { 
         sessionId, 
         attempts: session.attempts,
-        userInput: userInput.toUpperCase(),
-        expected: session.text.toUpperCase()
+        // Don't log the actual input for security
+        inputLength: sanitizedInput.length
       });
+      
+      // Record metrics
+      captchaMetrics.recordCaptchaFailed(clientIP, sessionId, 'INCORRECT_INPUT');
+      
       return { valid: false, reason: 'INCORRECT_INPUT' };
     }
   } catch (error) {
@@ -226,15 +284,21 @@ exports.recordFailedAttempt = (req) => {
   // If max attempts exceeded, set lockout
   if (clientData.attempts >= CAPTCHA_CONFIG.maxAttempts) {
     clientData.lockoutUntil = now + CAPTCHA_CONFIG.lockoutDuration;
+    
+    // Record lockout metrics
+    captchaMetrics.recordLockout(clientIP, CAPTCHA_CONFIG.lockoutDuration);
   }
 
   failedAttempts.set(clientIP, clientData);
 
-  logger.warn('Failed authentication attempt recorded', {
-    ip: clientIP,
-    attempts: clientData.attempts,
-    lockoutUntil: clientData.lockoutUntil
-  });
+      logger.warn('Failed authentication attempt recorded', {
+      ip: clientIP,
+      attempts: clientData.attempts,
+      lockoutUntil: clientData.lockoutUntil
+    });
+
+    // Record metrics
+    captchaMetrics.recordFailedAttempt(clientIP);
 };
 
 /**
@@ -266,6 +330,13 @@ const cleanupExpiredData = () => {
   for (const [ip, data] of failedAttempts.entries()) {
     if (data.lockoutUntil && now > data.lockoutUntil) {
       failedAttempts.delete(ip);
+    }
+  }
+
+  // Clean up expired CAPTCHA validation attempts
+  for (const [ip, data] of captchaValidationAttempts.entries()) {
+    if (now > data.resetTime) {
+      captchaValidationAttempts.delete(ip);
     }
   }
 };

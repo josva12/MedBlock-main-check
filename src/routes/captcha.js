@@ -26,7 +26,7 @@ router.post('/validate', (req, res) => {
     }
 
     const { validateCaptcha } = require('../middleware/captchaMiddleware');
-    const validation = validateCaptcha(sessionId, captchaInput);
+    const validation = validateCaptcha(sessionId, captchaInput, req.ip);
 
     if (validation.valid) {
       res.json({

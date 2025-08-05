@@ -1,0 +1,42 @@
+config:
+  target: '{{ $processEnvironment.API_BASE_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 30
+      arrivalRate: 5
+      name: "Warm up phase"
+    - duration: 60
+      arrivalRate: 20
+      name: "Normal load"
+    - duration: 60
+      arrivalRate: 50
+      name: "High load"
+    - duration: 30
+      arrivalRate: 100
+      name: "Peak load"
+  defaults:
+    headers:
+      User-Agent: "Artillery-Performance-Test/1.0"
+      X-Forwarded-For: "192.168.1.100"
+      Content-Type: "application/json"
+  processor: "./captcha-processor.js"
+
+scenarios:
+  - name: "CAPTCHA Validation Performance Test"
+    weight: 100
+    flow:
+      - get:
+          url: "/api/v1/captcha/generate"
+          capture:
+            - header: "x-captcha-session"
+              as: "sessionId"
+      - think: 2
+      - post:
+          url: "/api/v1/captcha/validate"
+          json:
+            sessionId: "{{ sessionId }}"
+            captchaInput: "ABC123"
+          capture:
+            - json: "$.success"
+              as: "validationSuccess"
+      - log: "Validation result: {{ validationSuccess }}"
+      - function: "recordResponseTime" 

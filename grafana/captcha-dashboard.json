@@ -1,0 +1,428 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "MedBlock CAPTCHA Security Dashboard",
+    "tags": ["captcha", "security", "medblock"],
+    "style": "dark",
+    "timezone": "browser",
+    "schemaVersion": 36,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "endpoint",
+          "type": "query",
+          "query": "label_values(captcha_endpoint_usage_total, endpoint)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        },
+        {
+          "name": "security_event",
+          "type": "query",
+          "query": "label_values(captcha_security_events_total, event_type)",
+          "refresh": 2,
+          "includeAll": true,
+          "multi": true
+        }
+      ]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "CAPTCHA Success Rate",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_success_rate",
+            "legendFormat": "Success Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 50},
+                {"color": "green", "value": 80}
+              ]
+            },
+            "unit": "percent",
+            "decimals": 2
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Total CAPTCHA Requests",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_generated_total",
+            "legendFormat": "Generated"
+          },
+          {
+            "expr": "captcha_validated_total",
+            "legendFormat": "Validated"
+          },
+          {
+            "expr": "captcha_failed_total",
+            "legendFormat": "Failed"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Security Events",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_lockouts_total",
+            "legendFormat": "Lockouts"
+          },
+          {
+            "expr": "captcha_rate_limit_exceeded_total",
+            "legendFormat": "Rate Limit Exceeded"
+          },
+          {
+            "expr": "captcha_failed_attempts_total",
+            "legendFormat": "Failed Attempts"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "Average Response Time",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_avg_response_time_seconds",
+            "legendFormat": "Avg Response Time"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "thresholds": {
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 10}
+              ]
+            },
+            "unit": "s",
+            "decimals": 2
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "CAPTCHA Requests Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(captcha_generated_total[5m])",
+            "legendFormat": "Generated/min"
+          },
+          {
+            "expr": "rate(captcha_validated_total[5m])",
+            "legendFormat": "Validated/min"
+          },
+          {
+            "expr": "rate(captcha_failed_total[5m])",
+            "legendFormat": "Failed/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "Security Events Over Time",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(captcha_lockouts_total[5m])",
+            "legendFormat": "Lockouts/min"
+          },
+          {
+            "expr": "rate(captcha_rate_limit_exceeded_total[5m])",
+            "legendFormat": "Rate Limit/min"
+          },
+          {
+            "expr": "rate(captcha_failed_attempts_total[5m])",
+            "legendFormat": "Failed Attempts/min"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "reqps"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 7,
+        "title": "Endpoint Usage",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "captcha_endpoint_usage_total",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "job": true,
+                "instance": true
+              },
+              "renameByName": {
+                "endpoint": "Endpoint",
+                "action": "Action",
+                "Value": "Count"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "User Agent Distribution",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "captcha_user_agents_total",
+            "legendFormat": "{{agent_type}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 9,
+        "title": "Time of Day Pattern",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "captcha_time_of_day_total{action=\"generated\"}",
+            "legendFormat": "Generated - Hour {{hour}}"
+          },
+          {
+            "expr": "captcha_time_of_day_total{action=\"validated\"}",
+            "legendFormat": "Validated - Hour {{hour}}"
+          },
+          {
+            "expr": "captcha_time_of_day_total{action=\"failed\"}",
+            "legendFormat": "Failed - Hour {{hour}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "Day of Week Pattern",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "captcha_day_of_week_total{action=\"generated\"}",
+            "legendFormat": "Generated - {{day}}"
+          },
+          {
+            "expr": "captcha_day_of_week_total{action=\"validated\"}",
+            "legendFormat": "Validated - {{day}}"
+          },
+          {
+            "expr": "captcha_day_of_week_total{action=\"failed\"}",
+            "legendFormat": "Failed - {{day}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 11,
+        "title": "Security Events by Type",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "captcha_security_events_total",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "job": true,
+                "instance": true
+              },
+              "renameByName": {
+                "event_type": "Event Type",
+                "Value": "Count"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 32}
+      },
+      {
+        "id": 12,
+        "title": "Performance Metrics",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_avg_response_time_seconds",
+            "legendFormat": "Avg Response Time"
+          },
+          {
+            "expr": "captcha_median_response_time_seconds",
+            "legendFormat": "Median Response Time"
+          },
+          {
+            "expr": "captcha_active_sessions",
+            "legendFormat": "Active Sessions"
+          },
+          {
+            "expr": "captcha_session_expirations_total",
+            "legendFormat": "Session Expirations"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "palette-classic"},
+            "unit": "s"
+          }
+        },
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      },
+      {
+        "id": 13,
+        "title": "Input Sanitization Events",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_input_sanitizations_total",
+            "legendFormat": "Sanitizations"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 40}
+      },
+      {
+        "id": 14,
+        "title": "Validation Attempts",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "captcha_validation_attempts_total",
+            "legendFormat": "Total Attempts"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "color": {"mode": "thresholds"},
+            "unit": "short"
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 40}
+      },
+      {
+        "id": 15,
+        "title": "Alerts Panel",
+        "type": "text",
+        "content": "## Security Alerts\n\n- **Low Success Rate**: < 50% may indicate CAPTCHA difficulty issues\n- **High Lockout Rate**: > 10/hour may indicate brute force attacks\n- **High Rate Limit Violations**: > 50/hour may indicate bot activity\n- **Unusual Time Patterns**: Activity outside normal hours\n- **Geographic Anomalies**: Requests from unexpected locations",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 40}
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Security Events",
+          "datasource": "Prometheus",
+          "expr": "captcha_lockouts_total > 0",
+          "iconColor": "red",
+          "enable": true
+        }
+      ]
+    }
+  }
+} 

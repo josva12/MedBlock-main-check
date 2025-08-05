@@ -1,0 +1,75 @@
+config:
+  target: '{{ $processEnvironment.API_BASE_URL || "http://localhost:3000" }}'
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Initial load"
+    - duration: 120
+      arrivalRate: 100
+      name: "Concurrent users"
+    - duration: 60
+      arrivalRate: 500
+      name: "High concurrency"
+    - duration: 30
+      arrivalRate: 1000
+      name: "Stress test"
+  defaults:
+    headers:
+      User-Agent: "Artillery-Load-Test/1.0"
+      X-Forwarded-For: "192.168.1.100"
+      Content-Type: "application/json"
+  processor: "./captcha-processor.js"
+
+scenarios:
+  - name: "CAPTCHA Generation Load Test"
+    weight: 40
+    flow:
+      - get:
+          url: "/api/v1/captcha/generate"
+          capture:
+            - header: "x-captcha-session"
+              as: "sessionId"
+      - think: 1
+      - log: "Generated CAPTCHA: {{ sessionId }}"
+
+  - name: "CAPTCHA Validation Load Test"
+    weight: 30
+    flow:
+      - get:
+          url: "/api/v1/captcha/generate"
+          capture:
+            - header: "x-captcha-session"
+              as: "sessionId"
+      - think: 1
+      - post:
+          url: "/api/v1/captcha/validate"
+          json:
+            sessionId: "{{ sessionId }}"
+            captchaInput: "ABC123"
+      - log: "Validated CAPTCHA: {{ sessionId }}"
+
+  - name: "CAPTCHA Error Handling Load Test"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/v1/captcha/generate"
+          capture:
+            - header: "x-captcha-session"
+              as: "sessionId"
+      - think: 1
+      - post:
+          url: "/api/v1/captcha/validate"
+          json:
+            sessionId: "{{ sessionId }}"
+            captchaInput: "WRONG"
+      - log: "Failed validation: {{ sessionId }}"
+
+  - name: "CAPTCHA Rate Limiting Test"
+    weight: 10
+    flow:
+      - loop:
+          - get:
+              url: "/api/v1/captcha/generate"
+          - think: 0.1
+        count: 25
+      - log: "Rate limit test completed" 

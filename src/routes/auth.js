@@ -145,7 +145,7 @@ router.post('/register', authLimiter, captchaCheck, validateRegister, async (req
       }
 
       const { validateCaptcha } = require('../middleware/captchaMiddleware');
-      const validation = validateCaptcha(sessionId, captchaInput);
+      const validation = validateCaptcha(sessionId, captchaInput, req.ip);
       
       if (!validation.valid) {
         return res.status(400).json({
@@ -282,7 +282,7 @@ router.post('/login', authLimiter, captchaCheck, validateLogin, async (req, res)
       }
 
       const { validateCaptcha } = require('../middleware/captchaMiddleware');
-      const validation = validateCaptcha(sessionId, captchaInput);
+      const validation = validateCaptcha(sessionId, captchaInput, req.ip);
       
       if (!validation.valid) {
         return res.status(400).json({

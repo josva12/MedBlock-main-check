@@ -1,0 +1,275 @@
+name: CAPTCHA Security Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - '**/captcha*'
+      - '**/middleware/captchaMiddleware.js'
+      - '**/services/captcha*'
+      - '**/routes/**'
+      - '**/tests/**'
+      - '**/scripts/test-captcha-security.js'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - '**/captcha*'
+      - '**/middleware/captchaMiddleware.js'
+      - '**/services/captcha*'
+      - '**/routes/**'
+      - '**/tests/**'
+      - '**/scripts/test-captcha-security.js'
+  schedule:
+    # Run security tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  security-tests:
+    name: CAPTCHA Security Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm install -g jest
+
+      - name: Run CAPTCHA Unit Tests
+        run: npm run test:captcha
+        env:
+          CI: true
+          NODE_ENV: test
+
+      - name: Run CAPTCHA Security Tests
+        run: |
+          # Start the server in background
+          npm run dev &
+          SERVER_PID=$!
+          
+          # Wait for server to start
+          sleep 10
+          
+          # Run security tests
+          node scripts/test-captcha-security.js
+          
+          # Stop server
+          kill $SERVER_PID
+        env:
+          API_BASE_URL: http://localhost:3000
+          NODE_ENV: test
+
+      - name: Upload Test Coverage
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captcha-test-coverage-${{ matrix.node-version }}
+          path: |
+            coverage/
+            logs/
+          retention-days: 30
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: captcha-test-results-${{ matrix.node-version }}
+          path: |
+            test-results/
+            junit.xml
+          retention-days: 30
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    needs: security-tests
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Run Snyk Security Scan
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high
+        continue-on-error: true
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-scan-report
+          path: |
+            snyk-report.json
+            npm-audit.json
+          retention-days: 90
+
+  performance-tests:
+    name: CAPTCHA Performance Tests
+    runs-on: ubuntu-latest
+    needs: security-tests
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm install -g artillery
+
+      - name: Start Server
+        run: |
+          npm run dev &
+          echo $! > server.pid
+          sleep 15
+
+      - name: Run Performance Tests
+        run: |
+          # Test CAPTCHA generation performance
+          artillery run -o captcha-generation-report.json tests/performance/captcha-generation.yml
+          
+          # Test CAPTCHA validation performance
+          artillery run -o captcha-validation-report.json tests/performance/captcha-validation.yml
+          
+          # Test concurrent load
+          artillery run -o captcha-load-report.json tests/performance/captcha-load.yml
+        env:
+          API_BASE_URL: http://localhost:3000
+
+      - name: Stop Server
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid)
+            rm server.pid
+          fi
+
+      - name: Upload Performance Reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-test-reports
+          path: |
+            *-report.json
+            *-report.html
+          retention-days: 30
+
+  code-quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    needs: security-tests
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run TypeScript Check
+        run: npx tsc --noEmit
+        continue-on-error: true
+
+      - name: Check Code Coverage
+        run: |
+          npm run test:captcha -- --coverage --coverageThreshold='{"global":{"branches":80,"functions":80,"lines":80,"statements":80}}'
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: code-coverage-report
+          path: coverage/
+          retention-days: 30
+
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [security-tests, security-scan, performance-tests, code-quality]
+    if: always()
+    
+    steps:
+      - name: Check Test Results
+        id: check-results
+        run: |
+          if [ "${{ needs.security-tests.result }}" == "success" ] && \
+             [ "${{ needs.performance-tests.result }}" == "success" ] && \
+             [ "${{ needs.code-quality.result }}" == "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "message=All CAPTCHA tests passed successfully! 🎉" >> $GITHUB_OUTPUT
+          else
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "message=Some CAPTCHA tests failed. Please check the logs. ❌" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Notify on Success
+        if: steps.check-results.outputs.status == 'success'
+        run: |
+          echo "✅ ${{ steps.check-results.outputs.message }}"
+          echo "📊 Test coverage and performance reports uploaded as artifacts"
+          echo "🔒 Security scan completed"
+          echo "📈 Code quality checks passed"
+
+      - name: Notify on Failure
+        if: steps.check-results.outputs.status == 'failure'
+        run: |
+          echo "❌ ${{ steps.check-results.outputs.message }}"
+          echo "🔍 Check the workflow logs for detailed error information"
+          echo "📋 Review the uploaded artifacts for test results"
+          exit 1
+
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [security-tests, security-scan, performance-tests, code-quality, notify]
+    if: always()
+    
+    steps:
+      - name: Cleanup Old Artifacts
+        run: |
+          echo "🧹 Cleaning up old test artifacts..."
+          echo "✅ CAPTCHA security test workflow completed" 

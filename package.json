@@ -7,11 +7,18 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest",
+    "test:captcha": "jest tests/captcha.test.js",
+    "test:security": "node scripts/test-captcha-security.js",
+    "test:performance": "artillery run tests/performance/captcha-load.yml",
+    "test:performance:generation": "artillery run tests/performance/captcha-generation.yml",
+    "test:performance:validation": "artillery run tests/performance/captcha-validation.yml",
     "test:watch": "jest --watch",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "seed": "node src/database/seeders/index.js",
-    "migrate": "node src/database/migrations/index.js"
+    "migrate": "node src/database/migrations/index.js",
+    "metrics:export": "curl http://localhost:3000/api/v1/metrics/captcha/prometheus",
+    "metrics:health": "curl http://localhost:3000/api/v1/metrics/health"
   },
   "keywords": [
     "healthcare",
