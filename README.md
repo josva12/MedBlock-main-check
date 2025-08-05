@@ -162,6 +162,9 @@ cd frontend && npm run dev
 - **Password Security**: Bcrypt hashing with salt
 - **Session Management**: Secure session handling
 - **Rate Limiting**: Protection against brute force attacks
+- **CAPTCHA Protection**: Advanced CAPTCHA system for authentication endpoints
+- **IP-based Attempt Tracking**: Automatic lockout after multiple failed attempts
+- **Progressive Security**: CAPTCHA appears only when needed
 
 ### **Data Protection**
 - **Data Encryption**: AES-256 encryption for sensitive data
@@ -430,6 +433,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - **Documentation**: See `IMPLEMENTATION_COMPLETE.md` for detailed implementation guide
 - **Chat System**: See `CHAT_IMPLEMENTATION.md` for comprehensive chat documentation
+- **CAPTCHA Security**: See `CAPTCHA_IMPLEMENTATION.md` for security implementation details
 - **Issues**: Report bugs and feature requests via GitHub Issues
 - **Discussions**: Join discussions in GitHub Discussions
 
