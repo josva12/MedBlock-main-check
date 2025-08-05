@@ -5,6 +5,7 @@ import { useAppSelector } from '../../hooks/useAppSelector';
 import type { RootState } from '../../store';
 import { login } from '../../features/auth/authSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import CaptchaComponent from '../../components/auth/CaptchaComponent';
 import { Sun, Moon } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
@@ -12,7 +13,12 @@ const LoginPage: React.FC = () => {
     email: '',
     password: '',
   });
+  const [captchaData, setCaptchaData] = useState({
+    sessionId: '',
+    captchaInput: '',
+  });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'light' || savedTheme === 'dark') {

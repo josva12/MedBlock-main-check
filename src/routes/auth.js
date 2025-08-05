@@ -3,6 +3,13 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const { authenticateToken, authenticateRefreshToken, authRateLimit } = require('../middleware/authMiddleware');
+const { 
+  isCaptchaRequired, 
+  recordFailedAttempt, 
+  resetFailedAttempts, 
+  requireCaptcha,
+  captchaCheck 
+} = require('../middleware/captchaMiddleware');
 const User = require('../models/User');
 const logger = require('../utils/logger');
 
@@ -89,7 +96,7 @@ console.log('🔶 Defining POST /register in auth router');
 // @route   POST /api/v1/auth/register
 // @desc    Register a new user
 // @access  Public
-router.post('/register', authLimiter, validateRegister, async (req, res) => {
+router.post('/register', authLimiter, captchaCheck, validateRegister, async (req, res) => {
   console.log('🔶 POST /register handler reached!');
   try {
     const errors = validationResult(req);
@@ -111,7 +118,9 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
       department,
       submittedLicenseNumber, // NEW field from request body
       licensingBody, // NEW field from request body
-      address
+      address,
+      sessionId,
+      captchaInput
     } = req.body;
 
     // Build the query for existing user dynamically
@@ -123,6 +132,28 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
         'professionalVerification.submittedLicenseNumber': submittedLicenseNumber,
         'professionalVerification.licensingBody': licensingBody
       });
+    }
+
+    // Check if CAPTCHA is required and validate it
+    if (isCaptchaRequired(req)) {
+      if (!sessionId || !captchaInput) {
+        return res.status(400).json({
+          error: 'CAPTCHA is required due to multiple failed attempts',
+          code: 'CAPTCHA_REQUIRED',
+          captchaRequired: true
+        });
+      }
+
+      const { validateCaptcha } = require('../middleware/captchaMiddleware');
+      const validation = validateCaptcha(sessionId, captchaInput);
+      
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'CAPTCHA validation failed',
+          code: validation.reason,
+          captchaRequired: true
+        });
+      }
     }
 
     // Check if user already exists
@@ -178,6 +209,9 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
 
     await user.save();
 
+    // Reset failed attempts on successful registration
+    resetFailedAttempts(req);
+
     // Generate tokens
     const accessToken = user.generateAuthToken();
     const refreshToken = user.generateRefreshToken();
@@ -225,7 +259,7 @@ router.post('/register', authLimiter, validateRegister, async (req, res) => {
 // @route   POST /api/v1/auth/login
 // @desc    Authenticate user & get token
 // @access  Public
-router.post('/login', authLimiter, validateLogin, async (req, res) => {
+router.post('/login', authLimiter, captchaCheck, validateLogin, async (req, res) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -235,7 +269,29 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
       });
     }
 
-    const { email, password } = req.body;
+    const { email, password, sessionId, captchaInput } = req.body;
+
+    // Check if CAPTCHA is required and validate it
+    if (isCaptchaRequired(req)) {
+      if (!sessionId || !captchaInput) {
+        return res.status(400).json({
+          error: 'CAPTCHA is required due to multiple failed attempts',
+          code: 'CAPTCHA_REQUIRED',
+          captchaRequired: true
+        });
+      }
+
+      const { validateCaptcha } = require('../middleware/captchaMiddleware');
+      const validation = validateCaptcha(sessionId, captchaInput);
+      
+      if (!validation.valid) {
+        return res.status(400).json({
+          error: 'CAPTCHA validation failed',
+          code: validation.reason,
+          captchaRequired: true
+        });
+      }
+    }
 
     // Authenticate user
     const user = await User.authenticate(email, password);
@@ -243,6 +299,9 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
     // Generate tokens
     const accessToken = user.generateAuthToken();
     const refreshToken = user.generateRefreshToken();
+
+    // Reset failed attempts on successful login
+    resetFailedAttempts(req);
 
     logger.audit('user_login', user._id, 'auth', {
       ip: req.ip,
@@ -260,6 +319,9 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
       }
     });
   } catch (error) {
+    // Record failed attempt
+    recordFailedAttempt(req);
+    
     logger.error('Login failed:', error);
     res.status(401).json({
       error: error.message || 'Authentication failed'

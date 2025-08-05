@@ -28,6 +28,7 @@ const predictionRoutes = require("./predictions");
 const resourceRoutes = require("./resources");
 const aiChatRoutes = require("./aiChat");
 const chatRoutes = require("./chat"); // Add chat routes import
+const captchaRoutes = require("./captcha"); // Add CAPTCHA routes import
 
 // --- TEMPORARY DIAGNOSTIC ROUTE - ADD THIS BLOCK ---
 // This route MUST be defined and used BEFORE any general authentication middleware
@@ -104,6 +105,7 @@ router.use("/insurance", require("./insurance"));
 router.use("/claims", require("./claims"));
 router.use("/payments", require("./payments"));
 router.use("/chat", require("./chat"));
+router.use("/captcha", captchaRoutes); // Add CAPTCHA routes
 router.use("/api/v1/teleconsultations", teleconsultationRoutes);
 router.use("/api/v1/predictions", predictionRoutes);
 router.use("/resources", require("./resources"));
