@@ -34,6 +34,7 @@ const ResetPasswordPage = React.lazy(() => import('./pages/auth/ResetPasswordPag
 const AdminDashboardPage = React.lazy(() => import('./pages/admin/AdminDashboardPage'));
 const AdminUsersPage = React.lazy(() => import('./pages/admin/AdminUsersPage'));
 const AdminClaimsPage = React.lazy(() => import('./pages/admin/AdminClaimsPage'));
+const MetricsPage = React.lazy(() => import('./pages/admin/MetricsPage'));
 const AuditLogsPage = React.lazy(() => import('./pages/AuditLogsPage'));
 
 // General Pages
@@ -138,6 +139,7 @@ function AppContent() {
                       <Route path="audit-logs" element={<AuditLogsPage />} />
                       <Route path="settings" element={<SettingsPage />} />
                       <Route path="chat" element={<ChatPage />} />
+                      <Route path="metrics" element={<MetricsPage />} />
                   </Route>
               </Route>
 

@@ -20,6 +20,7 @@ import {
   UserPlus, // Add User
   MessageCircle, // For Chat
   BookOpen, // For Resources
+  Activity, // For Metrics
 } from 'lucide-react';
 import { useAppDispatch } from '../../hooks/useAppDispatch';
 import { useAppSelector } from '../../hooks/useAppSelector';
@@ -83,6 +84,7 @@ const AdminDashboardPage: React.FC = () => {
   const handleBlockchain = () => navigate('/blockchain');
   const handleReports = () => navigate('/admin/reports');
   const handleSettings = () => navigate('/admin/settings');
+  const handleMetrics = () => navigate('/admin/metrics');
   const handleUserVerification = () => navigate('/admin/user-management?filter=pending');
   const handleManageBusinesses = () => navigate('/facilities');
   const handleManagePartners = () => navigate('/insurance-marketplace');
@@ -452,6 +454,9 @@ const AdminDashboardPage: React.FC = () => {
             </button>
             <button onClick={handleReports} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
               <BarChart2 className="h-5 w-5 mr-2 text-green-500" /> Reports
+            </button>
+            <button onClick={handleMetrics} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
+              <Activity className="h-5 w-5 mr-2 text-blue-500" /> Metrics
             </button>
             <button onClick={handleSettings} className="flex items-center justify-center p-4 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-lg shadow-sm text-gray-700 dark:text-gray-300 font-medium transition-colors transform hover:scale-[1.02]">
               <Settings className="h-5 w-5 mr-2 text-gray-500" /> Settings
