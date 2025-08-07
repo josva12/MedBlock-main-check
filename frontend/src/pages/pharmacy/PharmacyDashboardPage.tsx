@@ -27,8 +27,8 @@ const PharmacyDashboardPage: React.FC = () => {
     dispatch(fetchNotifications());
   }, [dispatch]);
 
-  // Orders: filter medical records for pharmacy-dispense or prescription
-  const pharmacyOrders = Array.isArray(records) ? records.filter(r => r.status === 'pharmacy_dispense' || r.prescription) : [];
+  // Orders: filter medical records for prescription type
+  const pharmacyOrders = Array.isArray(records) ? records.filter(r => r.recordType === 'prescription') : [];
   // Inventory: filter facilities for type 'pharmacy' (or use inventory field if available)
   const pharmacyInventory = Array.isArray(facilities) ? facilities.filter(f => f.type === 'pharmacy') : [];
   // Consultations: use teleconsultations
@@ -37,7 +37,7 @@ const PharmacyDashboardPage: React.FC = () => {
   const pharmacyNotifications = Array.isArray(notifications) ? notifications : [];
 
   // Stats
-  const pendingOrders = pharmacyOrders.filter(o => o.status === 'Pending').length;
+  const pendingOrders = pharmacyOrders.filter(o => o.status === 'draft').length;
   // TODO: Integrate real inventory model. For now, use pharmacyInventory.length and set lowStockCount to 0.
   const lowStockCount = 0;
   const newConsultations = consultations.length;
@@ -71,10 +71,10 @@ const PharmacyDashboardPage: React.FC = () => {
   // Helper for order status color
   const getOrderStatusColor = (status: string) => {
     switch (status) {
-      case 'Pending': return 'bg-yellow-100 text-yellow-800';
-      case 'Ready for Pickup': return 'bg-blue-100 text-blue-800';
-      case 'Completed': return 'bg-green-100 text-green-800';
-      case 'Cancelled': return 'bg-red-100 text-red-800';
+      case 'draft': return 'bg-yellow-100 text-yellow-800';
+      case 'final': return 'bg-green-100 text-green-800';
+      case 'amended': return 'bg-blue-100 text-blue-800';
+      case 'archived': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -187,8 +187,8 @@ const PharmacyDashboardPage: React.FC = () => {
                 {pharmacyOrders.slice(0, 5).map((order) => (
                   <div key={order._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-100 dark:border-gray-600 transition-transform transform hover:scale-[1.01]">
                     <div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{order.patientName}</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{order.prescription || order.treatment || '-'}</p>
+                      <p className="font-semibold text-gray-900 dark:text-white">{order.patient?.fullName || order.patientName || 'Unknown Patient'}</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 line-clamp-1">{order.description || order.content || '-'}</p>
                     </div>
                     <span className={`text-xs font-bold px-3 py-1 rounded-full ${getOrderStatusColor(order.status || '')}`}> {order.status || '-'}</span>
                   </div>

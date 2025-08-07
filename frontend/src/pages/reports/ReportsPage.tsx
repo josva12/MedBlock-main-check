@@ -1,461 +1,622 @@
-import React, { useEffect, useState } from "react";
-import { useAppDispatch } from "../../hooks/useAppDispatch";
-import { useAppSelector } from "../../hooks/useAppSelector";
-import { fetchReports, createReport, deleteReport } from "../../features/reports/reportsSlice";
-import { fetchPatients } from "../../features/patients/patientsSlice";
-import type { Report } from "../../features/reports/reportsSlice";
-import { type RootState } from "../../store";
+import React, { useEffect, useState, useCallback } from 'react';
+import { useAppDispatch } from '../../hooks/useAppDispatch';
+import { useAppSelector } from '../../hooks/useAppSelector';
+import reportsService, { 
+  Report, 
+  CreateReportData, 
+  ReportsFilter,
+  AnalyticsData,
+  ChartData,
+  ExportOptions
+} from '../../services/reportsService';
 import { 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Save, 
+  BarChart3, 
+  PieChart, 
+  TrendingUp, 
+  TrendingDown,
+  Users,
+  Calendar,
   FileText,
-  User,
-  Calendar
-} from "lucide-react";
+  DollarSign,
+  Activity,
+  Download,
+  Plus,
+  Settings,
+  Search,
+  Filter,
+  Eye,
+  Edit,
+  Trash2,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  MoreVertical,
+  ChevronDown,
+  ChevronUp,
+  RefreshCw,
+  Share2,
+  Mail,
+  Bell
+} from 'lucide-react';
+import LoadingSpinner from '../../components/common/LoadingSpinner';
+import toast from 'react-hot-toast';
 
-const initialForm = {
-  patientId: "",
-  reportType: "lab" as "lab" | "imaging" | "pathology" | "consultation" | "discharge",
-  title: "",
-  content: "",
-  findings: "",
-  recommendations: "",
-  status: "draft" as "draft" | "completed" | "reviewed" | "approved"
-};
-
-type FormType = typeof initialForm;
+interface ReportFormData {
+  title: string;
+  description: string;
+  type: Report['type'];
+  category: Report['category'];
+  filters: Record<string, any>;
+  isPublic: boolean;
+}
 
 const ReportsPage: React.FC = () => {
   const dispatch = useAppDispatch();
-  const { reports, isLoading, error } = useAppSelector((state: RootState) => state.reports);
-  const { patients } = useAppSelector((state: RootState) => state.patients);
-  const { user } = useAppSelector((state: RootState) => state.auth);
-  // Defensive check for patients array
-  const safePatients = Array.isArray(patients) ? patients : [];
-  // Filter patients by nurse assignment if possible (e.g., patient.assignedNurseId === user._id)
-  // If no such field, show all patients for now
-  const nursePatients = user?.role === 'nurse' && user.department
-    ? safePatients.filter(p => (p as any).assignedDepartment === user.department) // TODO: update Patient type
-    : safePatients;
-  // Only show reports for nurse's patients
-  const safeReports = Array.isArray(reports) ? reports : [];
-  const nursePatientIds = new Set(nursePatients.map(p => p._id));
-  const nurseReports = user?.role === 'nurse'
-    ? safeReports.filter(report => nursePatientIds.has(report.patientId))
-    : safeReports;
-  const [showModal, setShowModal] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormType>(initialForm);
-  const [formError, setFormError] = useState("");
+  const { user } = useAppSelector((state) => state.auth);
+  
+  const [reports, setReports] = useState<Report[]>([]);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [selectedReport, setSelectedReport] = useState<Report | null>(null);
+  const [filters, setFilters] = useState<ReportsFilter>({
+    page: 1,
+    limit: 20
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [dateRange, setDateRange] = useState({
+    startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    endDate: new Date().toISOString().split('T')[0]
+  });
+  const [selectedAnalytics, setSelectedAnalytics] = useState<string>('overview');
 
   useEffect(() => {
-    dispatch(fetchReports(undefined));
-    dispatch(fetchPatients());
-  }, [dispatch]);
+    loadReports();
+    loadAnalytics();
+  }, [filters, dateRange]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError("");
-
-    if (!form.patientId || !form.title || !form.content) {
-      setFormError("Patient, title, and content are required");
-      return;
-    }
-
-    const patient = patients.find(p => p._id === form.patientId);
-    if (!patient) {
-      setFormError("Selected patient not found");
-      return;
-    }
-
-    const reportData = {
-      patientId: form.patientId,
-      patientName: patient.fullName,
-      reportType: form.reportType,
-      title: form.title,
-      content: form.content,
-      findings: form.findings || undefined,
-      recommendations: form.recommendations || undefined,
-      status: form.status,
-      generatedBy: user?._id || "",
-      generatedAt: new Date().toISOString(),
-    };
-
+  const loadReports = async () => {
     try {
-      if (editId) {
-        // For now, we'll just create a new report since updateReport might not be implemented
-        await dispatch(createReport(reportData)).unwrap();
-      } else {
-        await dispatch(createReport(reportData)).unwrap();
-      }
-      await dispatch(fetchReports(undefined)); // Refresh the list after add
-      setShowModal(false);
-      setForm(initialForm);
-      setEditId(null);
+      setIsLoading(true);
+      setError(null);
+      const response = await reportsService.getReports(filters);
+      setReports(response.data);
     } catch (error: any) {
-      setFormError(error.message || "Failed to save report");
-    }
-  };
-  
-  const handleEdit = (report: Report) => {
-    setEditId(report._id);
-    setForm({
-      patientId: report.patientId,
-      reportType: report.reportType,
-      title: report.title,
-      content: report.content,
-      findings: report.findings || "",
-      recommendations: report.recommendations || "",
-      status: report.status,
-    });
-    setShowModal(true);
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this report?")) {
-      await dispatch(deleteReport(id));
+      setError(error.message || 'Failed to load reports');
+      toast.error('Failed to load reports');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const getPatientName = (patientId: string) => {
-    const patient = patients.find(p => p._id === patientId);
-    return patient ? patient.fullName : "Unknown Patient";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "completed": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
-      case "draft": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-300";
-      case "reviewed": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
-      case "approved": return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+  const loadAnalytics = async () => {
+    try {
+      const analyticsData = await reportsService.getAnalyticsData({
+        startDate: dateRange.startDate,
+        endDate: dateRange.endDate
+      });
+      setAnalytics(analyticsData);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
     }
   };
 
-  const getReportTypeColor = (type: string) => {
-    switch (type) {
-      case "lab": return "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-300";
-      case "imaging": return "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-300";
-      case "pathology": return "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-300";
-      case "consultation": return "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-300";
-      case "discharge": return "bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-300";
-      default: return "bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-300";
+  const handleCreateReport = async (formData: ReportFormData) => {
+    try {
+      const validation = reportsService.validateReportData({
+        ...formData,
+        data: {},
+        filters: formData.filters
+      });
+      
+      if (!validation.isValid) {
+        toast.error(validation.errors.join(', '));
+        return;
+      }
+
+      await reportsService.createReport({
+        ...formData,
+        data: {},
+        filters: formData.filters
+      });
+      
+      toast.success('Report created successfully');
+      setShowCreateModal(false);
+      loadReports();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create report');
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
+  const handleDeleteReport = async (id: string) => {
+    if (window.confirm('Are you sure you want to delete this report?')) {
+      try {
+        await reportsService.deleteReport(id);
+        setReports(prev => prev.filter(report => report._id !== id));
+        toast.success('Report deleted successfully');
+      } catch (error) {
+        toast.error('Failed to delete report');
+      }
+    }
+  };
+
+  const handleExportReport = async (id: string, format: ExportOptions['format']) => {
+    try {
+      const options: ExportOptions = {
+        format,
+        includeCharts: true,
+        dateRange: {
+          start: dateRange.startDate,
+          end: dateRange.endDate
+        }
+      };
+      
+      const blob = await reportsService.exportReport(id, options);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-${id}-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Report exported successfully');
+    } catch (error) {
+      toast.error('Failed to export report');
+    }
+  };
+
+  const handleExportAnalytics = async (format: ExportOptions['format']) => {
+    try {
+      const options: ExportOptions = {
+        format,
+        includeCharts: true,
+        dateRange: {
+          start: dateRange.startDate,
+          end: dateRange.endDate
+        }
+      };
+      
+      const blob = await reportsService.exportAnalytics(options);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `analytics-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Analytics exported successfully');
+    } catch (error) {
+      toast.error('Failed to export analytics');
+    }
+  };
+
+  const getAnalyticsCard = (title: string, value: number, change?: number, icon?: React.ReactNode) => (
+    <div className="bg-white rounded-lg shadow-md p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Reports</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage medical reports</p>
+          <p className="text-sm font-medium text-gray-600">{title}</p>
+          <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()}</p>
+          {change !== undefined && (
+            <div className="flex items-center mt-2">
+              {change >= 0 ? (
+                <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
+              ) : (
+                <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
+              )}
+              <span className={`text-sm ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {Math.abs(change)}%
+              </span>
+            </div>
+          )}
         </div>
-        <button 
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg shadow hover:bg-blue-700 transition flex items-center gap-2" 
-          onClick={() => { setShowModal(true); setForm(initialForm); setEditId(null); }}
-        >
-          <Plus className="h-5 w-5" />
-          Add Report
-        </button>
+        {icon && <div className="text-gray-400">{icon}</div>}
+      </div>
+    </div>
+  );
+
+  const getChartData = (data: any[], labelKey: string, valueKey: string, label?: string): ChartData => {
+    return reportsService.convertToChartData(data, labelKey, valueKey, label);
+  };
+
+  const formatCurrency = (amount: number) => reportsService.formatCurrency(amount);
+
+  const formatPercentage = (value: number) => reportsService.formatPercentage(value);
+
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Reports & Analytics</h1>
+          <p className="text-gray-600">Comprehensive data analysis and reporting</p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className={`px-4 py-2 rounded-lg flex items-center space-x-2 ${
+              showAdvanced 
+                ? 'bg-purple-600 text-white hover:bg-purple-700' 
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>{showAdvanced ? 'Hide Analytics' : 'Show Analytics'}</span>
+          </button>
+          <button
+            onClick={() => handleExportAnalytics('csv')}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"
+          >
+            <Download className="h-4 w-4" />
+            <span>Export Analytics</span>
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Create Report</span>
+          </button>
+        </div>
       </div>
 
-      {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
-          {error}
+      {/* Date Range Filter */}
+      <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div className="flex items-center space-x-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={dateRange.startDate}
+              onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={dateRange.endDate}
+              onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+          <button
+            onClick={loadAnalytics}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center space-x-2 mt-6"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Analytics Overview */}
+      {showAdvanced && analytics && (
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Analytics Overview</h2>
+          
+          {/* Key Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            {getAnalyticsCard('Total Appointments', analytics.appointments.total, 12, <Calendar className="h-6 w-6" />)}
+            {getAnalyticsCard('Active Patients', analytics.patients.total, 8, <Users className="h-6 w-6" />)}
+            {getAnalyticsCard('Medical Records', analytics.medicalRecords.total, 15, <FileText className="h-6 w-6" />)}
+            {getAnalyticsCard('Total Revenue', analytics.revenue.total, 20, <DollarSign className="h-6 w-6" />)}
+          </div>
+
+          {/* Detailed Analytics */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Appointments Analytics */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Appointments</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Completed</span>
+                  <span className="font-semibold text-green-600">{analytics.appointments.completed}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Pending</span>
+                  <span className="font-semibold text-yellow-600">{analytics.appointments.pending}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Cancelled</span>
+                  <span className="font-semibold text-red-600">{analytics.appointments.cancelled}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Utilization Rate</span>
+                  <span className="font-semibold text-blue-600">{formatPercentage(analytics.appointments.utilizationRate)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Revenue Analytics */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Revenue</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">This Month</span>
+                  <span className="font-semibold text-green-600">{formatCurrency(analytics.revenue.thisMonth)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">This Year</span>
+                  <span className="font-semibold text-blue-600">{formatCurrency(analytics.revenue.thisYear)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Avg Transaction</span>
+                  <span className="font-semibold text-purple-600">{formatCurrency(analytics.revenue.averageTransactionValue)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Patient Analytics */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Patients</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">New This Month</span>
+                  <span className="font-semibold text-green-600">{analytics.patients.newThisMonth}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active This Month</span>
+                  <span className="font-semibold text-blue-600">{analytics.patients.activeThisMonth}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Avg Visits</span>
+                  <span className="font-semibold text-purple-600">{analytics.patients.averageVisits.toFixed(1)}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Performance Analytics */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Performance</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Response Time</span>
+                  <span className="font-semibold text-blue-600">{analytics.performance.averageResponseTime}ms</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">System Uptime</span>
+                  <span className="font-semibold text-green-600">{formatPercentage(analytics.performance.systemUptime)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Error Rate</span>
+                  <span className="font-semibold text-red-600">{formatPercentage(analytics.performance.errorRate)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-600">Active Users</span>
+                  <span className="font-semibold text-purple-600">{analytics.performance.activeUsers}</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Add department warning */}
-      {user?.role === 'nurse' && !user.department && (
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 text-yellow-700 p-4 rounded mb-4">
-          You are not assigned to any department. Please contact your administrator.
+      {/* Reports List */}
+      <div className="bg-white rounded-lg shadow-md">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold text-gray-900">Reports</h2>
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search reports..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <select
+                value={filters.type || ''}
+                onChange={(e) => setFilters({ ...filters, type: e.target.value || undefined })}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">All Types</option>
+                {reportsService.getReportTypes().map(type => (
+                  <option key={type.value} value={type.value}>{type.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
-      )}
 
-      {/* Reports Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Patient
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-              {isLoading ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                    <p className="mt-2">Loading reports...</p>
-                  </td>
-                </tr>
-              ) : nurseReports.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    No reports found
-                  </td>
-                </tr>
-              ) : (
-                nurseReports.map((report) => (
-                  <tr key={report._id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <User className="h-5 w-5 text-gray-400 mr-2" />
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {getPatientName(report.patientId)}
-                          </div>
-                        </div>
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <LoadingSpinner />
+          </div>
+        ) : error ? (
+          <div className="p-6">
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800">{error}</p>
+            </div>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="p-6 text-center">
+            <BarChart3 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No Reports Found</h3>
+            <p className="text-gray-600">Start by creating a new report.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-200">
+            {reports
+              .filter(report => 
+                !searchTerm || 
+                report.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                report.description.toLowerCase().includes(searchTerm.toLowerCase())
+              )
+              .map((report) => (
+                <div key={report._id} className="p-6 hover:bg-gray-50">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-semibold text-gray-900">{report.title}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          report.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {report.isPublic ? 'Public' : 'Private'}
+                        </span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                      <div className="flex items-center">
-                        <FileText className="h-4 w-4 mr-2" />
-                        {report.title}
+                      <p className="text-gray-600 mb-2">{report.description}</p>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <span className="flex items-center space-x-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{new Date(report.createdAt).toLocaleDateString()}</span>
+                        </span>
+                        <span className="capitalize">{report.type.replace('_', ' ')}</span>
+                        <span className="capitalize">{report.category}</span>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getReportTypeColor(report.reportType)}`}>
-                        {report.reportType}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(report.status)}`}>
-                        {report.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
-                      <div className="flex items-center">
-                        <Calendar className="h-4 w-4 mr-1" />
-                        {new Date(report.generatedAt).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                      <button 
-                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        onClick={() => handleEdit(report)}
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleExportReport(report._id, 'csv')}
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-full"
+                        title="Export CSV"
                       >
-                        <Edit className="h-4 w-4" />
+                        <Download className="h-4 w-4" />
                       </button>
-                      <button 
-                        className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                        onClick={() => handleDelete(report._id)}
+                      <button
+                        onClick={() => handleExportReport(report._id, 'pdf')}
+                        className="p-2 text-green-600 hover:bg-green-50 rounded-full"
+                        title="Export PDF"
+                      >
+                        <Download className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteReport(report._id)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-full"
+                        title="Delete"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  {editId ? "Edit Report" : "Add Report"}
-                </h3>
-                <button 
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                  onClick={() => { setShowModal(false); setEditId(null); }}
-                >
-                  ×
-                </button>
-              </div>
+      {/* Create Report Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center p-6 border-b">
+              <h2 className="text-xl font-semibold">Create New Report</h2>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <XCircle className="h-6 w-6" />
+              </button>
             </div>
             
-            {formError && (
-              <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg">
-                {formError}
-              </div>
-            )}
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Patient Selection */}
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleCreateReport({
+                title: formData.get('title') as string,
+                description: formData.get('description') as string,
+                type: formData.get('type') as Report['type'],
+                category: formData.get('category') as Report['category'],
+                filters: {},
+                isPublic: formData.get('isPublic') === 'on'
+              });
+            }} className="p-6 space-y-6">
               <div>
-                <label htmlFor="report-patientId" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Patient *
-                </label>
-                <select
-                  id="report-patientId"
-                  name="patientId"
-                  autoComplete="off"
-                  value={form.patientId}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  required
-                >
-                  <option value="">Select Patient</option>
-                  {nursePatients.length === 0 && user?.role === 'nurse' && user.department && (
-                    <option value="" disabled>No patients found for your department.</option>
-                  )}
-                  {nursePatients.map(patient => (
-                    <option key={patient._id} value={patient._id}>
-                      {patient.fullName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Report Type and Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="report-type" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Report Type
-                  </label>
-                  <select
-                    id="report-type"
-                    name="reportType"
-                    autoComplete="off"
-                    value={form.reportType}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="lab">Lab Report</option>
-                    <option value="imaging">Imaging Report</option>
-                    <option value="pathology">Pathology Report</option>
-                    <option value="consultation">Consultation Report</option>
-                    <option value="discharge">Discharge Summary</option>
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="report-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Status
-                  </label>
-                  <select
-                    id="report-status"
-                    name="status"
-                    autoComplete="off"
-                    value={form.status}
-                    onChange={handleChange}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="draft">Draft</option>
-                    <option value="completed">Completed</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="approved">Approved</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Title */}
-              <div>
-                <label htmlFor="report-title" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Title *
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Title
                 </label>
                 <input
-                  id="report-title"
                   name="title"
                   type="text"
-                  autoComplete="off"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="Report title"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-
-              {/* Content */}
+              
               <div>
-                <label htmlFor="report-content" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Content *
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Description
                 </label>
                 <textarea
-                  id="report-content"
-                  name="content"
-                  rows={6}
-                  autoComplete="off"
-                  value={form.content}
-                  onChange={handleChange}
-                  placeholder="Report content..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                  name="description"
+                  rows={3}
                   required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
-
-              {/* Findings */}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Type
+                  </label>
+                  <select
+                    name="type"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Type</option>
+                    {reportsService.getReportTypes().map(type => (
+                      <option key={type.value} value={type.value}>{type.label}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Category
+                  </label>
+                  <select
+                    name="category"
+                    required
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select Category</option>
+                    {reportsService.getReportCategories().map(category => (
+                      <option key={category.value} value={category.value}>{category.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              
               <div>
-                <label htmlFor="report-findings" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Findings
+                <label className="flex items-center space-x-3">
+                  <input
+                    name="isPublic"
+                    type="checkbox"
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700">Make this report public</span>
                 </label>
-                <textarea
-                  id="report-findings"
-                  name="findings"
-                  rows={4}
-                  autoComplete="off"
-                  value={form.findings}
-                  onChange={handleChange}
-                  placeholder="Key findings..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                />
               </div>
-
-              {/* Recommendations */}
-              <div>
-                <label htmlFor="report-recommendations" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Recommendations
-                </label>
-                <textarea
-                  id="report-recommendations"
-                  name="recommendations"
-                  rows={4}
-                  autoComplete="off"
-                  value={form.recommendations}
-                  onChange={handleChange}
-                  placeholder="Recommendations..."
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200 dark:border-gray-700">
+              
+              <div className="flex justify-end space-x-3 pt-6 border-t">
                 <button
                   type="button"
-                  onClick={() => { setShowModal(false); setEditId(null); }}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  onClick={() => setShowCreateModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2"
-                  disabled={user?.role === 'nurse' && !user.isGovernmentVerified}
-                  title={user?.role === 'nurse' && !user.isGovernmentVerified ? 'Only government-verified nurses can save reports.' : ''}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  <Save className="h-4 w-4" />
-                  {editId ? "Update" : "Save"} Report
+                  Create Report
                 </button>
               </div>
             </form>
