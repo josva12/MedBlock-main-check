@@ -298,6 +298,28 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  
+  // Multi-Factor Authentication Settings
+  mfa: {
+    enabled: {
+      type: Boolean,
+      default: false
+    },
+    method: {
+      type: String,
+      enum: ['email', 'sms', 'totp'],
+      default: 'email'
+    },
+    lastVerified: Date,
+    backupCodes: [{
+      code: String,
+      used: {
+        type: Boolean,
+        default: false
+      },
+      usedAt: Date
+    }]
+  },
   lastSeen: {
     type: Date,
     default: Date.now

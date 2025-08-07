@@ -296,7 +296,53 @@ router.post('/login', authLimiter, captchaCheck, validateLogin, async (req, res)
     // Authenticate user
     const user = await User.authenticate(email, password);
     
-    // Generate tokens
+    // Check if MFA is enabled for the user
+    if (user.mfa && user.mfa.enabled) {
+      // Generate MFA code and send email
+      const MFA = require('../models/MFA');
+      const emailService = require('../services/emailService');
+      
+      // Invalidate any existing MFA codes for this user
+      await MFA.invalidateUserMFA(user._id);
+      
+      // Create new MFA record
+      const mfaRecord = await MFA.createMFA(
+        user._id,
+        email,
+        'login',
+        req.ip,
+        req.get('User-Agent'),
+        'email'
+      );
+      
+      // Send MFA email
+      await emailService.sendMFAEmail(
+        email,
+        mfaRecord.code,
+        user.fullName,
+        'login'
+      );
+      
+      logger.audit('mfa_required', user._id, 'auth', {
+        ip: req.ip,
+        userAgent: req.get('User-Agent'),
+        sessionId: mfaRecord.sessionId
+      });
+      
+      // Return MFA required response
+      return res.json({
+        success: true,
+        message: 'MFA code sent to your email',
+        data: {
+          requiresMFA: true,
+          sessionId: mfaRecord.sessionId,
+          expiresAt: mfaRecord.expiresAt,
+          purpose: 'login'
+        }
+      });
+    }
+    
+    // MFA not enabled, proceed with normal login
     const accessToken = user.generateAuthToken();
     const refreshToken = user.generateRefreshToken();
 
