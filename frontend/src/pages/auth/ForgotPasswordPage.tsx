@@ -4,10 +4,13 @@ import { Link } from 'react-router-dom';
 import type { RootState } from '../../store';
 import { forgotPassword } from '../../features/auth/authSlice';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import CaptchaComponent from '../../components/auth/CaptchaComponent';
 import { Sun, Moon } from 'lucide-react';
 
 const ForgotPasswordPage: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [captchaData, setCaptchaData] = useState({ sessionId: '', captchaInput: '' });
+  const [captchaRequired, setCaptchaRequired] = useState(false);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -29,12 +32,19 @@ const ForgotPasswordPage: React.FC = () => {
   const toggleTheme = () => setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
 
   const dispatch = useDispatch();
-  const { loading, error } = useSelector((state: RootState) => state.auth);
+  const { isLoading, error } = useSelector((state: RootState) => state.auth);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
     if (errors.email) {
       setErrors({ ...errors, email: '' });
+    }
+  };
+
+  const handleCaptchaChange = (sessionId: string, captchaInput: string) => {
+    setCaptchaData({ sessionId, captchaInput });
+    if (errors.captcha) {
+      setErrors({ ...errors, captcha: '' });
     }
   };
 
@@ -45,6 +55,10 @@ const ForgotPasswordPage: React.FC = () => {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(email)) {
       newErrors.email = 'Email is invalid';
+    }
+
+    if (captchaRequired && (!captchaData.sessionId || !captchaData.captchaInput)) {
+      newErrors.captcha = 'CAPTCHA verification is required';
     }
 
     setErrors(newErrors);
@@ -59,12 +73,35 @@ const ForgotPasswordPage: React.FC = () => {
     }
 
     try {
-      const result = await dispatch(forgotPassword({ email }) as any);
+      const forgotPasswordData = captchaRequired 
+        ? { email, ...captchaData }
+        : { email };
+      
+      const result = await dispatch(forgotPassword(forgotPasswordData) as any);
+      
       if (forgotPassword.fulfilled.match(result)) {
         setIsSubmitted(true);
+      } else if (forgotPassword.rejected.match(result)) {
+        const errorPayload = result.payload as any;
+        if (errorPayload?.code === 'CAPTCHA_REQUIRED' || errorPayload?.captchaRequired) {
+          setCaptchaRequired(true);
+          setErrors(prev => ({
+            ...prev,
+            captcha: errorPayload?.message || 'CAPTCHA verification is required'
+          }));
+        } else {
+          setErrors(prev => ({
+            ...prev,
+            general: errorPayload?.message || 'Failed to send password reset email'
+          }));
+        }
       }
     } catch (error) {
       console.error('Forgot password error:', error);
+      setErrors(prev => ({
+        ...prev,
+        general: 'An unexpected error occurred'
+      }));
     }
   };
 
@@ -149,13 +186,22 @@ const ForgotPasswordPage: React.FC = () => {
               </div>
             </div>
 
+            {captchaRequired && (
+              <CaptchaComponent
+                onCaptchaChange={handleCaptchaChange}
+                error={errors.captcha}
+                endpoint="forgot-password"
+                required={true}
+              />
+            )}
+
             <div>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={isLoading}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? <LoadingSpinner size="small" color="white" /> : 'Send reset link'}
+                {isLoading ? <LoadingSpinner size="small" color="white" /> : 'Send reset link'}
               </button>
             </div>
 
