@@ -30,7 +30,7 @@ const aiChatRoutes = require("./aiChat");
 const chatRoutes = require("./chat"); // Add chat routes import
 const captchaRoutes = require("./captcha"); // Add CAPTCHA routes import
 const metricsRoutes = require("./metrics"); // Add metrics routes import
-const userRoutes = require("./user"); // Add user routes import
+//const userRoutes = require("./user"); // Add user routes import
 
 // --- TEMPORARY DIAGNOSTIC ROUTE - ADD THIS BLOCK ---
 // This route MUST be defined and used BEFORE any general authentication middleware
