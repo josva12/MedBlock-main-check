@@ -14,6 +14,8 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
+import mfaService, { MFASettings } from '../services/mfaService';
+import toast from 'react-hot-toast';
 
 type TabType = 'profile' | 'security' | 'appearance';
 
@@ -48,6 +50,37 @@ const SettingsPage: React.FC = () => {
   const [isPasswordChanging, setIsPasswordChanging] = useState(false);
   const [profileMessage, setProfileMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [passwordMessage, setPasswordMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [mfaSettings, setMfaSettings] = useState<MFASettings | null>(null);
+  const [isMfaLoading, setIsMfaLoading] = useState(false);
+
+  React.useEffect(() => {
+    const fetchMfa = async () => {
+      setIsMfaLoading(true);
+      try {
+        const settings = await mfaService.getMFASettings();
+        setMfaSettings(settings);
+      } catch (error: any) {
+        setMfaSettings(null);
+      } finally {
+        setIsMfaLoading(false);
+      }
+    };
+    fetchMfa();
+  }, []);
+
+  const handleMfaToggle = async () => {
+    if (!mfaSettings) return;
+    setIsMfaLoading(true);
+    try {
+      const updated = await mfaService.updateMFASettings(!mfaSettings.enabled);
+      setMfaSettings(updated);
+      toast.success(`Multi-factor authentication ${updated.enabled ? 'enabled' : 'disabled'}!`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update MFA setting');
+    } finally {
+      setIsMfaLoading(false);
+    }
+  };
 
   const tabs = [
     { id: 'profile' as TabType, label: 'Profile', icon: User },
@@ -217,6 +250,49 @@ const SettingsPage: React.FC = () => {
 
   const renderSecurityTab = () => (
     <div className="space-y-6">
+      {/* MFA Section */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white flex items-center">
+              <Shield className="h-5 w-5 mr-2 text-blue-500" /> Multi-Factor Authentication (MFA)
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Add an extra layer of security to your account by requiring a code sent to your email during login.
+            </p>
+          </div>
+          <button
+            onClick={handleMfaToggle}
+            disabled={isMfaLoading || !mfaSettings}
+            className={`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium ${mfaSettings?.enabled ? 'bg-green-600 hover:bg-green-700' : 'bg-gray-400 hover:bg-gray-500'} text-white focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {isMfaLoading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            ) : mfaSettings?.enabled ? (
+              <>
+                <CheckCircle className="h-4 w-4 mr-2" /> Enabled
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-4 w-4 mr-2" /> Disabled
+              </>
+            )}
+          </button>
+        </div>
+        <div className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+          Status: <span className={`font-semibold ${mfaSettings?.enabled ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>{mfaSettings?.enabled ? 'Enabled' : 'Disabled'}</span>
+        </div>
+        {mfaSettings?.enabled && (
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            MFA is active. You will be required to enter a code sent to your email each time you log in.
+          </div>
+        )}
+        {!mfaSettings?.enabled && (
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            MFA is currently disabled. Enable it for enhanced security.
+          </div>
+        )}
+      </div>
       <div>
         <h3 className="text-lg font-medium text-gray-900 dark:text-white">Change Password</h3>
         <p className="text-sm text-gray-600 dark:text-gray-400">

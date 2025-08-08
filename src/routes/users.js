@@ -622,4 +622,28 @@ router.patch('/me/preferences', authenticateToken, async (req, res) => {
   }
 });
 
+// @route   PATCH /api/v1/users/me/mfa
+// @desc    Enable or disable MFA for the authenticated user
+// @access  Private (self only)
+router.patch('/me/mfa', authenticateToken, async (req, res) => {
+  try {
+    const { enabled } = req.body;
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({ error: 'Missing or invalid "enabled" field (must be boolean)' });
+    }
+    const user = await User.findById(req.user._id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.mfa = user.mfa || {};
+    user.mfa.enabled = enabled;
+    user.mfa.method = 'email';
+    user.mfa.lastVerified = enabled ? new Date() : null;
+    await user.save();
+    res.json({ success: true, message: `MFA ${enabled ? 'enabled' : 'disabled'} successfully`, mfa: user.mfa });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update MFA setting', details: error.message });
+  }
+});
+
 module.exports = router; 

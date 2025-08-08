@@ -49,6 +49,12 @@ export interface MFAGenerateRequest {
   purpose: 'login' | 'password_reset' | 'account_verification' | 'settings_change';
 }
 
+export interface MFASettings {
+  enabled: boolean;
+  method: 'email' | 'sms' | 'totp';
+  lastVerified?: string;
+}
+
 class MFAService {
   /**
    * Generate and send MFA code to user's email
@@ -147,6 +153,22 @@ class MFAService {
       email,
       purpose: 'settings_change'
     });
+  }
+
+  /**
+   * Get current user's MFA settings
+   */
+  async getMFASettings(): Promise<MFASettings> {
+    const response = await api.get('/users/me');
+    return response.data.data.mfa;
+  }
+
+  /**
+   * Update current user's MFA settings (enable/disable)
+   */
+  async updateMFASettings(enabled: boolean): Promise<MFASettings> {
+    const response = await api.patch('/users/me/mfa', { enabled });
+    return response.data.mfa;
   }
 
   /**
