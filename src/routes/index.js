@@ -23,6 +23,7 @@ const notificationRoutes = require("./notifications");
 const subscriptionRoutes = require("./subscriptions");
 const claimRoutes = require("./claims");
 const insuranceRoutes = require("./insurance");
+const pharmacyRoutes = require("./pharmacy");
 const teleconsultationRoutes = require("./teleconsultations");
 const predictionRoutes = require("./predictions");
 const resourceRoutes = require("./resources");
@@ -106,6 +107,7 @@ router.use("/notifications", notificationRoutes);
 router.use("/subscriptions", subscriptionRoutes);
 router.use("/insurance", require("./insurance"));
 router.use("/claims", require("./claims"));
+router.use("/pharmacy", pharmacyRoutes);
 router.use("/payments", require("./payments"));
 router.use("/chat", require("./chat"));
 router.use("/captcha", captchaRoutes); // Add CAPTCHA routes

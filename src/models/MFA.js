@@ -99,7 +99,7 @@ const mfaSchema = new mongoose.Schema({
 
 // Indexes for performance
 mfaSchema.index({ userId: 1, createdAt: -1 });
-mfaSchema.index({ sessionId: 1 });
+// Note: sessionId index is already created by the unique constraint in the schema
 mfaSchema.index({ email: 1, createdAt: -1 });
 
 // Static method to generate a new MFA code
