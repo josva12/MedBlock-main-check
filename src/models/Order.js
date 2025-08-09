@@ -5,8 +5,7 @@ const orderSchema = new mongoose.Schema({
   orderNumber: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   
   // Customer information
@@ -305,7 +304,6 @@ orderSchema.methods.dispenseItems = function(dispensedItems, dispensedBy) {
 };
 
 // Indexes for performance
-orderSchema.index({ orderNumber: 1 });
 orderSchema.index({ customer: 1, pharmacyId: 1 });
 orderSchema.index({ status: 1, pharmacyId: 1 });
 orderSchema.index({ createdAt: -1, pharmacyId: 1 });

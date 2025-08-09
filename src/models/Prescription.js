@@ -4,8 +4,7 @@ const prescriptionSchema = new mongoose.Schema({
   prescriptionNumber: {
     type: String,
     required: true,
-    unique: true,
-    index: true
+    unique: true
   },
   
   patient: {
@@ -176,7 +175,6 @@ prescriptionSchema.pre('save', function(next) {
   next();
 });
 
-prescriptionSchema.index({ prescriptionNumber: 1 });
 prescriptionSchema.index({ 'patient.patientId': 1, status: 1 });
 prescriptionSchema.index({ status: 1, endDate: 1 });
 

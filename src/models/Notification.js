@@ -42,8 +42,7 @@ const notificationSchema = new mongoose.Schema({
   
   archived: {
     type: Boolean,
-    default: false,
-    index: true
+    default: false
   },
 
   // Optional metadata for additional context
